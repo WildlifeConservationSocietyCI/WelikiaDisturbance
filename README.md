@@ -14,4 +14,4 @@ The fire script calls FARSITE a fire simulation and runs a trial, the outputs of
 ### Inputs ###
 
 ## Successional Model ##
-## Inputs ##
+### Inputs ###
