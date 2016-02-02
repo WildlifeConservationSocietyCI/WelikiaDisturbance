@@ -9,7 +9,7 @@ The fire script calls FARSITE a fire simulation and runs a trial, the outputs of
  - aspect.asc
  - canopy.asc
  - fuel.asc
- - 
+
 ## Horticulture ##
 ### Inputs ###
 
