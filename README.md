@@ -10,8 +10,16 @@ The fire script calls FARSITE a fire simulation model and runs a trial, the outp
  - canopy.asc
  - fuel.asc
 
-## Horticulture ##
-### Inputs ###
+## Ponds 
+Description:
+### Inputs
+ - Hydrologically conditioned DEM with burned streams
+ - flow direction
+ - suitable streams
+ - landcover
+ 
+## Horticulture
+### Inputs
 
 ## Successional Model ##
 ### Inputs ###
