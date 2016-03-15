@@ -1,4 +1,4 @@
-from create_ponds import *
+from pond_methods import *
 
 # Directories
 root_dir = 'E:/_data/welikia/beaver_ponds/_test'
