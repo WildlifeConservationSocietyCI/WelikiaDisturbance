@@ -1,14 +1,16 @@
 import posixpath as os
-
+import arcpy
+from arcpy import env
+import sys
 
 # DIRECTORIES
-ROOT_DIR = os.join('E:', '_data', 'welikia', 'WelikiaDisturbances')
+ROOT_DIR = os.join('E:', '_data', 'welikia', 'WelikiaDisturbance')
 INPUT_DIR = os.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.join(ROOT_DIR, 'outputs')
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1509)
+RUN_LENGTH = range(1, 3)
 
 ## Fire
 ### initial parameters
@@ -38,7 +40,31 @@ SUCCESSION_TIME_MID = 10
 SUCCESSION_TIME_CLIMAX = 20
 
 ## Ponds
-CARRYING_CAPACITY = 100
+CARRYING_CAPACITY = 20
 MINIMUM_DISTANCE = 1000
 CELL_SIZE = 5
 DAM_HEIGHT = 9
+
+# Disturbance Class Test
+
+class Disturbance(object):
+    ROOT_DIR = ROOT_DIR
+    INPUT_DIR = INPUT_DIR
+    OUTPUT_DIR = OUTPUT_DIR
+
+
+# Environment Setting
+env.workspace = ROOT_DIR
+print env.workspace
+env.scratchWorkspace = os.join(ROOT_DIR, 'Scratch_Geodatabase.gdb')
+print env.scratchWorkspace
+env.overWriteOutput = True
+
+
+if arcpy.CheckExtension("Spatial") == "Available":
+    arcpy.AddMessage("Checking out Spatial")
+    arcpy.CheckOutExtension("Spatial")
+else:
+    arcpy.AddError("Unable to get spatial analyst extension")
+    arcpy.AddMessage(arcpy.GetMessages(0))
+    sys.exit(0)
