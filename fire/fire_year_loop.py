@@ -8,11 +8,7 @@ from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo import gdal_array
 from wmi import WMI
-from run_farsite import *
-from tree_mortality import *
-from array_to_raster import *
-from ecosystem_to_fuel import *
-
+from fire_methods import *
 
 # Methods
 def memory():

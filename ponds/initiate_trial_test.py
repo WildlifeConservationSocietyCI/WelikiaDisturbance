@@ -1,4 +1,4 @@
-from pond_methods import *
+from ponds_methods import *
 from arcpy import env
 import posixpath as os
 
@@ -6,9 +6,10 @@ import posixpath as os
 env.overWriteOutput = True
 
 # Directories
-root_dir = 'E:/_data/welikia/beaver_ponds/_test'
+root_dir = 'E:/_data/welikia/WelikiaDisturbance/ponds'
 input_dir = os.join(root_dir, 'inputs')
 output_dir = os.join(root_dir, 'outputs')
+temp_dir = os.join(root_dir, 'temp')
 
 # Environment Setting
 env.workspace = root_dir
@@ -28,7 +29,7 @@ landcover = os.join(input_dir, 'landcover.tif')
 
 
 # Model Parameters
-CARRYING_CAPACITY = 10
+CARRYING_CAPACITY = 15
 MINIMUM_DISTANCE = 1000
 
 # Initate trial
@@ -36,7 +37,7 @@ print 'initiating trial'
 
 # calculate suitability points
 print 'calculating suitable points'
-suitability_points = os.join(input_dir, 'suitability_points_initial_00.shp')
+suitability_points = os.join(input_dir, 'suitability_points_initial_0.shp')
 
 if arcpy.Exists(suitability_points):
     arcpy.Delete_management(suitability_points)
@@ -47,13 +48,14 @@ calculate_suitability(landcover=landcover,
 
 # choose pond locations
 print 'selecting pond locations'
-pond_points = os.join(output_dir, 'pond_points.shp')
+pond_points = os.join(temp_dir, 'pond_points.shp')
 
 if arcpy.Exists(pond_points):
     arcpy.Delete_management(pond_points)
 
 assign_pond_locations(constraint=suitability_points,
-                      num_points=CARRYING_CAPACITY)
+                      num_points=CARRYING_CAPACITY,
+                      outpath=temp_dir)
 
 # convert pond points feature to coordinate list
 print 'converting pond points to coordinate list'
@@ -64,7 +66,7 @@ coordinate_list = dam_points_coordinates(pond_points)
 pond_list = []
 for p, i in zip(coordinate_list, range(len(coordinate_list))):
     print 'calculating pond %s' % i
-    temp_point = os.join(output_dir, 'temp_point.shp')
+    temp_point = os.join(temp_dir, 'temp_point.shp')
 
     if arcpy.Exists(temp_point):
         arcpy.Delete_management(temp_point)
@@ -79,11 +81,11 @@ for p, i in zip(coordinate_list, range(len(coordinate_list))):
 print 'summing ponds and reclassify as binary'
 ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(pond_list, 'SUM') > 0, 1, 0)
 
-ponds.save(os.join(output_dir, 'ponds_00.tif'))
+ponds.save(os.join(output_dir, 'ponds_0.tif'))
 
 pond_count, region_group = count_ponds(ponds)
 
 time_since_disturbance = initial_time_since_disturbance(region_group, landcover)
 
-time_since_disturbance.save(os.join(output_dir, 'time_since_last_disturbance_00.tif'))
+time_since_disturbance.save(os.join(output_dir, 'time_since_disturbance_0.tif'))
 

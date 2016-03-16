@@ -1,9 +1,12 @@
-from pond_methods import *
+from ponds_methods import *
+import posixpath as os
+from arcpy import env
 
 # Directories
-root_dir = 'E:/_data/welikia/beaver_ponds/_test'
+root_dir = 'E:/_data/welikia/WelikiaDisturbance/ponds'
 input_dir = os.join(root_dir, 'inputs')
 output_dir = os.join(root_dir, 'outputs')
+temp_dir = os.join(root_dir, 'temp')
 
 # Environment Setting
 env.workspace = root_dir
@@ -22,19 +25,19 @@ suitable_streams = os.join(input_dir, 'suitability_surface.tif')
 # Paths
 suitability_points = os.join(input_dir, 'suitability_points.shp')
 
-pond_points = os.join(output_dir, 'pond_points.shp')
+pond_points = os.join(temp_dir, 'pond_points.shp')
 
 time_since_disturbance = ""
 
 # Model Parameters
-CARRYING_CAPACITY = 115
+CARRYING_CAPACITY = 20
 MINIMUM_DISTANCE = 1000
-for year in range(1, 5):
+for year in range(1, 30):
 
     print 'year %s trial start' % year
 
     print 'incrementing time since disturbance'
-    time_since_disturbance = os.join(output_dir, 'time_since_last_disturbance_%s.tif' % (year - 1))
+    time_since_disturbance = os.join(output_dir, 'time_since_disturbance_%s.tif' % (year - 1))
     time_since_disturbance = arcpy.Raster(time_since_disturbance)
 
     # increment time since disturbance
@@ -46,7 +49,7 @@ for year in range(1, 5):
     landcover.save(os.join(output_dir, 'landcover_%s.tif' % year))
 
     print 'counting ponds...'
-    pond_count, region_group = count_ponds(landcover, year)
+    pond_count, region_group = count_ponds(landcover)
     print 'number of active ponds: %s' % pond_count
 
     if pond_count < CARRYING_CAPACITY:
@@ -71,7 +74,8 @@ for year in range(1, 5):
             arcpy.Delete_management(pond_points)
 
         assign_pond_locations(constraint=suitability_points,
-                              num_points=new_ponds)
+                              num_points=new_ponds,
+                              outpath=temp_dir)
 
         # convert pond points feature to list of longitude latitude coordinates
         print 'converting pond points to coordinate list'
@@ -82,7 +86,7 @@ for year in range(1, 5):
         pond_list = []
         for p, i in zip(coordinate_list, range(len(coordinate_list))):
             print 'calculating pond %s' % i
-            temp_point = os.join(output_dir, 'temp_point.shp')
+            temp_point = os.join(temp_dir, 'temp_point.shp')
 
             if arcpy.Exists(temp_point):
                 arcpy.Delete_management(temp_point)
@@ -101,7 +105,7 @@ for year in range(1, 5):
 
         time_since_disturbance = update_time_since_disturbance(time_since_disturbance, ponds)
 
-        time_since_disturbance.save(os.join(output_dir, 'time_since_last_disturbance_%s.tif' % year))
+        time_since_disturbance.save(os.join(output_dir, 'time_since_disturbance_%s.tif' % year))
 
 landcover = succession(time_since_disturbance)
 landcover.save(os.join(output_dir, 'landcover_final.tif'))
