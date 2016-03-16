@@ -1,10 +1,8 @@
 # Import system modules
 import arcpy
-from arcpy import env
 import sys
 import random
-import posixpath as os
-
+import settings as s
 # checkout spatial analyst
 if arcpy.CheckExtension("Spatial") == "Available":
     arcpy.AddMessage("Checking out Spatial")
@@ -46,13 +44,7 @@ else:
 #
 # assign_pond_locations(constraint=streams, num_points=ponds)
 
-# PARAMETERS
-DISTANCE = 800
-CELL_SIZE = 5
-DAM_HEIGHT = 9
-
-
-def assign_pond_locations(constraint, num_points):
+def assign_pond_locations(constraint, num_points, outpath):
     """
     This method assigns random locations for each pond that fall within the bounds of
     suitable habitat.
@@ -60,15 +52,13 @@ def assign_pond_locations(constraint, num_points):
     :param num_points:
     :return:
     """
-
-
     # constraint is the area of all suitable loacations for ponds
     # num_points is the maximum number of ponds that should be assigned
-    arcpy.CreateRandomPoints_management(out_path="E:/_data/welikia/beaver_ponds/_test/outputs/",
+    arcpy.CreateRandomPoints_management(out_path=outpath,
                                         out_name="pond_points.shp",
                                         constraining_feature_class=constraint,
                                         number_of_points_or_field=num_points,
-                                        minimum_allowed_distance=1000)
+                                        minimum_allowed_distance=s.MINIMUM_DISTANCE)
 
 
 def dam_points_coordinates(points):
@@ -79,7 +69,7 @@ def dam_points_coordinates(points):
     :return: coordinate_list
     """
 
-    cursor = arcpy.da.SearchCursor(points, 'SHAPE@XY')
+    cursor = arcpy.da.SearchCursor(points, "SHAPE@XY")
 
     coordinate_list = []
     for point in cursor:
@@ -113,7 +103,7 @@ def create_pond(dem, flow_direction, coordinates, temp_point):
     # print pour_point_elevation.maximum
 
     # set dam height
-    dam_height = pour_point_elevation.maximum + DAM_HEIGHT
+    dam_height = pour_point_elevation.maximum + s.DAM_HEIGHT
     # print dam_height
 
     # calculate watershed for dam
@@ -140,8 +130,8 @@ def calculate_territory(landcover):
     landcover_set_null = arcpy.sa.SetNull((landcover == 2) | (landcover == 3), 1)
 
     territory = arcpy.sa.EucDistance(in_source_data=landcover_set_null,
-                                     maximum_distance=DISTANCE,
-                                     cell_size=CELL_SIZE)
+                                     maximum_distance=s.MINIMUM_DISTANCE,
+                                     cell_size=s.CELL_SIZE)
 
     exclude_territory = arcpy.sa.IsNull(territory)
 
@@ -265,4 +255,3 @@ def succession(time_since_disturbance):
     landcover = arcpy.sa.Con(time_since_disturbance >= 30, 3, (arcpy.sa.Con(time_since_disturbance >= 10, 2, 1)))
 
     return landcover
-
