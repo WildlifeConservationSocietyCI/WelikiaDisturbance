@@ -56,7 +56,6 @@ class PondDisturbance(s.Disturbance):
         """
         take points shp and convert to X Y coordinate tuples, this intermediate is needed to
         create pour points for the watershed tool.
-        :param points:
         :return: coordinate_list
         """
 
@@ -83,15 +82,15 @@ class PondDisturbance(s.Disturbance):
         arcpy.CopyFeatures_management(in_features=arcpy.PointGeometry(pour_point),
                                       out_feature_class=self.temp_point)
 
-        # print type(pour_point)
+
         # get pour point elevation
         pour_point_elevation = arcpy.sa.ExtractByPoints(points=pour_point,
                                                         in_raster=self.DEM)
-        # print pour_point_elevation.maximum
+
 
         # set dam height
         dam_height = pour_point_elevation.maximum + s.DAM_HEIGHT
-        # print dam_height
+
 
         # calculate watershed for dam
         watershed = arcpy.sa.Watershed(in_flow_direction_raster=self.FLOW_DIRECTION,
@@ -176,17 +175,17 @@ class PondDisturbance(s.Disturbance):
         arcpy.RasterToPoint_conversion(in_raster=suitability_surface_set_null,
                                        out_point_features=self.suitability_points)
 
-    def initial_time_since_disturbance(self, in_raster, landcover):
+    def initial_time_since_disturbance(self, region_group, land_cover):
         """
         This method returns an initial time_since_disturbance raster. time_since_disturbance
         cells that are coincident with new ponds are assigned random values between 0 and 9,
-        all other cells are iniated with a value of 30.
-        :param in_raster:
-        :param landcover:
+        all other cells are initiated with a value of 30.
+        :param region_group:
+        :param land_cover:
         :return: 0_time_since_disturbance
         """
 
-        pond_count = in_raster
+        pond_count = region_group
 
         arcpy.AddField_management(in_table=pond_count,
                                   field_name='age',
@@ -202,7 +201,7 @@ class PondDisturbance(s.Disturbance):
         age = arcpy.sa.Lookup(in_raster=pond_count,
                               lookup_field="age")
 
-        start_age = arcpy.sa.Con((arcpy.sa.IsNull(pond_count) == 1) & (landcover), 30,
+        start_age = arcpy.sa.Con((arcpy.sa.IsNull(pond_count) == 1) & (land_cover), 30,
                                  arcpy.sa.Con(pond_count, age))
 
         return start_age
@@ -227,15 +226,6 @@ class PondDisturbance(s.Disturbance):
 
         self.land_cover = arcpy.sa.Con(self.time_since_disturbance >= 30, 3,
                                        (arcpy.sa.Con(self.time_since_disturbance >= 10, 2, 1)))
-
-    # def disturb(self, year):
-    #
-    #     pond_dis = PondDisturbance(year)
-    #
-    #     pond_dis.time_since_disturbance += 1
-    #
-    #     pond_dis.land_cover.save(os.join(pond_dis.OUTPUT_DIR, 'land_cover_%s.tif' % year))
-    #
 
 
 def run(year):
