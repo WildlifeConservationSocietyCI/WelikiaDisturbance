@@ -13,16 +13,18 @@ for year in s.RUN_LENGTH:
     # fire
 
     # beaver pond
-    pond.run(year)
+    pond_dis = pond.PondDisturbance(year)
+    pond_dis.run_year()
 
 
 
-f = fire.FireDisturbance()
 
-f.get_translation_table()
-f.get_climate_years()
-f.get_drought()
-
-print f.translation_table
-print f.climate_years
-print f.drought
+# f = fire.FireDisturbance()
+#
+# f.get_translation_table()
+# f.get_climate_years()
+# f.get_drought()
+#
+# print f.translation_table
+# print f.climate_years
+# print f.drought

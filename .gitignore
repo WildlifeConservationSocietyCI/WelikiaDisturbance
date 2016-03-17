@@ -1,0 +1,12 @@
+ponds/outputs/*
+ponds/inputs/*
+ponds/temp/*
+ponds/log
+ponds/info
+fire/outputs/*
+fire/inputs/*
+population/SUITABILITY_GARDENING/*
+Scratch_Geodatabase.gdb
+*.idea
+.idea/*
+log

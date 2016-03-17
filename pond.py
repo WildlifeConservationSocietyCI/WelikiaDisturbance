@@ -36,7 +36,7 @@ class PondDisturbance(s.Disturbance):
         self.time_since_disturbance = arcpy.Raster(os.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % (year - 1)))
         self.land_cover = None
         self.pond_count = None
-        self.suitability_points = os.join(self.INPUT_DIR, self._suitpoints)
+        self.suitability_points = os.join(s.TEMP_DIR, self._suitpoints)
         self.coordinate_list = None
         self.pond_points = os.join(s.TEMP_DIR, 'pond_points.shp')
         self.temp_point = os.join(s.TEMP_DIR, 'temp_point.shp')
@@ -55,7 +55,6 @@ class PondDisturbance(s.Disturbance):
         """
         This method assigns random locations for each pond that fall within the bounds of
         suitable habitat.
-        :param num_points:
         :return:
         """
 
@@ -99,15 +98,12 @@ class PondDisturbance(s.Disturbance):
         arcpy.CopyFeatures_management(in_features=arcpy.PointGeometry(pour_point),
                                       out_feature_class=self.temp_point)
 
-
         # get pour point elevation
         pour_point_elevation = arcpy.sa.ExtractByPoints(points=pour_point,
                                                         in_raster=self.DEM)
 
-
         # set dam height
         dam_height = pour_point_elevation.maximum + s.DAM_HEIGHT
-
 
         # calculate watershed for dam
         watershed = arcpy.sa.Watershed(in_flow_direction_raster=self.FLOW_DIRECTION,
@@ -139,6 +135,7 @@ class PondDisturbance(s.Disturbance):
 
         return exclude_territory
 
+
     def set_region_group(self):
         # sum_ponds = arcpy.Raster(in_raster)
         print 'setting null'
@@ -152,13 +149,14 @@ class PondDisturbance(s.Disturbance):
 
         # region_group.save('E:/_data/welikia/beaver_ponds/_test/outputs/region_group_%s.tif' % year)
 
+
     def count_ponds(self):
 
         """
         count_ponds takes a binary pond raster (pond = 1, no-pond = 0) and uses a region group
         function to count the number of ponds in the extent. This method returns the number of
         ponds as an integer and the region_group product as a raster object.
-        :return: pond_count, region_group
+        :return:
         """
         self.set_region_group()
 
@@ -183,9 +181,6 @@ class PondDisturbance(s.Disturbance):
         if type(self.SUITABLE_STREAMS) == str:
             self.SUITABLE_STREAMS = arcpy.Raster(self.SUITABLE_STREAMS)
 
-        if type(self.land_cover) == str:
-            land_cover = arcpy.Raster(self.land_cover)
-
         exclude_territory = self.calculate_territory()
 
         suitability_surface = exclude_territory * self.SUITABLE_STREAMS
@@ -200,8 +195,6 @@ class PondDisturbance(s.Disturbance):
         This method returns an initial time_since_disturbance raster. time_since_disturbance
         cells that are coincident with new ponds are assigned random values between 0 and 9,
         all other cells are initiated with a value of 30.
-        :param region_group:
-        :param land_cover:
         :return: 0_time_since_disturbance
         """
 
@@ -219,7 +212,7 @@ class PondDisturbance(s.Disturbance):
         age = arcpy.sa.Lookup(in_raster=self._region_group,
                               lookup_field="age")
 
-        start_age = arcpy.sa.Con((arcpy.sa.IsNull(self._region_group) == 1) & (self.ecocommunities), 30,
+        start_age = arcpy.sa.Con((arcpy.sa.IsNull(self._region_group) == 1) & self.ecocommunities, 30,
                                  arcpy.sa.Con(self._region_group, age))
 
         return start_age
@@ -246,7 +239,7 @@ class PondDisturbance(s.Disturbance):
                                        (arcpy.sa.Con(self.time_since_disturbance >= 10, 2, 1)))
 
     def run_year(self):
-
+        self.time_since_disturbance += 1
         self.time_since_disturbance += 1
 
         self.succession()
