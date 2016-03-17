@@ -20,7 +20,7 @@ class PondDisturbance(s.Disturbance):
     CELL_SIZE = s.CELL_SIZE
     DAM_HEIGHT = s.DAM_HEIGHT
 
-    # Inputs
+    # Constant Inputs
     DEM = os.join(INPUT_DIR, 'UPLAND_DEM_BURNED_STREAMS_5m_FILL.tif')
     FLOW_DIRECTION = os.join(INPUT_DIR, 'flow_direction.tif')
     SUITABLE_STREAMS = os.join(INPUT_DIR, 'suitability_surface.tif')
@@ -40,7 +40,6 @@ class PondDisturbance(s.Disturbance):
         """
         This method assigns random locations for each pond that fall within the bounds of
         suitable habitat.
-        :param constraint:
         :param num_points:
         :return:
         """
@@ -163,8 +162,8 @@ class PondDisturbance(s.Disturbance):
         if type(self.SUITABLE_STREAMS) == str:
             self.SUITABLE_STREAMS = arcpy.Raster(self.SUITABLE_STREAMS)
 
-        if type(self.SUITABLE_STREAMS) == str:
-            land_cover = arcpy.Raster(self.SUITABLE_STREAMS)
+        if type(self.land_cover) == str:
+            land_cover = arcpy.Raster(self.land_cover)
 
         exclude_territory = PondDisturbance.calculate_territory(self)
 
@@ -194,7 +193,7 @@ class PondDisturbance(s.Disturbance):
         cursor = arcpy.UpdateCursor(pond_count)
 
         for row in cursor:
-            age = random.randint(0,9)
+            age = random.randint(0, 9)
             row.setValue("age", age)
             cursor.updateRow(row)
 
