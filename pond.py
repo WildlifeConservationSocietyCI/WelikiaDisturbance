@@ -139,7 +139,6 @@ class PondDisturbance(s.Disturbance):
 
         return exclude_territory
 
-
     def set_region_group(self):
         # sum_ponds = arcpy.Raster(in_raster)
         print 'setting null'
@@ -152,7 +151,6 @@ class PondDisturbance(s.Disturbance):
                                             zone_connectivity='CROSS')
 
         # region_group.save('E:/_data/welikia/beaver_ponds/_test/outputs/region_group_%s.tif' % year)
-
 
     def count_ponds(self):
 
@@ -248,7 +246,7 @@ class PondDisturbance(s.Disturbance):
                                        (arcpy.sa.Con(self.time_since_disturbance >= 10, 2, 1)))
 
     def run_year(self):
-        self.time_since_disturbance += 1
+
         self.time_since_disturbance += 1
 
         self.succession()
