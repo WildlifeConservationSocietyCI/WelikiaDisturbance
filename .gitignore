@@ -46,3 +46,5 @@ inputs/pond/suitability_surface.tif.aux.xml
 inputs/pond/suitability_surface.tif.vat.dbf
 inputs/pond/suitability_surface.tif.xml
 pond.py.rej
+inputs/
+temp/

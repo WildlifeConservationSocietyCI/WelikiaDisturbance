@@ -33,7 +33,7 @@ class PondDisturbance(s.Disturbance):
 
     def __init__(self, year):
         self.year = year
-        self.time_since_disturbance = arcpy.Raster(os.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % (year - 1)))
+        self.time_since_disturbance = None
         self.land_cover = None
         self.pond_count = None
         self.suitability_points = os.join(s.TEMP_DIR, self._suitpoints)
@@ -57,8 +57,10 @@ class PondDisturbance(s.Disturbance):
         suitable habitat.
         :return:
         """
-
-        num_points = s.CARRYING_CAPACITY - self.pond_count
+        if self.pond_count is not None:
+            num_points = s.CARRYING_CAPACITY - self.pond_count
+        else:
+            num_points = s.CARRYING_CAPACITY
 
         # constraint is the area of all suitable loacations for ponds
         # num_points is the maximum number of ponds that should be assigned
@@ -84,7 +86,7 @@ class PondDisturbance(s.Disturbance):
 
         self.coordinate_list = coordinate_list
 
-    def create_pond(self, coordinates):
+    def flood_pond(self, coordinates):
         """
         create a raster with a single pond using watershed tool and conditional statement.
         The location of the pond is specified by the temp_point argument. DEM must be hydrologicaly
@@ -116,6 +118,34 @@ class PondDisturbance(s.Disturbance):
 
         return pond
 
+    def create_ponds(self):
+
+        # calculate suitability using existing ponds
+        self.reset_temp(self.suitability_points)
+        self.calculate_suitability()
+
+        # choose pond locations
+        print 'selecting pond locations'
+        self.reset_temp(self.pond_points)
+        print self.pond_points, type(self.pond_points)
+        self.assign_pond_locations()
+
+        # convert pond points feature to list of longitude latitude coordinates
+        print 'converting pond points to coordinate list'
+        self.dam_points_coordinates()
+        print self.coordinate_list
+
+        # create ponds
+        for p, i in zip(self.coordinate_list, range(len(self.coordinate_list))):
+            print 'calculating pond %s' % i
+            self.reset_temp(self.temp_point)
+            pond = self.flood_pond(coordinates=p)
+            self.pond_list.append(pond)
+
+        ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(self.pond_list, 'SUM') > 0, 1, 0)
+
+        return ponds
+
     def calculate_territory(self):
         """
         calculate territory creates a euclidean distance buffer using the global DISTANCE
@@ -135,7 +165,6 @@ class PondDisturbance(s.Disturbance):
 
         return exclude_territory
 
-
     def set_region_group(self):
         # sum_ponds = arcpy.Raster(in_raster)
         print 'setting null'
@@ -144,11 +173,10 @@ class PondDisturbance(s.Disturbance):
 
         print 'region grouping'
         self._region_group = arcpy.sa.RegionGroup(in_raster=sum_ponds_set_null,
-                                            number_neighbors='EIGHT',
-                                            zone_connectivity='CROSS')
+                                                  number_neighbors='EIGHT',
+                                                  zone_connectivity='CROSS')
 
         # region_group.save('E:/_data/welikia/beaver_ponds/_test/outputs/region_group_%s.tif' % year)
-
 
     def count_ponds(self):
 
@@ -195,8 +223,12 @@ class PondDisturbance(s.Disturbance):
         This method returns an initial time_since_disturbance raster. time_since_disturbance
         cells that are coincident with new ponds are assigned random values between 0 and 9,
         all other cells are initiated with a value of 30.
-        :return: 0_time_since_disturbance
+        :return:
         """
+        self.land_cover = arcpy.Raster(s.ecocommunities)
+        self.land_cover = self.create_ponds()
+
+        self.set_region_group()
 
         arcpy.AddField_management(in_table=self._region_group,
                                   field_name='age',
@@ -212,10 +244,10 @@ class PondDisturbance(s.Disturbance):
         age = arcpy.sa.Lookup(in_raster=self._region_group,
                               lookup_field="age")
 
-        start_age = arcpy.sa.Con((arcpy.sa.IsNull(self._region_group) == 1) & self.ecocommunities, 30,
-                                 arcpy.sa.Con(self._region_group, age))
+        self.time_since_disturbance = arcpy.sa.Con((arcpy.sa.IsNull(self._region_group) == 1) & self.ecocommunities, 30,
+                                                   arcpy.sa.Con(self._region_group, age))
 
-        return start_age
+        self.time_since_disturbance.save(os.join(self.OUTPUT_DIR, 'time_since_disturbance_0.tif'))
 
     def update_time_since_disturbance(self, new_ponds):
         """
@@ -238,7 +270,19 @@ class PondDisturbance(s.Disturbance):
         self.land_cover = arcpy.sa.Con(self.time_since_disturbance >= 30, 3,
                                        (arcpy.sa.Con(self.time_since_disturbance >= 10, 2, 1)))
 
+    def set_time_since_disturbance(self):
+        this_year_time_since_disturbance = os.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % (self.year - 1))
+        if os.isfile(this_year_time_since_disturbance):
+            self.time_since_disturbance = arcpy.Raster(this_year_time_since_disturbance)
+        else:
+            self.initial_time_since_disturbance()
+            self.time_since_disturbance = arcpy.Raster(os.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif'
+                                                               % (self.year - 1)))
+
     def run_year(self):
+
+        self.set_time_since_disturbance()
+
         self.time_since_disturbance += 1
         self.time_since_disturbance += 1
 
@@ -250,30 +294,8 @@ class PondDisturbance(s.Disturbance):
 
         if self.pond_count < self.CARRYING_CAPACITY:
             print 'number of active ponds is below carrying capacity, creating new ponds'
-            # calculate number of new ponds to create
-            new_ponds = self.CARRYING_CAPACITY - self.pond_count
 
-            # calculate suitability using existing ponds
-            self.reset_temp(self.suitability_points)
-            self.calculate_suitability()
-
-            # choose pond locations
-            print 'selecting pond locations'
-            self.reset_temp(self.pond_points)
-            print self.pond_points, type(self.pond_points)
-            self.assign_pond_locations()
-
-            # convert pond points feature to list of longitude latitude coordinates
-            print 'converting pond points to coordinate list'
-            self.dam_points_coordinates()
-            print self.coordinate_list
-
-            # create ponds
-            for p, i in zip(self.coordinate_list, range(len(self.coordinate_list))):
-                print 'calculating pond %s' % i
-                self.reset_temp(self.temp_point)
-                pond = self.create_pond(coordinates=p)
-                self.pond_list.append(pond)
+            ponds = self.create_ponds()
 
             ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(self.pond_list, 'SUM') > 0, 1, 0)
             ponds.save(os.join(self.OUTPUT_DIR, 'ponds_%s.tif' % self.year))
