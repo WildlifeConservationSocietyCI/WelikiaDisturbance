@@ -197,10 +197,10 @@ class PondDisturbance(s.Disturbance):
         new_ponds as an integer and the region_group product as a raster object.
         :return:
         """
-        print type(self._region_group)
-        if self._region_group is None:
-            print "set region group"
-            self.set_region_group(self.ecocommunities)
+        # print type(self._region_group)
+        # if self._region_group is None:
+        #     print "set region group"
+        #     self.set_region_group(self.ecocommunities)
 
         print type(self._region_group)
 
@@ -283,23 +283,23 @@ class PondDisturbance(s.Disturbance):
         :return:
         """
         # print self.ecocommunities, type(self.ecocommunities)
-        # self.ecocommunities = arcpy.sa.Con(s.ecocommunities,
-        #                                    arcpy.sa.Con(self.time_since_disturbance >= 30, 3,
-        #                                                 arcpy.sa.Con(self.time_since_disturbance >= 10, 2, 1,)))
+        self.land_cover = arcpy.sa.Con(s.ecocommunities,
+                                           arcpy.sa.Con(self.time_since_disturbance >= 30, 3,
+                                                        arcpy.sa.Con(self.time_since_disturbance >= 10, 2, 1)))
 
-        self.ecocommunities = arcpy.sa.Con(s.ecocommunities,
-                                   arcpy.sa.Con(self.time_since_disturbance >= 30, 3,
-                                                (arcpy.sa.Con((self.time_since_disturbance < 30) &
-                                                              (self.time_since_disturbance >= 10), 2,
-                                                              arcpy.sa.Con((self.time_since_disturbance < 10) &
-                                                                           (self.time_since_disturbance >= 0),
-                                                                           1,)))))
+        # self.land_cover = arcpy.sa.Con(s.ecocommunities,
+        #                                arcpy.sa.Con(self.time_since_disturbance >= 30, 3,
+        #                                             (arcpy.sa.Con((self.time_since_disturbance < 30) &
+        #                                                           (self.time_since_disturbance >= 10), 2,
+        #                                                           arcpy.sa.Con((self.time_since_disturbance < 10) &
+        #                                                                        (self.time_since_disturbance >= 0),
+        #                                                                        1, )))))
 
         # self.ecocommunities = arcpy.sa.SetNull(self.ecocommunities <= 0, self.ecocommunities)
 
         print 'succession calculation finished'
         print self.ecocommunities, type(self.ecocommunities)
-        self.ecocommunities.save(os.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+        self.land_cover.save(os.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
     def set_time_since_disturbance(self):
         this_year_time_since_disturbance = os.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % (self.year - 1))
@@ -314,17 +314,21 @@ class PondDisturbance(s.Disturbance):
         print 'YEAR: %s' % self.year
 
         print 'incrementing time since disturbance'
-        self.time_since_disturbance += 1
+        tsd = arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
+        self.time_since_disturbance = tsd
 
         print 'calculating land_cover'
         self.succession()
         # print 'self.ecocommunities: ', type(self.ecocommunities)
         # self.ecocommunities.save(os.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
+        self.set_region_group(self.land_cover)
+
         print 'counting number of active ponds'
         self.count_ponds()
 
         if self.pond_count < self.CARRYING_CAPACITY:
+            self._region_group = None
             print 'number of active ponds [%s] is below carrying capacity [%s], creating new ponds' \
                   % (self.pond_count, s.CARRYING_CAPACITY)
 

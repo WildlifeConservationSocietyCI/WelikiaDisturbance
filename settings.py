@@ -17,7 +17,7 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1, 10)
+RUN_LENGTH = range(1, 4)
 
 ## Fire
 ### initial parameters
@@ -76,7 +76,7 @@ class Disturbance(object):
 # Environment Setting
 env.workspace = ROOT_DIR
 print env.workspace
-env.scratchWorkspace = os.join(ROOT_DIR, '_scratch')
+env.scratchWorkspace = os.join(ROOT_DIR, 'Scratch_Geodatabase.gdb')
 print env.scratchWorkspace
 env.overWriteOutput = True
 env.nodata = "PROMOTION"
