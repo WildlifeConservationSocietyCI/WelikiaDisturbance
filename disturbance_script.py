@@ -16,9 +16,11 @@ for year in s.RUN_LENGTH:
     pond_dis = pond.PondDisturbance(year)
     pond_dis.run_year()
 
-
-
-
+#
+# pond_dis = pond.PondDisturbance(2)
+# print pond_dis.time_since_disturbance
+# pond_dis.succession()
+# pond_dis.ecocommunities.save(os.join(pond_dis.OUTPUT_DIR, pond_dis._ecocommunities_filename % pond_dis.year))
 # f = fire.FireDisturbance()
 #
 # f.get_translation_table()

@@ -23,7 +23,7 @@ else:
 #
 #
 # '''
-# Calculate number of ponds in landscape
+# Calculate number of new_ponds in landscape
 # '''
 # def number_of_ponds(density, streams):
 #     cursor = arcpy.SearchCursor(streams)
@@ -36,13 +36,13 @@ else:
 #     return int(total_stream_length / 1000 * density)
 #
 #
-# ponds = .4 * 1214
+# new_ponds = .4 * 1214
 #
 #
 
 
 #
-# assign_pond_locations(constraint=streams, num_points=ponds)
+# assign_pond_locations(constraint=streams, num_points=new_ponds)
 
 def assign_pond_locations(constraint, num_points, outpath):
     """
@@ -52,8 +52,8 @@ def assign_pond_locations(constraint, num_points, outpath):
     :param num_points:
     :return:
     """
-    # constraint is the area of all suitable loacations for ponds
-    # num_points is the maximum number of ponds that should be assigned
+    # constraint is the area of all suitable loacations for new_ponds
+    # num_points is the maximum number of new_ponds that should be assigned
     arcpy.CreateRandomPoints_management(out_path=outpath,
                                         out_name="pond_points.shp",
                                         constraining_feature_class=constraint,
@@ -122,7 +122,7 @@ def calculate_territory(landcover):
     """
     calculate territory creates a euclidean distance buffer using the global DISTANCE
     parameter. The returned raster is used to exclude areas from the set of points used
-    to create new ponds, ensuring that pond density does not exceed the specified threshold.
+    to create new new_ponds, ensuring that pond density does not exceed the specified threshold.
     :param landcover:
     :return: exclude_territory
     """
@@ -142,8 +142,8 @@ def count_ponds(ponds):
 
     """
     count_ponds takes a binary pond raster (pond = 1, no-pond = 0) and uses a region group
-    function to count the number of ponds in the extent. This method returns the number of
-    ponds as an integer and the region_group product as a raster object.
+    function to count the number of new_ponds in the extent. This method returns the number of
+    new_ponds as an integer and the region_group product as a raster object.
     :param ponds:
     :return: pond_count, region_group
     """
@@ -170,8 +170,8 @@ def count_ponds(ponds):
 
 def calculate_suitability(streams, landcover, suitability_points):
     """
-    calculate set of suitability points to constrain the potential locations of new ponds.
-    new ponds can only be placed:
+    calculate set of suitability points to constrain the potential locations of new new_ponds.
+    new new_ponds can only be placed:
         1) outside the bounds existing beaver territory
         2) on mapped streams with gradients lower than 15%
         3) above the highest tidal influence
@@ -200,7 +200,7 @@ def calculate_suitability(streams, landcover, suitability_points):
 def initial_time_since_disturbance(in_raster, landcover):
     """
     This method returns an initial time_since_disturbance raster. time_since_disturbance
-    cells that are coincident with new ponds are assigned random values between 0 and 9,
+    cells that are coincident with new new_ponds are assigned random values between 0 and 9,
     all other cells are iniated with a value of 30.
     :param in_raster:
     :param landcover:
@@ -231,7 +231,7 @@ def initial_time_since_disturbance(in_raster, landcover):
 
 def update_time_since_disturbance(time_since_disturbance, new_ponds):
     """
-    This method incorporates newly created ponds into the time_since_disturbance raster.
+    This method incorporates newly created new_ponds into the time_since_disturbance raster.
     Cells in the time since disturbance raster that are coincident with new pond cells
     (value = 1) are reset to 0.
     :param time_since_disturbance:

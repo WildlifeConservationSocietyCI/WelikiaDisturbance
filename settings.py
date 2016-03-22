@@ -17,7 +17,7 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1, 3)
+RUN_LENGTH = range(1, 10)
 
 ## Fire
 ### initial parameters
@@ -47,7 +47,7 @@ SUCCESSION_TIME_MID = 10
 SUCCESSION_TIME_CLIMAX = 20
 
 ## Ponds
-CARRYING_CAPACITY = 20
+CARRYING_CAPACITY = 2
 MINIMUM_DISTANCE = 1000
 CELL_SIZE = 5
 DAM_HEIGHT = 9
@@ -76,10 +76,11 @@ class Disturbance(object):
 # Environment Setting
 env.workspace = ROOT_DIR
 print env.workspace
-env.scratchWorkspace = os.join(ROOT_DIR, 'Scratch_Geodatabase.gdb')
+env.scratchWorkspace = os.join(ROOT_DIR, '_scratch')
 print env.scratchWorkspace
 env.overWriteOutput = True
-
+env.nodata = "PROMOTION"
+# print env.nodata
 
 if arcpy.CheckExtension("Spatial") == "Available":
     arcpy.AddMessage("Checking out Spatial")

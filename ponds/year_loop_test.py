@@ -3,7 +3,7 @@ import posixpath as os
 from arcpy import env
 
 # Directories
-root_dir = 'E:/_data/welikia/WelikiaDisturbance/ponds'
+root_dir = 'E:/_data/welikia/WelikiaDisturbance/new_ponds'
 input_dir = os.join(root_dir, 'inputs')
 output_dir = os.join(root_dir, 'outputs')
 temp_dir = os.join(root_dir, 'temp')
@@ -48,13 +48,13 @@ for year in range(1, 30):
     landcover = succession(time_since_disturbance)
     landcover.save(os.join(output_dir, 'landcover_%s.tif' % year))
 
-    print 'counting ponds...'
+    print 'counting new_ponds...'
     pond_count, region_group = count_ponds(landcover)
-    print 'number of active ponds: %s' % pond_count
+    print 'number of active new_ponds: %s' % pond_count
 
     if pond_count < CARRYING_CAPACITY:
-        print 'number of active ponds is below carrying capacity, creating new ponds'
-        # calculate number of new ponds to create
+        print 'number of active new_ponds is below carrying capacity, creating new new_ponds'
+        # calculate number of new new_ponds to create
         new_ponds = CARRYING_CAPACITY - pond_count
 
         print 'calculating suitable points'
@@ -62,7 +62,7 @@ for year in range(1, 30):
         if arcpy.Exists(suitability_points):
             arcpy.Delete_management(suitability_points)
 
-        # calculate suitability using existing ponds
+        # calculate suitability using existing new_ponds
         calculate_suitability(landcover=landcover,
                               streams=suitable_streams,
                               suitability_points=suitability_points)
@@ -82,7 +82,7 @@ for year in range(1, 30):
 
         coordinate_list = dam_points_coordinates(pond_points)
 
-        # create ponds
+        # create new_ponds
         pond_list = []
         for p, i in zip(coordinate_list, range(len(coordinate_list))):
             print 'calculating pond %s' % i

@@ -6,7 +6,7 @@ import posixpath as os
 env.overWriteOutput = True
 
 # Directories
-root_dir = 'E:/_data/welikia/WelikiaDisturbance/ponds'
+root_dir = 'E:/_data/welikia/WelikiaDisturbance/new_ponds'
 input_dir = os.join(root_dir, 'inputs')
 output_dir = os.join(root_dir, 'outputs')
 temp_dir = os.join(root_dir, 'temp')
@@ -62,7 +62,7 @@ print 'converting pond points to coordinate list'
 
 coordinate_list = dam_points_coordinates(pond_points)
 
-# create ponds
+# create new_ponds
 pond_list = []
 for p, i in zip(coordinate_list, range(len(coordinate_list))):
     print 'calculating pond %s' % i
@@ -78,7 +78,7 @@ for p, i in zip(coordinate_list, range(len(coordinate_list))):
 
     pond_list.append(pond)
 
-print 'summing ponds and reclassify as binary'
+print 'summing new_ponds and reclassify as binary'
 ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(pond_list, 'SUM') > 0, 1, 0)
 
 ponds.save(os.join(output_dir, 'ponds_0.tif'))

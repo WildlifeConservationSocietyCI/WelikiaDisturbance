@@ -4,6 +4,8 @@ from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo import gdal_array
 import numpy
+import linecache
+
 
 class FireDisturbance(s.Disturbance):
     
@@ -49,6 +51,7 @@ class FireDisturbance(s.Disturbance):
 
 
     def __init__(self):
+        self.ecocommunities = None
         self.drought = None
         self.climate_years = None
         self.translation_table = None
@@ -59,9 +62,8 @@ class FireDisturbance(s.Disturbance):
         self.camps = None
         self.ignition_sites = None
 
-
     def get_header(self):
-        self.header = ''
+        self.header = [linecache.getline(os.join(self.INPUT_DIR, 'ec-start.asc'), i) for i in range(1, 7)]
 
     def get_translation_table(self):
         translation = {}
@@ -118,3 +120,18 @@ class FireDisturbance(s.Disturbance):
 
         numpy.savetxt(out_asc, array, fmt="%4i")
         out_asc.close()
+
+    def ecosystem_to_fuel(self):
+
+        for index, cell_value in numpy.ndenumerate(self.ecocommunities):
+                row_index = index[0]
+                col_index = index[1]
+
+                if self.time_since_disturbance[row_index][col_index] > s.SUCCESSION_TIME_CLIMAX:
+                    self.fuel[row_index][col_index] = self.translation_table[cell_value]['climax_fuel']
+
+                elif self.time_since_disturbance[row_index][col_index] > s.SUCCESSION_TIME_MID:
+                    self.fuel[row_index][col_index] = self.translation_table[cell_value]['mid_fuel']
+
+                else:
+                    self.fuel[row_index][col_index] = self.translation_table[cell_value]['new_fuel']

@@ -48,3 +48,7 @@ inputs/pond/suitability_surface.tif.xml
 pond.py.rej
 inputs/
 temp/
+outputs/
+_scratch/info/arc.dir
+*.dir
+*.s
