@@ -150,6 +150,7 @@ class FireDisturbance(s.Disturbance):
         start = datetime.date(day=s.FIRE_SEASON_START[0], month=s.FIRE_SEASON_START[1], year=self.year).toordinal()
         end = datetime.date(day=s.FIRE_SEASON_END[0], month=s.FIRE_SEASON_END[1], year=self.year).toordinal()
 
+        random_date = None
         rain = True
         while rain is True:
             random_date = datetime.date.fromordinal(random.randint(start, end))
@@ -228,18 +229,6 @@ class FireDisturbance(s.Disturbance):
 
             ignition_file.write('1 %s %s\nEND' % (x, y))
 
-            # Log ignition site
-            # shutil.copyfile((self.INPUT_DIR, 'ignition.vct'),
-            #                 (output_dir + '/log_rasters/%r_ignition.vct' % year))
-            #
-            # # Log as a point
-            # point = arcpy.Point()
-            # point.X = x
-            # point.Y = y
-            # ptGeoms = arcpy.PointGeometry(point)
-            #
-            # arcpy.CopyFeatures_management(ptGeoms, (output_dir + '/log_rasters/%r_ignition.shp' % year))
-
     def initial_from_ecocommunities(self, in_property):
 
         reference = ''
@@ -283,8 +272,9 @@ class FireDisturbance(s.Disturbance):
 
         # full extent test input_dir
 
-        farsite = pywinauto.application.Application()
+        farsite = pywinauto.Application()
         farsite.start(r"C:\\Program Files (x86)\\farsite4.exe")
+
 
         # Load FARSITE project file
         logging.info('Loading FARSITE project file')
