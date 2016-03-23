@@ -1,15 +1,16 @@
 import posixpath as os
+import os
 import arcpy
 from arcpy import env
 import sys
 
 # DIRECTORIES
-ROOT_DIR = os.join('E:', '_data', 'welikia', 'WelikiaDisturbance')
-INPUT_DIR = os.join(ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.join(ROOT_DIR, 'outputs')
-TEMP_DIR = os.join(ROOT_DIR, 'temp')
+ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance')
+INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
+OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
+TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
 
-ecocommunities = os.join(INPUT_DIR, 'ecocommunities.tif')
+ecocommunities = os.path.join(INPUT_DIR, 'ecocommunities.tif')
 
 INPUT_FILES = [
     ecocommunities,
@@ -17,7 +18,7 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1, 4)
+RUN_LENGTH = range(1609, 1610)
 
 ## Fire
 ### initial parameters
@@ -76,7 +77,7 @@ class Disturbance(object):
 # Environment Setting
 env.workspace = ROOT_DIR
 print env.workspace
-env.scratchWorkspace = os.join(ROOT_DIR, 'Scratch_Geodatabase.gdb')
+env.scratchWorkspace = os.path.join(ROOT_DIR, 'Scratch_Geodatabase.gdb')
 print env.scratchWorkspace
 env.overWriteOutput = True
 env.nodata = "PROMOTION"
