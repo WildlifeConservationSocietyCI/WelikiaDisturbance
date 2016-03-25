@@ -52,3 +52,5 @@ outputs/
 _scratch/info/arc.dir
 *.dir
 *.s
+*.prj
+scratch.py

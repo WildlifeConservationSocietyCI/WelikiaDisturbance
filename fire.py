@@ -4,7 +4,7 @@ from osgeo.gdalconst import *
 from osgeo import gdal_array
 import numpy
 import linecache
-import pyautogui
+
 import pywinauto
 import logging
 import re
@@ -12,7 +12,16 @@ import time
 import datetime
 import random
 import os
-import posixpath
+import math
+import shutil
+from wmi import WMI
+
+
+def ascii_to_array(in_ascii_path):
+    ascii = gdal.Open(in_ascii_path, GA_ReadOnly)
+    array = gdal_array.DatasetReadAsArray(ascii)
+    return array
+
 
 class FireDisturbance(s.Disturbance):
     # CLASS VARIABLES
@@ -21,14 +30,19 @@ class FireDisturbance(s.Disturbance):
 
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'fire')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'fire')
+    LOG_DIR = os.path.join(OUTPUT_DIR, 'log_rasters', '%s_%s.asc')
     FARSITE = 'farsite'
+    SCRIPT = 'script'
+
     # Inputs
     DEM_ascii = os.path.join(INPUT_DIR, FARSITE, 'dem.asc')
     SLOPE_ascii = os.path.join(INPUT_DIR, FARSITE, 'slope.asc')
     ASPECT_ascii = os.path.join(INPUT_DIR, FARSITE, 'aspect.asc')
-    EC_START_ascii = os.path.join(INPUT_DIR, FARSITE, 'ec-climax.asc')
+    EC_START_ascii = os.path.join(INPUT_DIR, SCRIPT, 'ec_start.asc')
+    EC_CLIMAX_ascii = os.path.join(INPUT_DIR, SCRIPT, 'ec_climax.asc')
     FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, 'fuel.asc')
     CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, 'canopy.asc')
+    TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, 'fire_trail.asc')
     FPJ = os.path.join(INPUT_DIR, FARSITE, 'manhattan.FPJ')
     LCP = os.path.join(INPUT_DIR, FARSITE, 'MANHATTAN.LCP')
     IGNITION = os.path.join(INPUT_DIR, FARSITE, 'ignition.vct')
@@ -39,16 +53,19 @@ class FireDisturbance(s.Disturbance):
     WTR = os.path.join(INPUT_DIR, FARSITE, 'weather.wtr')
     BURN_RASTERS = os.path.join(INPUT_DIR, 'script', 'burn_rasters')
     FARSITE_OUTPUT = os.path.join(BURN_RASTERS, 'farsite_output')
+    FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, 'farsite_output.flm')
 
     def __init__(self, year):
         self.year = year
-        self.ecocommunities = None
+        self.ecocommunities = self.ascii_to_array(self.EC_START_ascii)
+        self.climax_communities = self.ascii_to_array(self.EC_CLIMAX_ascii)
         self.drought = None
         self.climate_years = None
-        self.climate_year = None
+        self.equivalent_climate_year = None
         self.weather = None
         self.translation_table = None
         self.header = None
+        self.header_text = None
         self.canopy = None
         self.forest_age = None
         self.time_since_disturbance = None
@@ -64,6 +81,16 @@ class FireDisturbance(s.Disturbance):
         self.start_day = None
         self.end_month = None
         self.end_day = None
+        self.area_burned = 0
+
+
+    def memory(self):
+        # Reports current memory usage
+
+        w = WMI('.')
+        result = w.query("SELECT WorkingSet FROM Win32_PerfRawData_PerfProc_Process WHERE IDProcess=%d" % os.getpid())
+        return int(result[0].WorkingSet) / 1000000.0
+
 
     def get_header(self):
         header = [linecache.getline(self.EC_START_ascii, i) for i in range(1, 7)]
@@ -74,6 +101,7 @@ class FireDisturbance(s.Disturbance):
             h[attribute] = float(value)
 
         self.header = h
+        self.header_text = header
 
     def get_translation_table(self):
         translation = {}
@@ -139,10 +167,10 @@ class FireDisturbance(s.Disturbance):
                 if 1876 <= climate_year <= 2006:
                     potential_years.append(climate_year)
 
-        self.climate_year = random.choice(potential_years)
+        self.equivalent_climate_year = random.choice(potential_years)
 
     def set_weather_file(self):
-        self.weather = os.path.join(self.INPUT_DIR, 'wtr', '%s.wtr' % self.climate_year)
+        self.weather = os.path.join(self.INPUT_DIR, 'wtr', '%s.wtr' % self.equivalent_climate_year)
 
     def get_clear_day(self):
         print self.weather_lines
@@ -179,7 +207,6 @@ class FireDisturbance(s.Disturbance):
         self.con_month = conditioning_date.month
         self.con_day = conditioning_date.day
 
-
         for i in self.weather_lines[1:]:
             if int(i[0]) == self.start_month and int(i[1]) == self.start_day:
                 start_index = self.weather_lines.index(i)
@@ -189,20 +216,43 @@ class FireDisturbance(s.Disturbance):
                         self.end_day = int(e[1])
                         break
 
-    def ascii_to_array(self, in_ascii_path):
-        ascii = gdal.Open(in_ascii_path, GA_ReadOnly)
+    def write_wnd(self):
+        with open(self.WTR, 'r') as weather_file:
+            with open(self.WND, 'w') as wind_file:
+                for line in weather_file:
+                    line_split = line.split(' ')
+                    if line_split[0] != 'ENGLISH':
+                        month = line_split[0]
+                        day = line_split[1]
+                        for i in range(1, 5):
+                            hour = i * 600 - 41
+                            speed = random.choice(range(1, 15))
+                            direction = random.choice(range(0, 360))
+                            cloud_cover = 20
+                            wind_file.write('%s %s %r %r %r %r\n' % (month, day, hour, speed, direction, cloud_cover))
+
+    def ascii_to_array(self, in_ascii):
+        """
+        convert ascii grid in to numpy array
+        :type in_ascii: object
+        """
+        print in_ascii
+        ascii = gdal.Open(in_ascii, GA_ReadOnly)
         array = gdal_array.DatasetReadAsArray(ascii)
+        ascii = None
+
         return array
 
     def array_to_ascii(self, out_ascii_path, array):
         out_asc = open(out_ascii_path, 'w')
-        for attribute in self.header:
+        for attribute in self.header_text:
             out_asc.write(attribute)
 
         numpy.savetxt(out_asc, array, fmt="%4i")
         out_asc.close()
 
     def ecosystem_to_fuel(self):
+        self.fuel = numpy.empty((self.header['nrows'], self.header['ncols']))
 
         for index, cell_value in numpy.ndenumerate(self.ecocommunities):
             row_index = index[0]
@@ -248,33 +298,29 @@ class FireDisturbance(s.Disturbance):
             self.forest_age = array
 
     def get_ignition(self, in_ascii):
-        array = self.ascii_to_array(in_ascii)
+        array = ascii_to_array(in_ascii)
         for index, cell_value in numpy.ndenumerate(array):
             if cell_value == 1:
-                    if self.fuel[index[0]][index[1]] not in s.UN_BURNABLE:
-                        self.potential_ignition_sites.append(index)
-
-        field_array = None
+                if self.fuel[index[0]][index[1]] not in s.UN_BURNABLE:
+                    self.potential_ignition_sites.append(index)
 
     def run_farsite(self):
         # cond_month, cond_day, start_month, start_day, end_month, end_day = select_duration(year)
         ordinal_start = datetime.date(day=self.start_day, month=self.start_month, year=1409).toordinal()
         ordinal_end = datetime.date(day=self.end_day, month=self.end_month, year=1409).toordinal()
 
-        logging.info('Start date: %r/%r/%r | End date:  %r/%r/%r | Duration: %r days'% (self.start_month,
-                                                                                        self.start_day,
-                                                                                        self.year,
-                                                                                        self.end_month,
-                                                                                        self.end_day,
-                                                                                        self.year,
-                                                                                        (ordinal_end-ordinal_start)))
-        pyautogui.PAUSE = 0.25
+        logging.info('Start date: %r/%r/%r | End date:  %r/%r/%r | Duration: %r days' % (self.start_month,
+                                                                                         self.start_day,
+                                                                                         self.year,
+                                                                                         self.end_month,
+                                                                                         self.end_day,
+                                                                                         self.year,
+                                                                                         (ordinal_end - ordinal_start)))
 
         # full extent test input_dir
 
         farsite = pywinauto.Application()
         farsite.start(r"C:\\Program Files (x86)\\farsite4.exe")
-
 
         # Load FARSITE project file
         logging.info('Loading FARSITE project file')
@@ -288,10 +334,11 @@ class FireDisturbance(s.Disturbance):
             load_project = farsite.window_(title='Select Project File')
             load_project.SetFocus()
 
-            pyautogui.typewrite(self.FPJ)
-            pyautogui.press('enter')
-            pyautogui.press('enter')
-
+            load_project[u'File &name:Edit'].SetEditText(self.FPJ)
+            load_project[u'&Open'].Click()
+            time.sleep(.5)
+            farsite[u'Custom Fuel Model File Converted to new Format'].SetFocus()
+            farsite[u'Custom Fuel Model File Converted to new Format'][u'OK'].Click()
             logging.info('Project file loaded')
 
         except pywinauto.findwindows.WindowNotFoundError:
@@ -313,14 +360,21 @@ class FireDisturbance(s.Disturbance):
             try:
                 landscape_load = farsite.window_(title='Landscape (LCP) File Generation')
                 landscape_load.SetFocus()
-                pyautogui.press(['tab'] * 8)
-                pyautogui.press('space')
-                pyautogui.typewrite(self.FUEL_ascii)
-                pyautogui.press('enter')
-                pyautogui.press(['down', 'space'])
-                pyautogui.typewrite(self.CANOPY_ascii)
-                pyautogui.press('enter')
-                pyautogui.press('enter')
+                landscape_load[u'&Fuel Model ASCII'].Click()
+                load_fuel = farsite.window_(title='Select ASCII Raster File')
+                load_fuel.SetFocus()
+                load_fuel[u'File &name:Edit'].SetEditText(self.FUEL_ascii)
+                load_fuel[u'&Open'].DoubleClick()
+                landscape_load.SetFocus()
+                landscape_load.Wait('ready')
+                landscape_load[u'Canopy Co&ver ASCII'].Click()
+                load_canopy = farsite.window_(title='Select ASCII Raster File')
+                load_canopy.SetFocus()
+                load_canopy.Wait('ready')
+                load_canopy[u'File &name:Edit'].SetEditText(self.CANOPY_ascii)
+                load_canopy[u'&Open'].DoubleClick()
+                landscape_load.SetFocus()
+                landscape_load[u'&OK'].Click()
 
             except pywinauto.findwindows.WindowNotFoundError:
                 logging.error('Can not find Landscape (LCP) File Generation window')
@@ -328,12 +382,14 @@ class FireDisturbance(s.Disturbance):
 
             # Wait while FARSITE generates the landcape file
             landscape_generated = farsite.window_(title_re='.*Landscape Generated$')
-            landscape_generated.Wait('exists', timeout=60)
+            landscape_generated.Wait('exists', timeout=100)
             landscape_generated.SetFocus()
-            pyautogui.press('enter')
-            pyautogui.press('esc')
+            landscape_generated[u'OK'].Click()
 
             logging.info('landscape file loaded')
+
+            project_inputs.SetFocus()
+            project_inputs[u'&OK'].Click()
 
         except pywinauto.findwindows.WindowNotFoundError:
             logging.info('Unable to generate landscape file')
@@ -343,7 +399,7 @@ class FireDisturbance(s.Disturbance):
         logging.info('Deleting previous FARSITE outputs')
         for f in os.listdir(self.BURN_RASTERS):
             if re.search('farsite_output', f):
-                os.remove(os.path.join(self.BURN_RASTERS,  f))
+                os.remove(os.path.join(self.BURN_RASTERS, f))
 
         # Export and output options
         logging.info('Setting export and output options')
@@ -354,8 +410,9 @@ class FireDisturbance(s.Disturbance):
             set_outputs = farsite.window_(title='Export and Output Options')
             set_outputs.SetFocus()
             set_outputs[u'&Select Rater File Name'].Click()
-            pyautogui.typewrite(self.FARSITE_OUTPUT)
-            pyautogui.press('enter')
+            select_raster = farsite.window_(title='Select Raster File')
+            select_raster[u'File &name:Edit'].SetEditText(self.FARSITE_OUTPUT)
+            select_raster[u'&Save'].DoubleClick()
             set_outputs[u'Flame Length (m)'].Click()
             set_outputs[u'&Default'].Click()
             set_outputs[u'&OK'].Click()
@@ -373,12 +430,12 @@ class FireDisturbance(s.Disturbance):
         try:
             set_parameters = farsite.window_(title='Model Parameters')
             set_parameters.SetFocus()
-            pyautogui.press(['right'] * 90)
-            pyautogui.press(['tab'] * 2)
-            pyautogui.press(['left'] * 30)
-            pyautogui.press('tab')
-            pyautogui.press(['left'] * 20)
-            pyautogui.press('enter')
+            set_parameters.TypeKeys('{RIGHT 90}')
+            set_parameters.TypeKeys('{TAB 2}')
+            set_parameters.TypeKeys('{LEFT 30}')
+            set_parameters.TypeKeys('{TAB}')
+            set_parameters.TypeKeys('{LEFT 20}')
+            set_parameters[u'&OK'].Click()
             time.sleep(3)
             logging.info('Parameters set')
 
@@ -432,7 +489,7 @@ class FireDisturbance(s.Disturbance):
                 if int(simulation_duration[u'Static6'].Texts()[0]) > self.con_day:
                     simulation_duration.Updown2.Decrement()
                 if int(simulation_duration[u'Static6'].Texts()[0]) < self.con_day:
-                        simulation_duration.Updown2.Increment()
+                    simulation_duration.Updown2.Increment()
 
             # Start month
             while int(simulation_duration[u'Static9'].Texts()[0]) != self.start_month:
@@ -471,24 +528,31 @@ class FireDisturbance(s.Disturbance):
 
         # Initiate simulation
         farsite_main_win.MenuItem('Simulate->Initiate/Terminate').Click()
-        landscape_initiated = farsite.window_(title_re='.*LANDSCAPE:')
+        landscape_initiated = farsite.window_(title_re='LANDSCAPE:*')
         landscape_initiated.Wait('ready', timeout=40)
 
-        time.sleep(5)
+        time.sleep(15)
 
         # Set Ignition
         farsite_main_win.MenuItem('Simulate->Modify Map->Import Ignition File').Click()
         try:
             set_ignition = farsite.window_(title='Select Vector Ignition File')
             set_ignition.SetFocus()
-            pyautogui.press('right')
-            pyautogui.typewrite(self.IGNITION)
-            pyautogui.press('enter')
-            pyautogui.press(['right', 'enter'])
-            pyautogui.press(['right', 'enter'])
+            # set_ignition.TypeKeys('{RIGHT}')
+            set_ignition.Wait('ready')
+            set_ignition[u'File &name:Edit'].SetEditText(self.IGNITION)
+            set_ignition[u'&Open'].DoubleClick()
+            contains_polygon = farsite.window_(title=self.IGNITION)
+            contains_polygon.SetFocus()
+            contains_polygon[u'&No'].Click()
+            contains_line = farsite.window_(title=self.IGNITION)
+            contains_line.SetFocus()
+            contains_line[u'&No'].Click()
+            # set_ignition.TypeKeys('{RIGHT}{ENTER}')
+            # set_ignition.TypeKeys('{RIGHT}{ENTER}')
 
         except farsite.findwindows.WindowNotFoundError:
-                logging.error('can not find SELECT VECTOR IGNITION FILE window')
+            logging.error('can not find SELECT VECTOR IGNITION FILE window')
 
         logging.info('Starting simulation')
         farsite_main_win.SetFocus()
@@ -496,9 +560,238 @@ class FireDisturbance(s.Disturbance):
         simulation_complete = farsite.window_(title_re='.*Simulation Complete')
         simulation_complete.Wait('exists', timeout=1800)
         simulation_complete.SetFocus()
-        pyautogui.press('enter')
+        simulation_complete[u'OK'].Click()
 
         # Exit FARSITE
         farsite.Kill_()
-        pyautogui.press('enter')
+
+    def tree_mortality(self, flame, age):
+
+        """
+        Tree_mortality calculates the percentage of the canopy in a cell killed during a burning event
+        This estimate is based on the age of the forest and the length of the flame
+        Model logic and tree size/diameter regressions from Tim Bean
+        :param: flame
+        :param: age
+        """
+
+        # Convert flame length to ft
+        flame *= 3.2808399
+
+        # Calculate scorch height
+        scorch = (3.1817*(flame**1.4503))
+
+        # Calculate tree height
+        tree_height = 44 * math.log(age) - 93
+
+        # Calculate tree diameter at breast height
+        dbh = (25.706 * math.log(age))-85.383
+
+        if tree_height < 0:
+            tree_height = 1
+        if age <= 35:
+            dbh = 5
+        if age <= 25:
+            dbh = 3
+        if age <= 20:
+            dbh = 2
+        if age <= 15:
+            dbh = 1
+
+        # Calculate bark thickness
+        bark_thickness = 0.045 * dbh
+
+        # Define crown ratio
+        crown_ratio = 0.4
+
+        # Calculate crown height
+        crown_height = tree_height*(1-crown_ratio)
+
+        # Calculate crown kill
+        if scorch < crown_height:
+            crown_kill = 0
+
+        else:
+
+            crown_kill = 41.961 * (math.log(100*(scorch - crown_height)/(tree_height * crown_ratio)))-89.721
+
+            if crown_kill < 5:
+                crown_kill = 5
+
+            if crown_kill > 100:
+                crown_kill = 100
+
+        # Calculate percent mortality
+        mortality = (1/(1 + math.exp((-1.941+(6.3136*(1-(math.exp(-bark_thickness)))))-(.000535*(crown_kill**2)))))
+
+        return mortality
+        #print 'Age: %r\t| Height: %r\t| DBH %r\t | Crown Kill: %r\t| Mortality: %r' %(age, tree_height, DBH, ck, pm)
+
+    def run_year(self):
+
+        logging.info('Year: %r' % self.year)
+        self.get_translation_table()
+        self.get_climate_years()
+        self.get_drought()
+        self.select_climate_records()
+        self.set_weather_file()
+        self.select_duration()
+        self.write_wnd()
+        self.get_header()
+
+        logging.info('Assigning initial values to canopy array')
+        self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
+        for index, value in numpy.ndenumerate(self.ecocommunities):
+            self.canopy[index[0]][index[1]] = self.translation_table[int(value)]['max_canopy']
+        logging.info('memory usage: %r Mb' % self.memory)
+
+        logging.info('Assigning initial values to forest age array')
+        self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
+        for index, value in numpy.ndenumerate(self.ecocommunities):
+            self.forest_age[index[0]][index[1]] = self.translation_table[int(value)]['start_age']
+        logging.info('memory usage: %r Mb' % self.memory)
+
+        logging.info('Assigning initial values to last_disturbance')
+        self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
+        self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
+        logging.info('memory usage: %r Mb' % self.memory)
+
+        logging.info('Assigning initial values to fuel array')
+        self.ecosystem_to_fuel()
+        logging.info('memory usage: %r Mb' % self.memory)
+
+        logging.info('Saving canopy array as ascii raster')
+        self.array_to_ascii(self.CANOPY_ascii, self.canopy)
+        logging.info('memory usage: %r Mb' % self.memory)
+
+        logging.info('Saving fuel array as ascii raster')
+        self.array_to_ascii(self.FUEL_ascii, self.fuel)
+        logging.info('memory usage: %r Mb' % self.memory)
+
+        # Check for trail fires
+        random_trail_fire = random.choice(range(1, 100))
+        if s.PROB_TRAIL_ESCAPE > random_trail_fire:
+            logging.info('escaped trail fire')
+
+            # Read in trail raster
+            logging.info('Creating trail array')
+            trail_array = self.ascii_to_array(self.TRAIL_ascii)
+
+            for index, cell_value in numpy.ndenumerate(trail_array):
+                if cell_value == 1 and self.time_since_disturbance[index[0]][index[1]] >= s.TRAIL_OVERGROWN_YRS:
+                    if self.fuel[index[0]][index[1]] not in s.UN_BURNABLE:
+                        self.potential_ignition_sites.append(index)
+
+            trail_array = None
+
+        # Fire
+        if len(self.potential_ignition_sites) > 0:
+
+            # Choose an ignition site
+            ignition_site = random.choice(self.potential_ignition_sites)
+
+            logging.info('Creating ignition point')
+            # Write selected ignition sites to .vct file for FARSITE
+            # Write ignition sites to .shp for logging
+            self.write_ignition()
+
+            # Select climate file
+            self.select_climate_records()
+            logging.info('Selected climate equivalent-year: %r' % self.equivalent_climate_year)
+
+            # Get matching climate year file for FARSITE
+            shutil.copyfile(os.path.join(self.INPUT_DIR, 'wtr', '%r.wtr' % self.equivalent_climate_year),
+                            os.path.join(self.INPUT_DIR, 'farsite', 'weather.wtr'))
+
+            # create wind file
+            self.write_wnd()
+
+            # Run Farsite
+
+            self.run_farsite()
+
+            # Create flame length array
+            flame_length_array = ascii_to_array(self.FLAME_LENGTH_ascii)
+
+            # Revise ecosystem raster based on fire
+            for index, cell_value in numpy.ndenumerate(self.ecocommunities):
+                row_index = index[0]
+                col_index = index[1]
+
+                climax = self.climax_communities[row_index][col_index]
+
+                flame_length = flame_length_array[row_index][col_index]
+
+                if flame_length > 0:
+                    self.area_burned += 1
+
+                    # Reset last disturbance array
+                    self.time_since_disturbance[row_index][col_index] = 1
+
+                    # Calculate tree mortality due to fire
+                    if self.translation_table[cell_value]['forest'] == 1:
+                        age = self.forest_age[row_index][col_index]
+                        percent_mortality = self.tree_mortality(flame_length, age)
+
+                        # Revise canopy cover according to tree mortality
+                        self.canopy[row_index][col_index] = int(self.canopy[row_index][col_index] *
+                                                                 (1 - percent_mortality))
+
+                    # Revise ecosystems based on new canopy
+                    # Convert burned forest to shrubland
+                    if self.translation_table[cell_value]['forest'] == 1:
+                        if self.canopy[row_index][col_index] < (self.translation_table[cell_value]['max_canopy'] / 2):
+                            self.ecocommunities[row_index][col_index] = 649
+                            self.forest_age[row_index][col_index] = 1
+
+                    # Convert burned shrubland to grassland
+                    if cell_value == 649 and self.canopy[row_index][col_index] < 10:
+                        self.ecocommunities[row_index][col_index] = 635
+
+        # No Fire
+        else:
+            logging.info('No escaped fires for %r' % self.year)
+
+            # Revise ecosystem raster based on succesional sequence
+            for index, cell_value in numpy.ndenumerate(self.ecocommunities):
+                row_index = index[0]
+                col_index = index[1]
+
+                climax = self.climax_communities[row_index][col_index]
+
+                self.time_since_disturbance[row_index][col_index] += 1
+
+                if self.translation_table[cell_value]['forest_shrub'] == 1:
+                    self.canopy[row_index][col_index] += 1
+
+                if cell_value == 649:
+                    if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy'] / 2):
+                        self.ecocommunities[row_index][col_index] = climax
+
+                if cell_value == 635:
+                    self.canopy[row_index][col_index] += 2
+
+                    if self.canopy[row_index][col_index] > 10:
+                        self.ecocommunities[row_index][col_index] = 649
+
+                if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
+                    self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
+
+                if self.translation_table[cell_value]['forest'] == 1:
+                    self.forest_age[row_index][col_index] += 1
+
+        logging.info('Area burned %r: %r acres' % (self.year, (self.area_burned * 100 * 0.000247105)))
+
+        # Revise fuel model
+        self.ecosystem_to_fuel()
+
+        self.array_to_ascii((self.FUEL_ascii), self.fuel)
+        self.array_to_ascii((self.CANOPY_ascii), self.canopy)
+
+        # Yearly outputs
+        if self.area_burned > 0:
+            shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
+            shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
+            self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
+            self. array_to_ascii(self.LOG_DIR % (self.year, 'time_since_disturbance'), self.time_since_disturbance)
 

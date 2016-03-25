@@ -12,14 +12,16 @@ for year in s.RUN_LENGTH:
 
     # fire
     f = fire.FireDisturbance(year)
-
-    f.get_translation_table()
-    f.get_climate_years()
-    f.get_drought()
-    f.select_climate_records()
-    f.set_weather_file()
-    f.select_duration()
-    f.run_farsite()
+    # f.climax_communities = f.ascii_to_array(f.EC_CLIMAX_ascii)
+    # print f.climax_communities.shape
+    f.run_year()
+    # f.get_translation_table()
+    # f.get_climate_years()
+    # f.get_drought()
+    # f.select_climate_records()
+    # f.set_weather_file()
+    # f.select_duration()
+    # f.write_wnd()
 
     # print f.translation_table
     # print f.climate_years
