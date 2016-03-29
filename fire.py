@@ -28,8 +28,10 @@ class FireDisturbance(s.Disturbance):
 
     # Directories
 
-    INPUT_DIR = os.path.join(s.INPUT_DIR, 'fire')
-    OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'fire')
+    # INPUT_DIR = os.path.join(s.INPUT_DIR, 'fire')
+    # OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'fire')
+    INPUT_DIR = s.INPUT_DIR
+    OUTPUT_DIR = s.OUTPUT_DIR
     LOG_DIR = os.path.join(OUTPUT_DIR, 'log_rasters', '%s_%s.asc')
     FARSITE = 'farsite'
     SCRIPT = 'script'
@@ -42,9 +44,9 @@ class FireDisturbance(s.Disturbance):
     EC_CLIMAX_ascii = os.path.join(INPUT_DIR, SCRIPT, 'ec_climax.asc')
     FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, 'fuel.asc')
     CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, 'canopy.asc')
-    TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, 'fire_trail.asc')
-    FPJ = os.path.join(INPUT_DIR, FARSITE, 'manhattan.FPJ')
-    LCP = os.path.join(INPUT_DIR, FARSITE, 'MANHATTAN.LCP')
+    TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, 'fire_trails.asc')
+    FPJ = os.path.join(INPUT_DIR, FARSITE, 'BK_Q.FPJ')
+    LCP = os.path.join(INPUT_DIR, FARSITE, 'BK_Q.LCP')
     IGNITION = os.path.join(INPUT_DIR, FARSITE, 'ignition.vct')
     FMD = os.path.join(INPUT_DIR, FARSITE, 'custom_fuel.fmd')
     FMS = os.path.join(INPUT_DIR, FARSITE, 'fuel_moisture.fms')
@@ -53,7 +55,7 @@ class FireDisturbance(s.Disturbance):
     WTR = os.path.join(INPUT_DIR, FARSITE, 'weather.wtr')
     BURN_RASTERS = os.path.join(INPUT_DIR, 'script', 'burn_rasters')
     FARSITE_OUTPUT = os.path.join(BURN_RASTERS, 'farsite_output')
-    FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, 'farsite_output.flm')
+    FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, 'farsite_output.fml')
 
     def __init__(self, year):
         self.year = year
@@ -71,7 +73,7 @@ class FireDisturbance(s.Disturbance):
         self.time_since_disturbance = None
         self.fuel = None
         self.camps = None
-        self.ignition_sites = None
+        self.ignition_site = None
         self.potential_ignition_sites = []
         self.weather_lines = []
         self.start_date = None
@@ -82,14 +84,14 @@ class FireDisturbance(s.Disturbance):
         self.end_month = None
         self.end_day = None
         self.area_burned = 0
+        self.memory = None
 
-
-    def memory(self):
+    def get_memory(self):
         # Reports current memory usage
 
         w = WMI('.')
         result = w.query("SELECT WorkingSet FROM Win32_PerfRawData_PerfProc_Process WHERE IDProcess=%d" % os.getpid())
-        return int(result[0].WorkingSet) / 1000000.0
+        self.memory = int(result[0].WorkingSet) / 1000000.0
 
 
     def get_header(self):
@@ -173,7 +175,10 @@ class FireDisturbance(s.Disturbance):
         self.weather = os.path.join(self.INPUT_DIR, 'wtr', '%s.wtr' % self.equivalent_climate_year)
 
     def get_clear_day(self):
-        print self.weather_lines
+        """
+        :return:
+        """
+
         # convert window for ignition start date to ordinal date format
         start = datetime.date(day=s.FIRE_SEASON_START[0], month=s.FIRE_SEASON_START[1], year=self.year).toordinal()
         end = datetime.date(day=s.FIRE_SEASON_END[0], month=s.FIRE_SEASON_END[1], year=self.year).toordinal()
@@ -182,7 +187,6 @@ class FireDisturbance(s.Disturbance):
         rain = True
         while rain is True:
             random_date = datetime.date.fromordinal(random.randint(start, end))
-            print random_date.month, random_date.day
             for i in self.weather_lines[1:]:
                 if int(i[0]) == random_date.month and int(i[1]) == random_date.day:
                     if int(i[2]) == 0:
@@ -272,10 +276,11 @@ class FireDisturbance(s.Disturbance):
         :return:
         """
         # Writes ignition site as vct file for FARSITE and shp file for logging
-
+        logging.info(self.header)
+        logging.info(self.ignition_site)
         with open(self.IGNITION, 'w') as ignition_file:
-            x = (self.header['xllcorner'] + (self.header['cellsize'] * self.ignition_sites[1]))
-            y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - self.ignition_sites[0])))
+            x = (self.header['xllcorner'] + (self.header['cellsize'] * self.ignition_site[1]))
+            y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - self.ignition_site[0])))
 
             ignition_file.write('1 %s %s\nEND' % (x, y))
 
@@ -531,7 +536,7 @@ class FireDisturbance(s.Disturbance):
         landscape_initiated = farsite.window_(title_re='LANDSCAPE:*')
         landscape_initiated.Wait('ready', timeout=40)
 
-        time.sleep(15)
+        time.sleep(50)
 
         # Set Ignition
         farsite_main_win.MenuItem('Simulate->Modify Map->Import Ignition File').Click()
@@ -629,6 +634,8 @@ class FireDisturbance(s.Disturbance):
 
     def run_year(self):
 
+        start_time = time.time()
+
         logging.info('Year: %r' % self.year)
         self.get_translation_table()
         self.get_climate_years()
@@ -643,29 +650,35 @@ class FireDisturbance(s.Disturbance):
         self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
         for index, value in numpy.ndenumerate(self.ecocommunities):
             self.canopy[index[0]][index[1]] = self.translation_table[int(value)]['max_canopy']
+        self.get_memory()
         logging.info('memory usage: %r Mb' % self.memory)
 
         logging.info('Assigning initial values to forest age array')
         self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
         for index, value in numpy.ndenumerate(self.ecocommunities):
             self.forest_age[index[0]][index[1]] = self.translation_table[int(value)]['start_age']
+        self.get_memory()
         logging.info('memory usage: %r Mb' % self.memory)
 
         logging.info('Assigning initial values to last_disturbance')
         self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
         self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
+        self.get_memory()
         logging.info('memory usage: %r Mb' % self.memory)
 
         logging.info('Assigning initial values to fuel array')
         self.ecosystem_to_fuel()
+        self.get_memory()
         logging.info('memory usage: %r Mb' % self.memory)
 
         logging.info('Saving canopy array as ascii raster')
         self.array_to_ascii(self.CANOPY_ascii, self.canopy)
+        self.get_memory()
         logging.info('memory usage: %r Mb' % self.memory)
 
         logging.info('Saving fuel array as ascii raster')
         self.array_to_ascii(self.FUEL_ascii, self.fuel)
+        self.get_memory()
         logging.info('memory usage: %r Mb' % self.memory)
 
         # Check for trail fires
@@ -684,11 +697,15 @@ class FireDisturbance(s.Disturbance):
 
             trail_array = None
 
+        initialize_time = time.time()
+
+        logging.info('initialize run time: %s' % (initialize_time - start_time))
+
         # Fire
         if len(self.potential_ignition_sites) > 0:
 
             # Choose an ignition site
-            ignition_site = random.choice(self.potential_ignition_sites)
+            self.ignition_site = random.choice(self.potential_ignition_sites)
 
             logging.info('Creating ignition point')
             # Write selected ignition sites to .vct file for FARSITE
@@ -795,3 +812,8 @@ class FireDisturbance(s.Disturbance):
             self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
             self. array_to_ascii(self.LOG_DIR % (self.year, 'time_since_disturbance'), self.time_since_disturbance)
 
+        end_time = time.time()
+
+        run_time = end_time - start_time
+
+        logging.info('runtime: %s' % run_time)

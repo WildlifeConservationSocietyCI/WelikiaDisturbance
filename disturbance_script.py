@@ -1,6 +1,6 @@
 import settings as s
 import posixpath as os
-# import pond
+import pond
 import fire
 
 # assign s.ecocommunities to starting raster
@@ -11,10 +11,10 @@ for year in s.RUN_LENGTH:
     # horticulture
 
     # fire
-    f = fire.FireDisturbance(year)
+    # f = fire.FireDisturbance(year)
     # f.climax_communities = f.ascii_to_array(f.EC_CLIMAX_ascii)
     # print f.climax_communities.shape
-    f.run_year()
+    # f.run_year()
     # f.get_translation_table()
     # f.get_climate_years()
     # f.get_drought()
@@ -29,5 +29,5 @@ for year in s.RUN_LENGTH:
 
 
     # beaver pond
-    # pond_dis = pond.PondDisturbance(year)
-    # pond_dis.run_year()
+    pond_dis = pond.PondDisturbance(year)
+    pond_dis.run_year()
