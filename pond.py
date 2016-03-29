@@ -27,9 +27,9 @@ class PondDisturbance(s.Disturbance):
     DAM_HEIGHT = s.DAM_HEIGHT
 
     # Constant Inputs
-    DEM = os.path.join(INPUT_DIR, 'UPLAND_DEM_BURNED_STREAMS_5m_FILL.tif')
-    FLOW_DIRECTION = os.path.join(INPUT_DIR, 'flow_direction.tif')
-    SUITABLE_STREAMS = os.path.join(INPUT_DIR, 'suitability_surface.tif')
+    DEM = os.path.join(INPUT_DIR, 'UPLAND_DEM_BURNED_STREAMS_5m_FILL_bk_q.tif')
+    FLOW_DIRECTION = os.path.join(INPUT_DIR, 'flow_direction_bk_q.tif')
+    SUITABLE_STREAMS = os.path.join(INPUT_DIR, 'suitability_surface_bk_q.tif')
 
     def __init__(self, year):
         self.year = year
@@ -158,7 +158,7 @@ class PondDisturbance(s.Disturbance):
         :return: exclude_territory
         """
 
-        land_cover_set_null = arcpy.sa.SetNull((self.ecocommunities != 622), 1)
+        land_cover_set_null = arcpy.sa.SetNull(self.ecocommunities, 1, 'VALUE <> 622')
 
         territory = arcpy.sa.EucDistance(in_source_data=land_cover_set_null,
                                          maximum_distance=s.MINIMUM_DISTANCE,
