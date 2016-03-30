@@ -18,7 +18,7 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1411)
+RUN_LENGTH = range(1409, 1429)
 
 ## Fire
 ### initial parameters
@@ -30,7 +30,7 @@ FIRE_SEASON_START = (1, 3)
 FIRE_SEASON_END = (31, 5)
 
 ### Rain in mm needed to extinguish a fire
-EXTINGUISH_THRESHOLD = 20
+EXTINGUISH_THRESHOLD = 5
 
 ### Number of days used to condition fuel before the start of fire
 CONDITIONING_LENGTH = 15
@@ -46,6 +46,9 @@ UN_BURNABLE = [14, 16, 98, 99]
 ### succession
 SUCCESSION_TIME_MID = 10
 SUCCESSION_TIME_CLIMAX = 20
+
+# GUI controls
+INITIATE_RENDER_WAIT_TIME = 50
 
 ## Ponds
 CARRYING_CAPACITY = 5
@@ -80,8 +83,6 @@ print env.workspace
 env.scratchWorkspace = TEMP_DIR
 print env.scratchWorkspace
 env.overwriteOutput = True
-# env.nodata = "PROMOTION"
-# print env.nodata
 
 if arcpy.CheckExtension("Spatial") == "Available":
     arcpy.AddMessage("Checking out Spatial")

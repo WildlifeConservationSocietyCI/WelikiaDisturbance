@@ -45,6 +45,9 @@ class FireDisturbance(s.Disturbance):
 
     FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, 'fuel.asc')
     CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, 'canopy.asc')
+    FOREST_AGE_ascii = os.path.join(INPUT_DIR, FARSITE, 'forest_age.asc')
+    TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, FARSITE, 'time_since_disturbance.asc')
+
     TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, 'fire_trails.asc')
     FPJ = os.path.join(INPUT_DIR, FARSITE, 'BK_Q.FPJ')
     LCP = os.path.join(INPUT_DIR, FARSITE, 'BK_Q.LCP')
@@ -55,8 +58,8 @@ class FireDisturbance(s.Disturbance):
     WND = os.path.join(INPUT_DIR, FARSITE, 'wind.wnd')
     WTR = os.path.join(INPUT_DIR, FARSITE, 'weather.wtr')
     BURN_RASTERS = os.path.join(INPUT_DIR, 'script', 'burn_rasters')
-    FARSITE_OUTPUT = os.path.join(BURN_RASTERS, 'farsite_output')
-    FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, 'farsite_output.fml')
+    FARSITE_OUTPUT = os.path.join(BURN_RASTERS, '%s_farsite_output')
+    FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, '%s_farsite_output.fml')
 
     _ecocommunities_filename = 'ecocommunities_%s.tif'
 
@@ -88,6 +91,8 @@ class FireDisturbance(s.Disturbance):
         self.end_month = None
         self.end_day = None
         self.area_burned = 0
+        self.farsite_output = os.path.join(self.BURN_RASTERS, '%s_farsite_output' % year)
+        self.flame_length_ascii = os.path.join(self.BURN_RASTERS, '%s_farsite_output.fml' % year)
         self.memory = None
 
         self.get_header()
@@ -265,7 +270,6 @@ class FireDisturbance(s.Disturbance):
         print in_ascii
         ascii = gdal.Open(in_ascii, GA_ReadOnly)
         array = gdal_array.DatasetReadAsArray(ascii)
-        ascii = None
 
         return array
 
@@ -305,6 +309,66 @@ class FireDisturbance(s.Disturbance):
             y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - self.ignition_site[0])))
 
             ignition_file.write('1 %s %s\nEND' % (x, y))
+
+    def set_canopy(self):
+
+        if os.path.isfile(self.CANOPY_ascii):
+            logging.info('Setting canopy')
+            self.canopy = ascii_to_array(self.CANOPY_ascii)
+        else:
+            logging.info('Assigning initial values to canopy array')
+            self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
+            for index, value in numpy.ndenumerate(self.ecocommunities):
+                self.canopy[index[0]][index[1]] = self.translation_table[int(value)]['max_canopy']
+            self.array_to_ascii(self.CANOPY_ascii, self.canopy)
+
+        self.get_memory()
+        logging.info('memory usage: %r Mb' % self.memory)
+
+    def set_forest_age(self):
+
+        if os.path.isfile(self.FOREST_AGE_ascii):
+            logging.info('Setting forest age')
+            self.forest_age = ascii_to_array(self.FOREST_AGE_ascii)
+
+        else:
+            logging.info('Assigning initial values to forest age array')
+            self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
+            for index, value in numpy.ndenumerate(self.ecocommunities):
+                self.forest_age[index[0]][index[1]] = self.translation_table[int(value)]['start_age']
+            self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
+
+        self.get_memory()
+        logging.info('memory usage: %r Mb' % self.memory)
+
+    def set_time_since_disturbance(self):
+
+        if os.path.isfile(self.TIME_SINCE_DISTURBANCE_ascii):
+            logging.info('Setting time since disturbance')
+            self.time_since_disturbance = ascii_to_array(self.TIME_SINCE_DISTURBANCE_ascii)
+
+        else:
+            logging.info('Assigning initial values to time since disturbance array')
+            self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
+            self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
+            self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
+
+        self.get_memory()
+        logging.info('memory usage: %r Mb' % self.memory)
+
+    def set_fuel(self):
+
+        if os.path.isfile(self.FUEL_ascii):
+            logging.info('Setting fuel')
+            self.fuel = ascii_to_array(self.FUEL_ascii)
+
+        else:
+            logging.info('Assigning initial fuel values')
+            self.ecosystem_to_fuel()
+            self.array_to_ascii(self.FUEL_ascii, self.fuel)
+
+        self.get_memory()
+        logging.info('memory usage: %r Mb' % self.memory)
 
     def initial_from_ecocommunities(self, in_property):
 
@@ -423,10 +487,10 @@ class FireDisturbance(s.Disturbance):
             farsite.Kill_()
 
         # Delete FARSITE_output from output folder
-        logging.info('Deleting previous FARSITE outputs')
-        for f in os.listdir(self.BURN_RASTERS):
-            if re.search('farsite_output', f):
-                os.remove(os.path.join(self.BURN_RASTERS, f))
+        # logging.info('Deleting previous FARSITE outputs')
+        # for f in os.listdir(self.BURN_RASTERS):
+        #     if re.search('%s_farsite_output' % self.year, f):
+        #         os.remove(os.path.join(self.BURN_RASTERS, f))
 
         # Export and output options
         logging.info('Setting export and output options')
@@ -438,7 +502,7 @@ class FireDisturbance(s.Disturbance):
             set_outputs.SetFocus()
             set_outputs[u'&Select Rater File Name'].Click()
             select_raster = farsite.window_(title='Select Raster File')
-            select_raster[u'File &name:Edit'].SetEditText(self.FARSITE_OUTPUT)
+            select_raster[u'File &name:Edit'].SetEditText(self.farsite_output)
             select_raster[u'&Save'].DoubleClick()
             set_outputs[u'Flame Length (m)'].Click()
             set_outputs[u'&Default'].Click()
@@ -558,7 +622,7 @@ class FireDisturbance(s.Disturbance):
         landscape_initiated = farsite.window_(title_re='LANDSCAPE:*')
         landscape_initiated.Wait('ready', timeout=40)
 
-        time.sleep(50)
+        time.sleep(s.INITIATE_RENDER_WAIT_TIME)
 
         # Set Ignition
         farsite_main_win.MenuItem('Simulate->Modify Map->Import Ignition File').Click()
@@ -669,40 +733,45 @@ class FireDisturbance(s.Disturbance):
         self.write_wnd()
         self.get_header()
 
-        logging.info('Assigning initial values to canopy array')
-        self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
-        for index, value in numpy.ndenumerate(self.ecocommunities):
-            self.canopy[index[0]][index[1]] = self.translation_table[int(value)]['max_canopy']
-        self.get_memory()
-        logging.info('memory usage: %r Mb' % self.memory)
+        self.set_canopy()
+        self.set_forest_age()
+        self.set_time_since_disturbance()
+        self.set_fuel()
 
-        logging.info('Assigning initial values to forest age array')
-        self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
-        for index, value in numpy.ndenumerate(self.ecocommunities):
-            self.forest_age[index[0]][index[1]] = self.translation_table[int(value)]['start_age']
-        self.get_memory()
-        logging.info('memory usage: %r Mb' % self.memory)
-
-        logging.info('Assigning initial values to last_disturbance')
-        self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
-        self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
-        self.get_memory()
-        logging.info('memory usage: %r Mb' % self.memory)
-
-        logging.info('Assigning initial values to fuel array')
-        self.ecosystem_to_fuel()
-        self.get_memory()
-        logging.info('memory usage: %r Mb' % self.memory)
-
-        logging.info('Saving canopy array as ascii raster')
-        self.array_to_ascii(self.CANOPY_ascii, self.canopy)
-        self.get_memory()
-        logging.info('memory usage: %r Mb' % self.memory)
-
-        logging.info('Saving fuel array as ascii raster')
-        self.array_to_ascii(self.FUEL_ascii, self.fuel)
-        self.get_memory()
-        logging.info('memory usage: %r Mb' % self.memory)
+        # logging.info('Assigning initial values to canopy array')
+        # self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
+        # for index, value in numpy.ndenumerate(self.ecocommunities):
+        #     self.canopy[index[0]][index[1]] = self.translation_table[int(value)]['max_canopy']
+        # self.get_memory()
+        # logging.info('memory usage: %r Mb' % self.memory)
+        #
+        # logging.info('Assigning initial values to forest age array')
+        # self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
+        # for index, value in numpy.ndenumerate(self.ecocommunities):
+        #     self.forest_age[index[0]][index[1]] = self.translation_table[int(value)]['start_age']
+        # self.get_memory()
+        # logging.info('memory usage: %r Mb' % self.memory)
+        #
+        # logging.info('Assigning initial values to last_disturbance')
+        # self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
+        # self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
+        # self.get_memory()
+        # logging.info('memory usage: %r Mb' % self.memory)
+        #
+        # logging.info('Assigning initial values to fuel array')
+        # self.ecosystem_to_fuel()
+        # self.get_memory()
+        # logging.info('memory usage: %r Mb' % self.memory)
+        #
+        # logging.info('Saving canopy array as ascii raster')
+        # self.array_to_ascii(self.CANOPY_ascii, self.canopy)
+        # self.get_memory()
+        # logging.info('memory usage: %r Mb' % self.memory)
+        #
+        # logging.info('Saving fuel array as ascii raster')
+        # self.array_to_ascii(self.FUEL_ascii, self.fuel)
+        # self.get_memory()
+        # logging.info('memory usage: %r Mb' % self.memory)
 
         # Check for trail fires
         random_trail_fire = random.choice(range(1, 100))
@@ -751,7 +820,7 @@ class FireDisturbance(s.Disturbance):
             self.run_farsite()
 
             # Create flame length array
-            flame_length_array = ascii_to_array(self.FLAME_LENGTH_ascii)
+            flame_length_array = ascii_to_array(self.FLAME_LENGTH_ascii % self.year)
 
             # Revise ecosystem raster based on fire
             for index, cell_value in numpy.ndenumerate(self.ecocommunities):
@@ -823,20 +892,25 @@ class FireDisturbance(s.Disturbance):
         logging.info('Area burned %r: %r acres' % (self.year, (self.area_burned * 100 * 0.000247105)))
 
         # Revise fuel model
-        self.ecosystem_to_fuel()
 
-        self.array_to_ascii((self.FUEL_ascii), self.fuel)
-        self.array_to_ascii((self.CANOPY_ascii), self.canopy)
+        self.ecosystem_to_fuel()
+        logging.info('saving arrays as ascii')
+        self.array_to_ascii(self.FUEL_ascii, self.fuel)
+        self.array_to_ascii(self.CANOPY_ascii, self.canopy)
+        self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
+        self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
 
         # Yearly outputs
         if self.area_burned > 0:
+            logging.info('copying outputs to log folder')
             shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
             shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
+            shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
+            shutil.copyfile(self.TIME_SINCE_DISTURBANCE_ascii, self.LOG_DIR % (self.year, 'time_since_disturbance'))
             self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
-            self.array_to_ascii(self.LOG_DIR % (self.year, 'time_since_disturbance'), self.time_since_disturbance)
 
         arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
-                                       os.path.join(self.OUTPUT_DIR, 'eccommunities_%s.tif' % self.year))
+                                       os.path.join(s.OUTPUT_DIR, 'eccommunities_%s.tif' % self.year))
 
         end_time = time.time()
 

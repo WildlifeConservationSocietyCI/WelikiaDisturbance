@@ -48,6 +48,7 @@ class PondDisturbance(s.Disturbance):
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % year)
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (year - 1))
         if os.path.isfile(this_year_ecocomms):
+            print this_year_ecocomms
             self.ecocommunities = arcpy.Raster(this_year_ecocomms)
         elif os.path.isfile(last_year_ecocomms):
             self.ecocommunities = arcpy.Raster(last_year_ecocomms)
@@ -181,14 +182,14 @@ class PondDisturbance(s.Disturbance):
         sum_ponds_set_null = arcpy.sa.SetNull(in_raster != 622, 1)
 
         # print 'sum_ponds_set_null:', type(sum_ponds_set_null)
-        # sum_ponds_set_null.save(os.path.join(s.TEMP_DIR, 'ponds_set_null_%s.tif' % self.year))
+        sum_ponds_set_null.save(os.path.join(s.TEMP_DIR, 'ponds_set_null_%s.tif' % self.year))
 
         # print 'region grouping'
         self._region_group = arcpy.sa.RegionGroup(in_raster=sum_ponds_set_null,
                                                   number_neighbors='EIGHT',
                                                   zone_connectivity='CROSS')
 
-        # self._region_group.save(os.path.join(s.TEMP_DIR, 'region_group_%s.tif' % self.year))
+        self._region_group.save(os.path.join(s.TEMP_DIR, 'region_group_%s.tif' % self.year))
 
     def count_ponds(self):
 
@@ -289,8 +290,8 @@ class PondDisturbance(s.Disturbance):
         :return:
         """
 
-        self.land_cover = arcpy.sa.Con(s.ecocommunities,
-                                       arcpy.sa.Con(self.time_since_disturbance >= 30, s.ecocommunities,
+        self.land_cover = arcpy.sa.Con(self.ecocommunities,
+                                       arcpy.sa.Con(self.time_since_disturbance >= 30, self.ecocommunities,
                                                     (arcpy.sa.Con((self.time_since_disturbance < 30) &
                                                                   (self.time_since_disturbance >= 10), 625,
                                                                   arcpy.sa.Con((self.time_since_disturbance < 10) &
