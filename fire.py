@@ -4,7 +4,7 @@ from osgeo.gdalconst import *
 from osgeo import gdal_array
 import numpy
 import linecache
-
+import arcpy
 import pywinauto
 import logging
 import re
@@ -28,10 +28,10 @@ class FireDisturbance(s.Disturbance):
 
     # Directories
 
-    # INPUT_DIR = os.path.join(s.INPUT_DIR, 'fire')
-    # OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'fire')
-    INPUT_DIR = s.INPUT_DIR
-    OUTPUT_DIR = s.OUTPUT_DIR
+    INPUT_DIR = os.path.join(s.INPUT_DIR, 'fire')
+    OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'fire')
+    # INPUT_DIR = s.INPUT_DIR
+    # OUTPUT_DIR = s.OUTPUT_DIR
     LOG_DIR = os.path.join(OUTPUT_DIR, 'log_rasters', '%s_%s.asc')
     FARSITE = 'farsite'
     SCRIPT = 'script'
@@ -42,6 +42,7 @@ class FireDisturbance(s.Disturbance):
     ASPECT_ascii = os.path.join(INPUT_DIR, FARSITE, 'aspect.asc')
     EC_START_ascii = os.path.join(INPUT_DIR, SCRIPT, 'ec_start.asc')
     EC_CLIMAX_ascii = os.path.join(INPUT_DIR, SCRIPT, 'ec_climax.asc')
+
     FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, 'fuel.asc')
     CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, 'canopy.asc')
     TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, 'fire_trails.asc')
@@ -57,10 +58,13 @@ class FireDisturbance(s.Disturbance):
     FARSITE_OUTPUT = os.path.join(BURN_RASTERS, 'farsite_output')
     FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, 'farsite_output.fml')
 
+    _ecocommunities_filename = 'ecocommunities_%s.tif'
+
     def __init__(self, year):
         self.year = year
-        self.ecocommunities = self.ascii_to_array(self.EC_START_ascii)
-        self.climax_communities = self.ascii_to_array(self.EC_CLIMAX_ascii)
+        self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, 'ecocommunities_%s.asc' % year)
+        self.ecocommunities = None  # self.ascii_to_array(self.EC_START_ascii)
+        self.climax_communities = None
         self.drought = None
         self.climate_years = None
         self.equivalent_climate_year = None
@@ -86,6 +90,25 @@ class FireDisturbance(s.Disturbance):
         self.area_burned = 0
         self.memory = None
 
+        self.get_header()
+        self.set_communities()
+        self.climax_communities = self.ascii_to_array(self.EC_CLIMAX_ascii)
+
+    def set_communities(self):
+        this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
+        last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
+
+        if os.path.isfile(this_year_ecocomms):
+            arcpy.RasterToASCII_conversion(this_year_ecocomms, self.ECOCOMMUNITIES_ascii)
+
+        elif os.path.isfile(last_year_ecocomms):
+            arcpy.RasterToASCII_conversion(last_year_ecocomms, self.ECOCOMMUNITIES_ascii)
+
+        else:
+            arcpy.RasterToASCII_conversion(s.ecocommunities, self.ECOCOMMUNITIES_ascii)
+
+        self.ecocommunities = self.ascii_to_array(self.ECOCOMMUNITIES_ascii)
+
     def get_memory(self):
         # Reports current memory usage
 
@@ -93,9 +116,8 @@ class FireDisturbance(s.Disturbance):
         result = w.query("SELECT WorkingSet FROM Win32_PerfRawData_PerfProc_Process WHERE IDProcess=%d" % os.getpid())
         self.memory = int(result[0].WorkingSet) / 1000000.0
 
-
     def get_header(self):
-        header = [linecache.getline(self.EC_START_ascii, i) for i in range(1, 7)]
+        header = [linecache.getline(self.EC_CLIMAX_ascii, i) for i in range(1, 7)]
         h = {}
 
         for line in header:
@@ -584,13 +606,13 @@ class FireDisturbance(s.Disturbance):
         flame *= 3.2808399
 
         # Calculate scorch height
-        scorch = (3.1817*(flame**1.4503))
+        scorch = (3.1817 * (flame ** 1.4503))
 
         # Calculate tree height
         tree_height = 44 * math.log(age) - 93
 
         # Calculate tree diameter at breast height
-        dbh = (25.706 * math.log(age))-85.383
+        dbh = (25.706 * math.log(age)) - 85.383
 
         if tree_height < 0:
             tree_height = 1
@@ -610,7 +632,7 @@ class FireDisturbance(s.Disturbance):
         crown_ratio = 0.4
 
         # Calculate crown height
-        crown_height = tree_height*(1-crown_ratio)
+        crown_height = tree_height * (1 - crown_ratio)
 
         # Calculate crown kill
         if scorch < crown_height:
@@ -618,7 +640,7 @@ class FireDisturbance(s.Disturbance):
 
         else:
 
-            crown_kill = 41.961 * (math.log(100*(scorch - crown_height)/(tree_height * crown_ratio)))-89.721
+            crown_kill = 41.961 * (math.log(100 * (scorch - crown_height) / (tree_height * crown_ratio))) - 89.721
 
             if crown_kill < 5:
                 crown_kill = 5
@@ -627,10 +649,11 @@ class FireDisturbance(s.Disturbance):
                 crown_kill = 100
 
         # Calculate percent mortality
-        mortality = (1/(1 + math.exp((-1.941+(6.3136*(1-(math.exp(-bark_thickness)))))-(.000535*(crown_kill**2)))))
+        mortality = (
+            1 / (1 + math.exp((-1.941 + (6.3136 * (1 - (math.exp(-bark_thickness))))) - (.000535 * (crown_kill ** 2)))))
 
         return mortality
-        #print 'Age: %r\t| Height: %r\t| DBH %r\t | Crown Kill: %r\t| Mortality: %r' %(age, tree_height, DBH, ck, pm)
+        # print 'Age: %r\t| Height: %r\t| DBH %r\t | Crown Kill: %r\t| Mortality: %r' %(age, tree_height, DBH, ck, pm)
 
     def run_year(self):
 
@@ -752,7 +775,7 @@ class FireDisturbance(s.Disturbance):
 
                         # Revise canopy cover according to tree mortality
                         self.canopy[row_index][col_index] = int(self.canopy[row_index][col_index] *
-                                                                 (1 - percent_mortality))
+                                                                (1 - percent_mortality))
 
                     # Revise ecosystems based on new canopy
                     # Convert burned forest to shrubland
@@ -810,7 +833,10 @@ class FireDisturbance(s.Disturbance):
             shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
             shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
             self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
-            self. array_to_ascii(self.LOG_DIR % (self.year, 'time_since_disturbance'), self.time_since_disturbance)
+            self.array_to_ascii(self.LOG_DIR % (self.year, 'time_since_disturbance'), self.time_since_disturbance)
+
+        arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
+                                       os.path.join(self.OUTPUT_DIR, 'eccommunities_%s.tif' % self.year))
 
         end_time = time.time()
 

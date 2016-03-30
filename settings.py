@@ -18,7 +18,7 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1609, 1611)
+RUN_LENGTH = range(1409, 1411)
 
 ## Fire
 ### initial parameters
@@ -48,7 +48,7 @@ SUCCESSION_TIME_MID = 10
 SUCCESSION_TIME_CLIMAX = 20
 
 ## Ponds
-CARRYING_CAPACITY = 2
+CARRYING_CAPACITY = 5
 MINIMUM_DISTANCE = 1000
 CELL_SIZE = 5
 DAM_HEIGHT = 9
@@ -75,12 +75,12 @@ class Disturbance(object):
 
 
 # Environment Setting
-env.workspace = ROOT_DIR
+env.workspace = TEMP_DIR
 print env.workspace
-env.scratchWorkspace = os.path.join(ROOT_DIR, 'Scratch_Geodatabase.gdb')
+env.scratchWorkspace = TEMP_DIR
 print env.scratchWorkspace
-env.overWriteOutput = True
-env.nodata = "PROMOTION"
+env.overwriteOutput = True
+# env.nodata = "PROMOTION"
 # print env.nodata
 
 if arcpy.CheckExtension("Spatial") == "Available":
