@@ -15,10 +15,10 @@ for year in s.RUN_LENGTH:
     # horticulture
 
     # fire
-    fire_dis = fire.FireDisturbance(year)
+    # fire_dis = fire.FireDisturbance(year)
     # f.climax_communities = f.ascii_to_array(f.EC_CLIMAX_ascii)
     # print f.climax_communities.shape
-    fire_dis.run_year()
+    # fire_dis.run_year()
     # f.get_translation_table()
     # f.get_climate_years()
     # f.get_drought()

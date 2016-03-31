@@ -34,6 +34,7 @@ class PondDisturbance(s.Disturbance):
     SUITABLE_STREAMS = os.path.join(INPUT_DIR, 'suitability_surface_bk_q.tif')
 
     def __init__(self, year):
+
         self.year = year
         self.time_since_disturbance = None
         self.land_cover = None
@@ -51,12 +52,17 @@ class PondDisturbance(s.Disturbance):
             print this_year_ecocomms
             self.ecocommunities = arcpy.Raster(this_year_ecocomms)
         elif os.path.isfile(last_year_ecocomms):
+            print last_year_ecocomms
             self.ecocommunities = arcpy.Raster(last_year_ecocomms)
         else:
             print 'initial run'
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
 
         self.set_time_since_disturbance()
+
+    def clear_temp(self):
+        for f in os.listdir(s.TEMP_DIR):
+            os.remove(f)
 
     def reset_temp(self, filename):
         if arcpy.Exists(filename):
@@ -151,7 +157,7 @@ class PondDisturbance(s.Disturbance):
             self.pond_list.append(pond)
 
         self.new_ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(self.pond_list, 'SUM') > 0, 622, 0)
-        self.new_ponds.save('E:/_data/welikia/WelikiaDisturbance/outputs/pond/ponds_%s.tif' % self.year)
+        # self.new_ponds.save('E:/_data/welikia/WelikiaDisturbance/outputs/pond/ponds_%s.tif' % self.year)
 
     def calculate_territory(self):
         """
@@ -259,7 +265,7 @@ class PondDisturbance(s.Disturbance):
         cursor = arcpy.UpdateCursor(self._region_group)
 
         for row in cursor:
-            age = random.randint(0, 9)
+            age = random.randint(1, 8)
             row.setValue("age", age)
             cursor.updateRow(row)
 
@@ -280,7 +286,10 @@ class PondDisturbance(s.Disturbance):
         (value = 1) are reset to 0.
         :return:
         """
-        self.time_since_disturbance = arcpy.sa.Con(self.new_ponds == 622, 0, self.time_since_disturbance)
+
+        # for some reason the conditional statement in the succesional method is not converting 0 to ecid 622
+        # setting the age of new ponds to 1 instead of 0 seems to solve this problem for now
+        self.time_since_disturbance = arcpy.sa.Con(self.new_ponds == 622, 1, self.time_since_disturbance)
 
     def succession(self):
         """
@@ -290,13 +299,26 @@ class PondDisturbance(s.Disturbance):
         :return:
         """
 
-        self.land_cover = arcpy.sa.Con(self.ecocommunities,
-                                       arcpy.sa.Con(self.time_since_disturbance >= 30, self.ecocommunities,
-                                                    (arcpy.sa.Con((self.time_since_disturbance < 30) &
-                                                                  (self.time_since_disturbance >= 10), 625,
-                                                                  arcpy.sa.Con((self.time_since_disturbance < 10) &
-                                                                               (self.time_since_disturbance >= 0),
-                                                                               622, )))))
+        climax = arcpy.Raster(s.ecocommunities)
+
+        self.land_cover = arcpy.sa.Con((self.time_since_disturbance >= 30) &
+                                       (self.ecocommunities == 625), climax,
+                                       arcpy.sa.Con((self.time_since_disturbance < 30) &
+                                                    (self.time_since_disturbance >= 10) &
+                                                    (self.ecocommunities == 622), 625,
+                                                    arcpy.sa.Con((self.time_since_disturbance < 10) &
+                                                                 (self.time_since_disturbance >= 0),
+                                                                 622, self.ecocommunities)))
+
+        # self.land_cover = arcpy.sa.Con(self.ecocommunities,
+        #                                arcpy.sa.Con((self.time_since_disturbance >= 30) &
+        #                                             (self.ecocommunities == 625), climax,
+        #                                             arcpy.sa.Con((self.time_since_disturbance < 30) &
+        #                                                          (self.time_since_disturbance >= 10) &
+        #                                                          (self.ecocommunities == 622), 625,
+        #                                                          arcpy.sa.Con((self.time_since_disturbance < 10) &
+        #                                                                       (self.time_since_disturbance >= 0),
+        #                                                                       622))))
 
         # print 'succession calculation finished'
         self.land_cover.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
@@ -315,6 +337,8 @@ class PondDisturbance(s.Disturbance):
     def run_year(self):
 
         start_time = time.time()
+
+
 
         print 'YEAR: %s' % self.year
 

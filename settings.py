@@ -18,7 +18,7 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1429)
+RUN_LENGTH = range(1409, 1415)
 
 ## Fire
 ### initial parameters

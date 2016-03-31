@@ -910,7 +910,7 @@ class FireDisturbance(s.Disturbance):
             self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
 
         arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
-                                       os.path.join(s.OUTPUT_DIR, 'eccommunities_%s.tif' % self.year))
+                                       os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         end_time = time.time()
 
