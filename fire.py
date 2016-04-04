@@ -724,6 +724,8 @@ class FireDisturbance(s.Disturbance):
         start_time = time.time()
 
         logging.info('Year: %r' % self.year)
+
+        # set weather and simulation duration
         self.get_translation_table()
         self.get_climate_years()
         self.get_drought()
@@ -733,45 +735,11 @@ class FireDisturbance(s.Disturbance):
         self.write_wnd()
         self.get_header()
 
+        # set tracking rasters
         self.set_canopy()
         self.set_forest_age()
         self.set_time_since_disturbance()
         self.set_fuel()
-
-        # logging.info('Assigning initial values to canopy array')
-        # self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
-        # for index, value in numpy.ndenumerate(self.ecocommunities):
-        #     self.canopy[index[0]][index[1]] = self.translation_table[int(value)]['max_canopy']
-        # self.get_memory()
-        # logging.info('memory usage: %r Mb' % self.memory)
-        #
-        # logging.info('Assigning initial values to forest age array')
-        # self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
-        # for index, value in numpy.ndenumerate(self.ecocommunities):
-        #     self.forest_age[index[0]][index[1]] = self.translation_table[int(value)]['start_age']
-        # self.get_memory()
-        # logging.info('memory usage: %r Mb' % self.memory)
-        #
-        # logging.info('Assigning initial values to last_disturbance')
-        # self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
-        # self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
-        # self.get_memory()
-        # logging.info('memory usage: %r Mb' % self.memory)
-        #
-        # logging.info('Assigning initial values to fuel array')
-        # self.ecosystem_to_fuel()
-        # self.get_memory()
-        # logging.info('memory usage: %r Mb' % self.memory)
-        #
-        # logging.info('Saving canopy array as ascii raster')
-        # self.array_to_ascii(self.CANOPY_ascii, self.canopy)
-        # self.get_memory()
-        # logging.info('memory usage: %r Mb' % self.memory)
-        #
-        # logging.info('Saving fuel array as ascii raster')
-        # self.array_to_ascii(self.FUEL_ascii, self.fuel)
-        # self.get_memory()
-        # logging.info('memory usage: %r Mb' % self.memory)
 
         # Check for trail fires
         random_trail_fire = random.choice(range(1, 100))
@@ -786,8 +754,6 @@ class FireDisturbance(s.Disturbance):
                 if cell_value == 1 and self.time_since_disturbance[index[0]][index[1]] >= s.TRAIL_OVERGROWN_YRS:
                     if self.fuel[index[0]][index[1]] not in s.UN_BURNABLE:
                         self.potential_ignition_sites.append(index)
-
-            trail_array = None
 
         initialize_time = time.time()
 
@@ -846,16 +812,37 @@ class FireDisturbance(s.Disturbance):
                         self.canopy[row_index][col_index] = int(self.canopy[row_index][col_index] *
                                                                 (1 - percent_mortality))
 
-                    # Revise ecosystems based on new canopy
-                    # Convert burned forest to shrubland
-                    if self.translation_table[cell_value]['forest'] == 1:
+                        # Revise ecosystems based on new canopy
+                        # Convert burned forest to shrubland
                         if self.canopy[row_index][col_index] < (self.translation_table[cell_value]['max_canopy'] / 2):
                             self.ecocommunities[row_index][col_index] = 649
                             self.forest_age[row_index][col_index] = 1
 
                     # Convert burned shrubland to grassland
-                    if cell_value == 649 and self.canopy[row_index][col_index] < 10:
+                    elif cell_value == 649 and self.canopy[row_index][col_index] < 10:
                         self.ecocommunities[row_index][col_index] = 635
+
+                elif flame_length < 0:
+
+                    # increment last disturbance array
+                    self.time_since_disturbance[row_index][col_index] += 1
+
+                    if self.translation_table[cell_value]['forest_shrub'] == 1:
+                        self.canopy[row_index][col_index] += 1
+                        self.forest_age[row_index][col_index] += 1
+
+                        if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
+                            self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
+
+                    elif cell_value == 649:
+                        if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy'] / 2):
+                            self.ecocommunities[row_index][col_index] = climax
+
+                    elif cell_value == 635:
+                        self.canopy[row_index][col_index] += 2
+
+                        if self.canopy[row_index][col_index] > 10:
+                            self.ecocommunities[row_index][col_index] = 649
 
         # No Fire
         else:
@@ -872,22 +859,20 @@ class FireDisturbance(s.Disturbance):
 
                 if self.translation_table[cell_value]['forest_shrub'] == 1:
                     self.canopy[row_index][col_index] += 1
+                    self.forest_age[row_index][col_index] += 1
 
-                if cell_value == 649:
+                    if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
+                        self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
+
+                elif cell_value == 649:
                     if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy'] / 2):
                         self.ecocommunities[row_index][col_index] = climax
 
-                if cell_value == 635:
+                elif cell_value == 635:
                     self.canopy[row_index][col_index] += 2
 
                     if self.canopy[row_index][col_index] > 10:
                         self.ecocommunities[row_index][col_index] = 649
-
-                if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
-                    self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
-
-                if self.translation_table[cell_value]['forest'] == 1:
-                    self.forest_age[row_index][col_index] += 1
 
         logging.info('Area burned %r: %r acres' % (self.year, (self.area_burned * 100 * 0.000247105)))
 
@@ -899,6 +884,11 @@ class FireDisturbance(s.Disturbance):
         self.array_to_ascii(self.CANOPY_ascii, self.canopy)
         self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
         self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
+        self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
+
+        # save the updated community raster to the shared disturbance directory
+        arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
+                                       os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         # Yearly outputs
         if self.area_burned > 0:
@@ -907,10 +897,6 @@ class FireDisturbance(s.Disturbance):
             shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
             shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
             shutil.copyfile(self.TIME_SINCE_DISTURBANCE_ascii, self.LOG_DIR % (self.year, 'time_since_disturbance'))
-            self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
-
-        arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
-                                       os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         end_time = time.time()
 

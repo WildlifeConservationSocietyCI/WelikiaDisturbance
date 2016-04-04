@@ -1,36 +1,42 @@
 import settings as s
+import os
 import pond
 import fire
 import arcpy
-# assign s.ecocommunities to starting raster
+import shutil
 
+# assign s.ecocommunities to starting raster
 arcpy.env.extent = s.ecocommunities
 arcpy.env.cellSize = s.ecocommunities
 arcpy.env.snapRaster = s.ecocommunities
-# arcpy.env.outputCoordinateSystem = arcpy.SpatialReference(s.ecocommunities)
+arcpy.env.outputCoordinateSystem = arcpy.Describe(s.ecocommunities).spatialReference
+arcpy.env.cartographicCoordinateSystem = arcpy.Describe(s.ecocommunities).spatialReference
+print arcpy.Describe(s.ecocommunities).spatialReference
+print arcpy.env.outputCoordinateSystem
+
+def clear_dir(directory):
+
+    file_list = os.listdir(directory)
+    for file_name in file_list:
+        path = (os.path.join(directory, file_name))
+        if os.path.isfile(path):
+            os.remove(path)
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+
+clear_dir(os.path.join(s.INPUT_DIR, 'fire', 'script', 'burn_rasters'))
+
 
 for year in s.RUN_LENGTH:
+
+    # clear_dir(s.TEMP_DIR)
 
 
     # horticulture
 
     # fire
-    # fire_dis = fire.FireDisturbance(year)
-    # f.climax_communities = f.ascii_to_array(f.EC_CLIMAX_ascii)
-    # print f.climax_communities.shape
-    # fire_dis.run_year()
-    # f.get_translation_table()
-    # f.get_climate_years()
-    # f.get_drought()
-    # f.select_climate_records()
-    # f.set_weather_file()
-    # f.select_duration()
-    # f.write_wnd()
-
-    # print f.translation_table
-    # print f.climate_years
-    # print f.drought
-
+    fire_dis = fire.FireDisturbance(year)
+    fire_dis.run_year()
 
     # beaver pond
     pond_dis = pond.PondDisturbance(year)

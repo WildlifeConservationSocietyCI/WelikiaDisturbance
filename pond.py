@@ -35,6 +35,8 @@ class PondDisturbance(s.Disturbance):
 
     def __init__(self, year):
 
+        # self.clear_temp()
+
         self.year = year
         self.time_since_disturbance = None
         self.land_cover = None
@@ -59,10 +61,6 @@ class PondDisturbance(s.Disturbance):
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
 
         self.set_time_since_disturbance()
-
-    def clear_temp(self):
-        for f in os.listdir(s.TEMP_DIR):
-            os.remove(f)
 
     def reset_temp(self, filename):
         if arcpy.Exists(filename):
@@ -188,14 +186,14 @@ class PondDisturbance(s.Disturbance):
         sum_ponds_set_null = arcpy.sa.SetNull(in_raster != 622, 1)
 
         # print 'sum_ponds_set_null:', type(sum_ponds_set_null)
-        sum_ponds_set_null.save(os.path.join(s.TEMP_DIR, 'ponds_set_null_%s.tif' % self.year))
+        # sum_ponds_set_null.save(os.path.join(s.TEMP_DIR, 'ponds_set_null_%s.tif' % self.year))
 
         # print 'region grouping'
         self._region_group = arcpy.sa.RegionGroup(in_raster=sum_ponds_set_null,
                                                   number_neighbors='EIGHT',
                                                   zone_connectivity='CROSS')
 
-        self._region_group.save(os.path.join(s.TEMP_DIR, 'region_group_%s.tif' % self.year))
+        # self._region_group.save(os.path.join(s.TEMP_DIR, 'region_group_%s.tif' % self.year))
 
     def count_ponds(self):
 
@@ -301,7 +299,7 @@ class PondDisturbance(s.Disturbance):
 
         climax = arcpy.Raster(s.ecocommunities)
 
-        self.land_cover = arcpy.sa.Con((self.time_since_disturbance >= 30) &
+        self.ecocommunities = arcpy.sa.Con((self.time_since_disturbance >= 30) &
                                        (self.ecocommunities == 625), climax,
                                        arcpy.sa.Con((self.time_since_disturbance < 30) &
                                                     (self.time_since_disturbance >= 10) &
@@ -320,8 +318,15 @@ class PondDisturbance(s.Disturbance):
         #                                                                       (self.time_since_disturbance >= 0),
         #                                                                       622))))
 
-        # print 'succession calculation finished'
-        self.land_cover.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+        self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (str(self.year) + 'a')))
+
+        if arcpy.Exists(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)):
+            arcpy.Delete_management(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+
+        arcpy.Rename_management(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (str(self.year) + 'a')),
+                                os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+
+        self.ecocommunities = arcpy.Raster(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
     def set_time_since_disturbance(self):
         this_year_time_since_disturbance = os.path.join(self.OUTPUT_DIR,
@@ -338,8 +343,6 @@ class PondDisturbance(s.Disturbance):
 
         start_time = time.time()
 
-
-
         print 'YEAR: %s' % self.year
 
         print 'incrementing time since disturbance'
@@ -348,7 +351,7 @@ class PondDisturbance(s.Disturbance):
         print 'calculating land_cover'
         self.succession()
 
-        self.set_region_group(self.land_cover)
+        self.set_region_group(self.ecocommunities)
 
         print 'counting number of active ponds'
         self.count_ponds()

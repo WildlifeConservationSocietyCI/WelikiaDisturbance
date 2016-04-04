@@ -18,7 +18,7 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1415)
+RUN_LENGTH = range(1409, 1411)
 
 ## Fire
 ### initial parameters
@@ -30,7 +30,7 @@ FIRE_SEASON_START = (1, 3)
 FIRE_SEASON_END = (31, 5)
 
 ### Rain in mm needed to extinguish a fire
-EXTINGUISH_THRESHOLD = 5
+EXTINGUISH_THRESHOLD = 10
 
 ### Number of days used to condition fuel before the start of fire
 CONDITIONING_LENGTH = 15
@@ -51,7 +51,7 @@ SUCCESSION_TIME_CLIMAX = 20
 INITIATE_RENDER_WAIT_TIME = 50
 
 ## Ponds
-CARRYING_CAPACITY = 5
+CARRYING_CAPACITY = 10
 MINIMUM_DISTANCE = 1000
 CELL_SIZE = 5
 DAM_HEIGHT = 9
