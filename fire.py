@@ -834,7 +834,7 @@ class FireDisturbance(s.Disturbance):
                         if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
                             self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
 
-                    elif cell_value == 649:
+                    if cell_value == 649:
                         if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy'] / 2):
                             self.ecocommunities[row_index][col_index] = climax
 
