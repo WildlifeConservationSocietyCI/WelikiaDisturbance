@@ -38,6 +38,7 @@ class PondDisturbance(s.Disturbance):
         # self.clear_temp()
 
         self.year = year
+        self.initial_flag = False
         self.time_since_disturbance = None
         self.land_cover = None
         self.pond_count = 0
@@ -155,7 +156,7 @@ class PondDisturbance(s.Disturbance):
             self.pond_list.append(pond)
 
         self.new_ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(self.pond_list, 'SUM') > 0, 622, 0)
-        # self.new_ponds.save('E:/_data/welikia/WelikiaDisturbance/outputs/pond/ponds_%s.tif' % self.year)
+        self.new_ponds.save('E:/_data/welikia/WelikiaDisturbance/outputs/pond/ponds_%s.tif' % self.year)
 
     def calculate_territory(self):
         """
@@ -277,6 +278,8 @@ class PondDisturbance(s.Disturbance):
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR,
                                                       'time_since_disturbance_%s.tif' % self.year))
 
+        self.new_ponds = None
+
     def update_time_since_disturbance(self):
         """
         This method incorporates newly created new_ponds into the time_since_disturbance raster.
@@ -338,6 +341,7 @@ class PondDisturbance(s.Disturbance):
             self.initial_time_since_disturbance()
             self.time_since_disturbance = arcpy.Raster(
                 os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
+            self.initial_flag = True
 
     def run_year(self):
 
@@ -356,14 +360,14 @@ class PondDisturbance(s.Disturbance):
         print 'counting number of active ponds'
         self.count_ponds()
 
-        if self.pond_count < self.CARRYING_CAPACITY:
+        if self.pond_count < self.CARRYING_CAPACITY and self.initial_flag is False:
             self._region_group = None
             print 'number of active ponds [%s] is below carrying capacity [%s], creating new ponds' \
                   % (self.pond_count, s.CARRYING_CAPACITY)
 
             self.create_ponds()
 
-            self.new_ponds.save(os.path.join(self.OUTPUT_DIR, 'ponds_%s.tif' % self.year))
+            # self.new_ponds.save(os.path.join(self.OUTPUT_DIR, 'ponds_%s.tif' % self.year))
 
             self.update_time_since_disturbance()
 
