@@ -420,10 +420,12 @@ class FireDisturbance(s.Disturbance):
 
         farsite_main_win = farsite.window_(title_re='.*FARSITE: Fire Area Simulator$')
 
-        farsite_main_win.MenuItem('File->Load Project').Click()
+        farsite_main_win.Wait('ready')
+        farsite_main_win.SetFocus().MenuItem('File->Load Project').Click()
+
         try:
             load_project = farsite.window_(title='Select Project File')
-            load_project.SetFocus()
+            load_project.Wait('ready').SetFocus()
 
             load_project[u'File &name:Edit'].SetEditText(self.FPJ)
             load_project[u'&Open'].Click()
@@ -444,13 +446,13 @@ class FireDisturbance(s.Disturbance):
 
         try:
             project_inputs = farsite.window_(title='FARSITE Project')
-            project_inputs.SetFocus()
+            project_inputs.Wait('ready').SetFocus()
             project_inputs[u'->13'].Click()
 
             # Load fuel and canopy rasters
             try:
                 landscape_load = farsite.window_(title='Landscape (LCP) File Generation')
-                landscape_load.SetFocus()
+                landscape_load.Wait('ready').SetFocus()
                 landscape_load[u'&Fuel Model ASCII'].Click()
                 load_fuel = farsite.window_(title='Select ASCII Raster File')
                 load_fuel.SetFocus()
@@ -473,13 +475,13 @@ class FireDisturbance(s.Disturbance):
 
             # Wait while FARSITE generates the landcape file
             landscape_generated = farsite.window_(title_re='.*Landscape Generated$')
-            landscape_generated.Wait('exists', timeout=100)
+            landscape_generated.Wait('ready', timeout=100)
             landscape_generated.SetFocus()
             landscape_generated[u'OK'].Click()
 
             logging.info('landscape file loaded')
 
-            project_inputs.SetFocus()
+            project_inputs.Wait('ready').SetFocus()
             project_inputs[u'&OK'].Click()
 
         except pywinauto.findwindows.WindowNotFoundError:
@@ -496,7 +498,7 @@ class FireDisturbance(s.Disturbance):
         logging.info('Setting export and output options')
 
         # Open export and output option window
-        farsite_main_win.MenuItem('Output->Export and Output').Click()
+        farsite_main_win.Wait('ready').SetFocus().MenuItem('Output->Export and Output').Click()
         try:
             set_outputs = farsite.window_(title='Export and Output Options')
             set_outputs.SetFocus()
@@ -517,10 +519,10 @@ class FireDisturbance(s.Disturbance):
         logging.info('Setting simulation parameters')
 
         # Open parameter window
-        farsite_main_win.MenuItem('Model->Parameters').Click()
+        farsite_main_win.Wait('ready').SetFocus().MenuItem('Model->Parameters').Click()
         try:
             set_parameters = farsite.window_(title='Model Parameters')
-            set_parameters.SetFocus()
+            set_parameters.Wait('ready').SetFocus()
             set_parameters.TypeKeys('{RIGHT 90}')
             set_parameters.TypeKeys('{TAB 2}')
             set_parameters.TypeKeys('{LEFT 30}')
@@ -536,7 +538,7 @@ class FireDisturbance(s.Disturbance):
 
         # fire behavior options: disable crown fire
         # Open fire behavior window
-        farsite_main_win.MenuItem('Model->Fire Behavior Options').Click()
+        farsite_main_win.Wait('ready').SetFocus().MenuItem('Model->Fire Behavior Options').Click()
         try:
             set_fire_behavior = farsite.window_(title='Fire Behavior Options')
             set_fire_behavior.SetFocus()
@@ -549,7 +551,7 @@ class FireDisturbance(s.Disturbance):
             farsite.Kill_()
 
         # Set number of simulation threads
-        farsite_main_win.MenuItem('Simulate->Options').Click()
+        farsite_main_win.Wait('ready').SetFocus().MenuItem('Simulate->Options').Click()
         try:
             simulation_options = farsite.window_(title='Simulation Options')
             simulation_options.SetFocus()
@@ -562,12 +564,17 @@ class FireDisturbance(s.Disturbance):
             farsite.Kill_()
 
         # Open duration window
-        farsite_main_win.MenuItem('Simulate->Duration').Click()
+        farsite_main_win.Wait('ready').SetFocus().MenuItem('Simulate->Duration').Click()
         try:
             simulation_duration = farsite.window_(title='Simulation Duration')
+            simulation_duration.Wait('ready').SetFocus()
+
+            if simulation_duration[u'Use Conditioning Period for Fuel Moistures'].GetCheckState() == 0:
+                simulation_duration[u'Use Conditioning Period for Fuel Moistures'].Click()
+
             simulation_duration.SetFocus()
-            simulation_duration[u'Use Conditioning Period for Fuel Moistures'].Click()
             time.sleep(.5)
+
             # Conditioning month
             while int(simulation_duration[u'Static5'].Texts()[0]) != self.con_month:
                 if int(simulation_duration[u'Static5'].Texts()[0]) > self.con_month:
@@ -618,17 +625,17 @@ class FireDisturbance(s.Disturbance):
             farsite.Kill_()
 
         # Initiate simulation
-        farsite_main_win.MenuItem('Simulate->Initiate/Terminate').Click()
+        farsite_main_win.Wait('ready').SetFocus().MenuItem('Simulate->Initiate/Terminate').Click()
         landscape_initiated = farsite.window_(title_re='LANDSCAPE:*')
         landscape_initiated.Wait('ready', timeout=40)
 
         time.sleep(s.INITIATE_RENDER_WAIT_TIME)
 
         # Set Ignition
-        farsite_main_win.MenuItem('Simulate->Modify Map->Import Ignition File').Click()
+        farsite_main_win.Wait('ready').SetFocus().MenuItem('Simulate->Modify Map->Import Ignition File').Click()
         try:
             set_ignition = farsite.window_(title='Select Vector Ignition File')
-            set_ignition.SetFocus()
+            set_ignition.Wait('ready').SetFocus()
             # set_ignition.TypeKeys('{RIGHT}')
             set_ignition.Wait('ready')
             set_ignition[u'File &name:Edit'].SetEditText(self.IGNITION)
@@ -639,17 +646,14 @@ class FireDisturbance(s.Disturbance):
             contains_line = farsite.window_(title=self.IGNITION)
             contains_line.SetFocus()
             contains_line[u'&No'].Click()
-            # set_ignition.TypeKeys('{RIGHT}{ENTER}')
-            # set_ignition.TypeKeys('{RIGHT}{ENTER}')
 
         except farsite.findwindows.WindowNotFoundError:
             logging.error('can not find SELECT VECTOR IGNITION FILE window')
 
         logging.info('Starting simulation')
-        farsite_main_win.SetFocus()
-        farsite_main_win.MenuItem(u'&Simulate->&Start/Restart').Click()
+        farsite_main_win.Wait('ready').SetFocus().MenuItem(u'&Simulate->&Start/Restart').Click()
         simulation_complete = farsite.window_(title_re='.*Simulation Complete')
-        simulation_complete.Wait('exists', timeout=1800)
+        simulation_complete.Wait('ready', timeout=s.SIMULATION_TIMEOUT)
         simulation_complete.SetFocus()
         simulation_complete[u'OK'].Click()
 
