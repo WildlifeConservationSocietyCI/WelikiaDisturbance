@@ -397,8 +397,8 @@ class FireDisturbance(s.Disturbance):
 
     def run_farsite(self):
         # cond_month, cond_day, start_month, start_day, end_month, end_day = select_duration(year)
-        ordinal_start = datetime.date(day=self.start_day, month=self.start_month, year=1409).toordinal()
-        ordinal_end = datetime.date(day=self.end_day, month=self.end_month, year=1409).toordinal()
+        ordinal_start = datetime.date(day=self.start_day, month=self.start_month, year=self.year).toordinal()
+        ordinal_end = datetime.date(day=self.end_day, month=self.end_month, year=self.year).toordinal()
 
         logging.info('Start date: %r/%r/%r | End date:  %r/%r/%r | Duration: %r days' % (self.start_month,
                                                                                          self.start_day,
@@ -507,7 +507,9 @@ class FireDisturbance(s.Disturbance):
             select_raster[u'File &name:Edit'].SetEditText(self.farsite_output)
             select_raster[u'&Save'].DoubleClick()
             set_outputs[u'Flame Length (m)'].Click()
-            set_outputs[u'&Default'].Click()
+            # set_outputs[u'&Default'].Click()
+            if set_outputs[u'XUpDown'].GetValue() != self.header['cellsize']:
+                set_outputs[u'&Default'].Click()
             set_outputs[u'&OK'].Click()
             logging.info('Outputs set')
 
