@@ -18,7 +18,7 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1610)
+RUN_LENGTH = range(1532, 1610)
 
 ## Fire
 ### initial parameters
@@ -64,13 +64,13 @@ class Disturbance(object):
     INPUT_DIR = INPUT_DIR
     OUTPUT_DIR = OUTPUT_DIR
 
-    def __init__(self):
+    def __init__(self, year):
         self.setup_dirs()
         self.check_inputs()
 
     # ensure that dir structure exists
     def setup_dirs(self):
-        if not os.isdir(ROOT_DIR):
+        if not os.path.isdir(ROOT_DIR):
             pass
 
     def check_inputs(self):
