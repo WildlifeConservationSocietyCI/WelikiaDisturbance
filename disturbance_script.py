@@ -24,7 +24,22 @@ def clear_dir(directory):
         if os.path.isdir(path):
             shutil.rmtree(path)
 
-clear_dir(os.path.join(s.INPUT_DIR, 'fire', 'script', 'burn_rasters'))
+# clear_dir(os.path.join(s.INPUT_DIR, 'fire', 'script', 'burn_rasters'))
+
+#
+# fire_dis = fire.FireDisturbance(1455)
+#
+# # set weather and simulation duration
+# fire_dis.get_translation_table()
+# fire_dis.get_climate_years()
+# fire_dis.get_drought()
+# fire_dis.select_climate_records()
+# fire_dis.set_weather_file()
+# fire_dis.select_duration()
+# fire_dis.write_wnd()
+# fire_dis.get_header()
+#
+# fire_dis.run_farsite()
 
 
 for year in s.RUN_LENGTH:
