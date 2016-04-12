@@ -22,12 +22,6 @@ class PondDisturbance(s.Disturbance):
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'pond')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'pond')
 
-    # Pond Parameters
-    CARRYING_CAPACITY = s.CARRYING_CAPACITY
-    MINIMUM_DISTANCE = s.MINIMUM_DISTANCE
-    CELL_SIZE = s.CELL_SIZE
-    DAM_HEIGHT = s.DAM_HEIGHT
-
     # Constant Inputs
     DEM = os.path.join(INPUT_DIR, 'UPLAND_DEM_BURNED_STREAMS_5m_FILL_bk_q.tif')
     FLOW_DIRECTION = os.path.join(INPUT_DIR, 'flow_direction_bk_q.tif')
@@ -360,7 +354,7 @@ class PondDisturbance(s.Disturbance):
         print 'counting number of active ponds'
         self.count_ponds()
 
-        if self.pond_count < self.CARRYING_CAPACITY and self.initial_flag is False:
+        if self.pond_count < s.CARRYING_CAPACITY and self.initial_flag is False:
             self._region_group = None
             print 'number of active ponds [%s] is below carrying capacity [%s], creating new ponds' \
                   % (self.pond_count, s.CARRYING_CAPACITY)
