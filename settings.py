@@ -57,6 +57,18 @@ MINIMUM_DISTANCE = 1000
 CELL_SIZE = 5
 DAM_HEIGHT = 9
 
+# Gardens
+PER_CAPITA_GARDEN_AREA = 1
+
+TIME_TO_ABANDON = 20  # abandon a garden after 20 years.
+SHRUB_SUCCESSION = 36  # after 36 years abandoned garden turns to successional shrubland.
+FOREST_SUCCESSION = 80
+
+GARDEN_ID = 650  # ecosystem id for gardens (will look for this value when processing raster.
+OLD_FIELD_ID = 648  # ecosystem id for abandoned fields.
+SHRUBLAND_ID = 649
+
+
 # Disturbance Class Test
 
 class Disturbance(object):
