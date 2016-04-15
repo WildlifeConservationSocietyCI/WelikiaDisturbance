@@ -41,6 +41,7 @@ class GardenDisturbance():
         self.garden_list = []
         self.garden = None
         self.time_since_disturbance = None
+        self.randrast = None
 
         self.site_center = None
         self.temp_point = os.path.join(s.TEMP_DIR, 'temp_point.shp')
@@ -142,12 +143,6 @@ class GardenDisturbance():
         """
         self.time_since_disturbance = arcpy.sa.Con(self.new_garden == s.GARDEN_ID, 1, self.time_since_disturbance)
 
-    def create_buffer(self):
-        """
-        create a X meter buffer around site center point. clip ecocommunity and suitability rasters to extent
-        :return:
-        """
-
     def get_garden_area(self, in_raster):
         """
         return count of garden cells in community raster
@@ -179,13 +174,6 @@ class GardenDisturbance():
                               buffer_distance_or_field=500)
 
         local_ecocommunities = arcpy.sa.ExtractByMask(self.ecocommunities, self.temp_buffer)
-        # print type(local_ecocommunities)
-        # array = arcpy.RasterToNumPyArray(local_ecocommunities)
-        # unique = numpy.unique(array)
-        # count = 0
-        # if 650 in unique:
-        #     print 'garden_present'
-        #     count = 1
 
         self.garden_area = self.get_garden_area(local_ecocommunities)
 
@@ -270,18 +258,19 @@ class GardenDisturbance():
                                            arcpy.sa.Con(new_cells == s.GARDEN_ID, s.GARDEN_ID, self.garden))
 
             else:
-                random_values = []
                 random_cells = arcpy.sa.Con(new_cells, self.randrast)
+
                 print type(random_cells)
                 array = arcpy.RasterToNumPyArray(random_cells)
-                print array.shape
-                for index, cell_value in numpy.ndenumerate(array):
-                    if cell_value > 0:
-                        random_values.append(float(cell_value))
+                random_values = numpy.unique(array).tolist()
+
+                # print randomvalues
+                # for index, cell_value in numpy.ndenumerate(array):
+                #     if cell_value > 0:
+                #         random_values.append(float(cell_value))
 
                 random.shuffle(random_values)
 
-                counter_1 = 0
                 while self.garden_area < self.garden_area_target:
                     # print 'garden area: %s' % self.garden_area
 
@@ -355,8 +344,8 @@ class GardenDisturbance():
 
                     print 'garden created'
 
-                else:
-                    print 'no new gardens created'
+            else:
+                print 'no new gardens created'
 
             arcpy.env.extent = s.ecocommunities
 
@@ -365,3 +354,5 @@ class GardenDisturbance():
 
         print type(self.ecocommunities)
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
+
+        self.time_since_disturbance.save(os.path.join(s.OUTPUT_DIR, 'time_since_disturbance1_%s.tif' % self.year))
