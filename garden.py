@@ -178,22 +178,18 @@ class GardenDisturbance():
                               out_feature_class=self.temp_buffer,
                               buffer_distance_or_field=500)
 
-        arcpy.env.extent = self.temp_buffer
-
         local_ecocommunities = arcpy.sa.ExtractByMask(self.ecocommunities, self.temp_buffer)
-        # array = arcpy.RasterToNumPyArray(local_ecocommunities)
-        # count = 0
-        # for index, cell_value in numpy.ndenumerate(array):
-        #     if cell_value == s.GARDEN_ID:
-        #         count += 1
-
-        # local_ecocommunities.save(os.path.join(self.OUTPUT_DIR, 'local_ecosystems_%s.tif') % self.population)
         # print type(local_ecocommunities)
+        # array = arcpy.RasterToNumPyArray(local_ecocommunities)
+        # unique = numpy.unique(array)
+        # count = 0
+        # if 650 in unique:
+        #     print 'garden_present'
+        #     count = 1
 
         self.garden_area = self.get_garden_area(local_ecocommunities)
 
         print self.garden_area
-
         self.local_suitability = arcpy.sa.ExtractByMask(self.suitability, self.temp_buffer)
 
     def set_garden_center(self):
@@ -230,20 +226,6 @@ class GardenDisturbance():
 
         for point in cursor:
             self.coordinate_list.append((point[0][0], point[0][1]))
-
-    # def get_unique_values(self, in_raster):
-    #     """
-    #     takes raster input and returns a list of the unique cell values
-    #     :param in_raster:
-    #     :return:
-    #     """
-    #     values = []
-    #     cursor = arcpy.SearchCursor(in_raster)
-    #
-    #     for row in cursor:
-    #         values.append(row.GetValue("Value"))
-    #
-    #     return values
 
     def create_garden(self):
         """
@@ -338,14 +320,18 @@ class GardenDisturbance():
         self.points_to_coordinates()
         self.set_populations()
 
+
         for population, coordinates in zip(self.site_populations, self.coordinate_list):
             print population, coordinates
 
             self.population = population
+            self.population_to_garden_area()
 
             self.site_center = arcpy.Point(coordinates[0], coordinates[1])
 
             self.set_local_extent()
+
+            arcpy.env.extent = self.temp_buffer
 
             # check for gardens in area buffered around site
 
