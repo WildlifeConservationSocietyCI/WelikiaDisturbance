@@ -1,7 +1,8 @@
 import os
 import settings as s
 import arcpy
-
+import numpy
+import random
 
 class GardenDisturbance():
     # CLASS VARIABLES
@@ -54,12 +55,15 @@ class GardenDisturbance():
         if os.path.isfile(this_year_ecocomms):
             print this_year_ecocomms
             self.ecocommunities = arcpy.Raster(this_year_ecocomms)
+
         elif os.path.isfile(last_year_ecocomms):
             print last_year_ecocomms
             self.ecocommunities = arcpy.Raster(last_year_ecocomms)
         else:
             print 'initial run'
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
+
+        print self.ecocommunities.height, self.ecocommunities.width
 
     def set_time_since_disturbance(self):
         """
@@ -144,11 +148,13 @@ class GardenDisturbance():
         """
         cursor = arcpy.SearchCursor(in_raster)
         # cursor = arcpy.SearchCursor(os.path.join(self.OUTPUT_DIR, 'garden.tif'))
-
+        count = 0
         # print"Checking if a garden exists..."
         for row in cursor:
             if row.getValue('VALUE') == s.GARDEN_ID:
-                self.garden_area = row.getValue('Count')
+                count = row.getValue('Count')
+
+        return count
 
     def set_garden_center(self):
         """
@@ -184,6 +190,20 @@ class GardenDisturbance():
 
         for point in cursor:
             self.coordinate_list.append((point[0][0], point[0][1]))
+
+    def get_unique_values(self, in_raster):
+        """
+        takes raster input and returns a list of the unique cell values
+        :param in_raster:
+        :return:
+        """
+        values = []
+        cursor = arcpy.SearchCursor(in_raster)
+
+        for row in cursor:
+            values.append(row.GetValue("Value"))
+
+        return values
 
     def create_garden(self):
         """
@@ -222,7 +242,7 @@ class GardenDisturbance():
                                   buffer_distance_or_field=500)
 
             ecocommunities = arcpy.sa.ExtractByMask(self.ecocommunities, self.temp_buffer)
-            self.get_garden_area(ecocommunities)
+            self.garden_area = self.get_garden_area(ecocommunities)
             print self.garden_area
 
             local_suitability = arcpy.sa.ExtractByMask(self.suitability, self.temp_buffer)
@@ -233,22 +253,21 @@ class GardenDisturbance():
 
                 # Find most suitable areas for garden
                 maxsuit = arcpy.sa.Con(local_suitability == local_suitability.maximum, local_suitability)
-                maxsuit.save(os.path.join(self.OUTPUT_DIR, 'maxsuit.tif'))
+                # maxsuit.save(os.path.join(self.OUTPUT_DIR, 'maxsuit.tif'))
 
                 # Create random raster to associate with most suitable areas to randomly select garden centroid cell
-                # TODO: Exclude already gardened cells from suitable areas (so centroid should be well outside garden)
                 randrast = arcpy.sa.CreateRandomRaster(345, local_suitability, local_suitability)
-                randrast.save(os.path.join(self.OUTPUT_DIR, 'randrast.tif'))
+                # randrast.save(os.path.join(self.OUTPUT_DIR, 'randrast.tif'))
                 randrastclip = arcpy.sa.Con(maxsuit, randrast)
-                randrastclip.save(os.path.join(self.OUTPUT_DIR, 'randrastclip.tif'))
-                print "Selecting random starting place..."
+                # randrastclip.save(os.path.join(self.OUTPUT_DIR, 'randrastclip.tif'))
+                print "selecting garden center"
                 gardencenter = arcpy.sa.Con(randrastclip == randrastclip.maximum, s.GARDEN_ID)
-                gardencenter.save(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
+                # gardencenter.save(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
 
                 self.garden = gardencenter
 
                 self.population_to_garden_area()
-
+                random_values = []
                 counter = 0
                 while self.garden_area < self.garden_area_target:
                     print 'garden area: %s' % self.garden_area
@@ -257,208 +276,247 @@ class GardenDisturbance():
 
                     # Set nodata values in garden grid to 0
                     zero = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 1, 0, self.garden)
-                    zero.save(os.path.join(self.OUTPUT_DIR, "zero_%s.tif" % counter))
+                    # zero.save(os.path.join(self.OUTPUT_DIR, "zero_%s.tif" % counter))
 
                     # Create another grid where current garden is NODATA and all other values = 0
                     nullgard = arcpy.sa.SetNull(zero == s.GARDEN_ID, 0)
-                    nullgard.save(os.path.join(self.OUTPUT_DIR, "nullgard_%s.tif" % counter))
+                    # nullgard.save(os.path.join(self.OUTPUT_DIR, "nullgard_%s.tif" % counter))
 
                     # Expand potential garden grid by one cell
                     zone = arcpy.sa.Expand(self.garden, 1, s.GARDEN_ID)
-                    zone.save(os.path.join(self.OUTPUT_DIR, "zone_%s.tif" % counter))
+                    # zone.save(os.path.join(self.OUTPUT_DIR, "zone_%s.tif" % counter))
 
                     # Create a clipping raster for gardens
                     zapped = arcpy.sa.Plus(nullgard, local_suitability)
-                    zapped.save(os.path.join(self.OUTPUT_DIR, "zapped_%s.tif" % counter))
+                    # zapped.save(os.path.join(self.OUTPUT_DIR, "zapped_%s.tif" % counter))
 
-                    # Clip expanded garden grid by removing unsuitable areas and places where garden currently exists "NODATA"
+                    # Clip expanded garden grid by removing unsuitable areas and places where garden currently exists
+                    #  "NODATA"
                     clip = arcpy.sa.ExtractByMask(zone, zapped)
-                    clip.save(os.path.join(self.OUTPUT_DIR, 'clip_%s.tif' % counter))
+                    # clip.save(os.path.join(self.OUTPUT_DIR, 'clip_%s.tif' % counter))
 
                     ring_suitability = arcpy.sa.Con(clip, local_suitability)
-                    ring_suitability.save(os.path.join(self.OUTPUT_DIR, 'ring_suitability_%s.tif' % counter))
+                    # ring_suitability.save(os.path.join(self.OUTPUT_DIR, 'ring_suitability_%s.tif' % counter))
 
                     new_cells = arcpy.sa.Con(ring_suitability == ring_suitability.maximum, s.GARDEN_ID)
-                    new_cells.save(os.path.join(self.OUTPUT_DIR, 'new_cells_%s.tif' % counter))
+                    # new_cells.save(os.path.join(self.OUTPUT_DIR, 'new_cells_%s.tif' % counter))
 
-                    random_cells = arcpy.sa.Con(new_cells, randrast)
-                    random_cells.save(os.path.join(self.OUTPUT_DIR, 'random_cells_%s.tif' % counter))
+                    new_cells_area = self.get_garden_area(new_cells)
 
-                    new_cell = arcpy.sa.Con(random_cells == random_cells.maximum, s.GARDEN_ID)
-                    new_cell.save(os.path.join(self.OUTPUT_DIR, 'new_cell_%s.tif' % counter))
+                    if (new_cells_area + self.garden_area) <= self.garden_area_target:
+                        self.garden = arcpy.sa.Con(zero == s.GARDEN_ID, s.GARDEN_ID,
+                                                   arcpy.sa.Con(new_cells == s.GARDEN_ID, s.GARDEN_ID, self.garden))
 
-                    # # Find focal mean suitability values, to smooth them assumes a 3x3 window (default of second arg in function below)
-                    # mean_suitability = arcpy.sa.FocalStatistics(local_suitability, "#", "MEAN", "#")
-                    # mean_suitability.save(os.path.join(self.OUTPUT_DIR, 'mean_suitability_%s.tif'))
-                    #
-                    # # Find maximum focal suitability value in zone
-                    # ring_max = arcpy.sa.ZonalStatistics(clip, "VALUE", mean_suitability, "MEAN", "#")
-                    # ring_max.save(os.path.join(self.OUTPUT_DIR, 'ring_max_%s.tif'))
-                    # # Expand garden to the most suitable locations
-                    #
-                    self.garden = arcpy.sa.Con(zero == s.GARDEN_ID, s.GARDEN_ID,
-                                               arcpy.sa.Con(new_cell == s.GARDEN_ID, s.GARDEN_ID, self.garden))
+                    else:
+                        random_cells = arcpy.sa.Con(new_cells, randrast)
+                        print type(random_cells)
+                        array = arcpy.RasterToNumPyArray(random_cells)
+                        print array.shape
+                        for index, cell_value in numpy.ndenumerate(array):
+                            if cell_value > 0:
+                                random_values.append(float(cell_value))
+
+                        random.shuffle(random_values)
+
+                        counter_1 = 0
+                        while self.garden_area < self.garden_area_target:
+                            print 'garden area: %s' % self.garden_area
+
+                            r = random_values.pop()
+
+                            new_cell = arcpy.sa.Con(random_cells == r, s.GARDEN_ID)
+
+                            self.garden = arcpy.sa.Con(arcpy.sa.IsNull(new_cell) == 0, new_cell, self.garden)
+
+                            self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden_%s.tif' % counter_1))
+
+                            self.garden_area = self.get_garden_area(self.garden)
+                            new_cell.save(os.path.join(self.OUTPUT_DIR, 'new_cell_%s.tif' % counter_1))
+
+                            new_cell = None
+
+                            counter_1 += 1
+
+                        # # Find focal mean suitability values, to smooth them assumes a 3x3 window (default of second
+                        # arg in function below)
+                        # mean_suitability = arcpy.sa.FocalStatistics(local_suitability, "#", "MEAN", "#")
+                        # mean_suitability.save(os.path.join(self.OUTPUT_DIR, 'mean_suitability_%s.tif'))
+                        #
+                        # # Find maximum focal suitability value in zone
+                        # ring_max = arcpy.sa.ZonalStatistics(clip, "VALUE", mean_suitability, "MEAN", "#")
+                        # ring_max.save(os.path.join(self.OUTPUT_DIR, 'ring_max_%s.tif'))
+                        # # Expand garden to the most suitable locations
+                        #
+
 
                     counter += 1
-                    self.get_garden_area(self.garden)
 
+                    self.garden_area = self.get_garden_area(self.garden)
+
+                self.garden = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 1, 0, self.garden)
                 self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden.tif'))
 
-                self.ecocommunities = (self.garden == s.GARDEN_ID, self.garden, self.ecocommunities)
+            arcpy.env.extent = s.ecocommunities
+
+            self.ecocommunities = arcpy.sa.Con(self.ecocommunities,
+                                               arcpy.sa.Con(self.garden == s.GARDEN_ID, self.garden,
+                                                            self.ecocommunities))
 
             self.ecocommunities.save((os.path.join(self.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
-                
-                    # garcounter: raster showing garden extent at each loop
-                    # garcounter should be 1 cell = 10000 (from gardencenter)
-                    # garcounter = arcpy.sa.SetNull(garcounter, garcounter, garcounter == 10000)
-                    # garcounter = arcpy.sa.Con(null == 1, gardencenter, null)
-                    # #TODO: look into refactoring garcounter and other rasters to have no NoData cells
-                    # garcounter = gardencenter
-                    # #garcounter = arcpy.sa.SetNull(gardencenter, gardencenter, 'VALUE = %s' % CENTROID)
-                    # garcounter.save("garcounter.tif")
-                    #
-                    #
-                    #
-                    # # Grow garden iteratively until threshold is reached
-                    # while currentsize < patchsize:
-                    #
-                    #     lastsize = currentsize
-                    #
-                    #
-                    #     # Set nodata values in garden grid to 0
-                    #     zerocounter = arcpy.sa.Con(IsNull(garcounter), 0, garcounter)
-                    #     zerocounter.save("zerocounter%s.tif" % counter)
-                    #
-                    #     # Create another grid where current garden is NODATA and all other values = 0
-                    #     nullgard = arcpy.sa.SetNull(zerocounter == CENTROID, 0)
-                    #     nullgard.save("nullgard%s.tif" % counter)
-                    #
-                    #     # Expand potential garden grid by one cell
-                    #     zonecounter = arcpy.sa.Expand(garcounter, 1, [CENTROID])
-                    #     zonecounter.save("zonecounter%s.tif" % counter)
-                    #
-                    #
-                    #     # Create a clipping raster for gardens
-                    #     zapped = arcpy.sa.Plus(nullgard, unsuit)
-                    #     zapped.save("zapped%s.tif" % counter)
-                    #
-                    #     # Clip expanded garden grid by removing unsuitable areas and places where garden currently exists "NODATA"
-                    #     clipcounter = arcpy.sa.ExtractByMask(zonecounter, zapped)
-                    #     clipcounter.save("clipcounter%s.tif" % counter)
-                    #
-                    #
-                    #     # Find focal mean suitability values, to smooth them assumes a 3x3 window (default of second arg in function below)
-                    #     suitcounter = arcpy.sa.FocalStatistics(suit, "#", "MEAN", "#")
-                    #     suitcounter.save("suitcounter%s.tif" % counter)
-                    #
-                    #
-                    #     # Find maximum focal suitability value in zone
-                    #     maxcounter = arcpy.sa.ZonalStatistics(clipcounter, "VALUE", suitcounter, "MEAN", "#")
-                    #     maxcounter.save("maxcounter%s.tif" % counter)
-                    #
-                    #
-                    #
-                    #     # Expand garden to the most suitable locations
-                    #     garcounter = arcpy.sa.Con(zerocounter == 10000, 10000, Con(maxcounter <= suit, 10000, garcounter))
-                    #     garcounter.save('garcounter%s.tif'% counter)
-                    #
-                    #
-                    #
-                    #     # Query raster for number of cells attributed 10000
-                    #     garcountercursor = arcpy.SearchCursor(garcounter)
-                    #     for row in garcountercursor:
-                    #         if row.getValue('Value') == 10000:
-                    #             currentsize = row.getValue('Count')
-                    #             print "This garden is now %d cells large." % currentsize
-                    #
-                    #     # Break out of loop once garden is maxed out or can't grow anymore, and report back
-                    #     if lastsize == currentsize:
-                    #         break
-                    #
-                    #     # Update counter
-                    #     counter += 1
-                    #     gardenexists = 1
-                    #
-                    # print "This garden is done at %d cells!" % currentsize
-                    # #garden_ok = arcpy.sa.Con(IsNull(garcounter), 0, garcounter)
-                    # gardens = garcounter
-                    # gardens.save('gardenslast.tif')
-                    # # lc1 = arcpy.sa.Con(garden_ok == 10000, 650, lc)
-                    # # age1 = arcpy.sa.Con(garden_ok == 10000, 0, age)
-                    # garcounter_nonull = arcpy.sa.Con(IsNull(garcounter), 0, garcounter)
-                    # lc1 = arcpy.sa.Con(garcounter_nonull == 10000, 650, lc)
-                    # age1 = arcpy.sa.Con(garcounter_nonull == 10000, 0, age)
-                    # lc = lc1
-                    # lc.save('lc%s.tif' % counter)
-                    # age = age1
 
-                    # self.population_to_garden_area()
-                    # # Grow garden iteratively until threshold is reached
-                    # # while self.garden_area < self.garden_area_target:
-                    #
-                    # local_max = arcpy.GetRasterProperties_management(local_suitability, 'MAXIMUM').getOutput(0)
-                    # potential_center = arcpy.sa.SetNull(local_suitability, local_suitability, 'VALUE <> %s' % local_max)
-                    # arcpy.RasterToPoint_conversion(in_raster=potential_center,
-                    #                                out_point_features=self.temp_point)
-                    #
-                    # arcpy.CreateRandomPoints_management(out_path=s.TEMP_DIR,
-                    #                                     out_name='center.shp',
-                    #                                     constraining_feature_class=self.temp_point,
-                    #                                     number_of_points_or_field=1)
-                    #
-                    # arcpy.PointToRaster_conversion(in_features=os.path.join(s.TEMP_DIR, 'center.shp'),
-                    #                                out_rasterdataset=os.path.join(self.OUTPUT_DIR, 'center.tif'))
-                    #
-                    # # while self.garden_area < self.garden_area_target:
-                    # center = arcpy.Raster(os.path.join(self.OUTPUT_DIR, 'center.tif'))
-                    # self.garden = arcpy.sa.Con(arcpy.sa.IsNull(center) == 0, s.GARDEN_ID)
-                    #
-                    # self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden.tif'))
-                    #
-                    # # Expand potential garden by a one cell ring around current garden
-                    # zone = arcpy.sa.Expand(self.garden, 1, s.GARDEN_ID)
-                    # zone.save(os.path.join(self.OUTPUT_DIR, 'zone.tif'))
+            # garcounter: raster showing garden extent at each loop
+            # garcounter should be 1 cell = 10000 (from gardencenter)
+            # garcounter = arcpy.sa.SetNull(garcounter, garcounter, garcounter == 10000)
+            # garcounter = arcpy.sa.Con(null == 1, gardencenter, null)
+            # #TODO: look into refactoring garcounter and other rasters to have no NoData cells
+            # garcounter = gardencenter
+            # #garcounter = arcpy.sa.SetNull(gardencenter, gardencenter, 'VALUE = %s' % CENTROID)
+            # garcounter.save("garcounter.tif")
+            #
+            #
+            #
+            # # Grow garden iteratively until threshold is reached
+            # while currentsize < patchsize:
+            #
+            #     lastsize = currentsize
+            #
+            #
+            #     # Set nodata values in garden grid to 0
+            #     zerocounter = arcpy.sa.Con(IsNull(garcounter), 0, garcounter)
+            #     zerocounter.save("zerocounter%s.tif" % counter)
+            #
+            #     # Create another grid where current garden is NODATA and all other values = 0
+            #     nullgard = arcpy.sa.SetNull(zerocounter == CENTROID, 0)
+            #     nullgard.save("nullgard%s.tif" % counter)
+            #
+            #     # Expand potential garden grid by one cell
+            #     zonecounter = arcpy.sa.Expand(garcounter, 1, [CENTROID])
+            #     zonecounter.save("zonecounter%s.tif" % counter)
+            #
+            #
+            #     # Create a clipping raster for gardens
+            #     zapped = arcpy.sa.Plus(nullgard, unsuit)
+            #     zapped.save("zapped%s.tif" % counter)
+            #
+            #     # Clip expanded garden grid by removing unsuitable areas and places where garden currently exists
+            # "NODATA"
+            #     clipcounter = arcpy.sa.ExtractByMask(zonecounter, zapped)
+            #     clipcounter.save("clipcounter%s.tif" % counter)
+            #
+            #
+            #     # Find focal mean suitability values, to smooth them assumes a 3x3 window (default of second arg in
+            #  function below)
+            #     suitcounter = arcpy.sa.FocalStatistics(suit, "#", "MEAN", "#")
+            #     suitcounter.save("suitcounter%s.tif" % counter)
+            #
+            #
+            #     # Find maximum focal suitability value in zone
+            #     maxcounter = arcpy.sa.ZonalStatistics(clipcounter, "VALUE", suitcounter, "MEAN", "#")
+            #     maxcounter.save("maxcounter%s.tif" % counter)
+            #
+            #
+            #
+            #     # Expand garden to the most suitable locations
+            #     garcounter = arcpy.sa.Con(zerocounter == 10000, 10000, Con(maxcounter <= suit, 10000, garcounter))
+            #     garcounter.save('garcounter%s.tif'% counter)
+            #
+            #
+            #
+            #     # Query raster for number of cells attributed 10000
+            #     garcountercursor = arcpy.SearchCursor(garcounter)
+            #     for row in garcountercursor:
+            #         if row.getValue('Value') == 10000:
+            #             currentsize = row.getValue('Count')
+            #             print "This garden is now %d cells large." % currentsize
+            #
+            #     # Break out of loop once garden is maxed out or can't grow anymore, and report back
+            #     if lastsize == currentsize:
+            #         break
+            #
+            #     # Update counter
+            #     counter += 1
+            #     gardenexists = 1
+            #
+            # print "This garden is done at %d cells!" % currentsize
+            # #garden_ok = arcpy.sa.Con(IsNull(garcounter), 0, garcounter)
+            # gardens = garcounter
+            # gardens.save('gardenslast.tif')
+            # # lc1 = arcpy.sa.Con(garden_ok == 10000, 650, lc)
+            # # age1 = arcpy.sa.Con(garden_ok == 10000, 0, age)
+            # garcounter_nonull = arcpy.sa.Con(IsNull(garcounter), 0, garcounter)
+            # lc1 = arcpy.sa.Con(garcounter_nonull == 10000, 650, lc)
+            # age1 = arcpy.sa.Con(garcounter_nonull == 10000, 0, age)
+            # lc = lc1
+            # lc.save('lc%s.tif' % counter)
+            # age = age1
+
+            # self.population_to_garden_area()
+            # # Grow garden iteratively until threshold is reached
+            # # while self.garden_area < self.garden_area_target:
+            #
+            # local_max = arcpy.GetRasterProperties_management(local_suitability, 'MAXIMUM').getOutput(0)
+            # potential_center = arcpy.sa.SetNull(local_suitability, local_suitability, 'VALUE <> %s' % local_max)
+            # arcpy.RasterToPoint_conversion(in_raster=potential_center,
+            #                                out_point_features=self.temp_point)
+            #
+            # arcpy.CreateRandomPoints_management(out_path=s.TEMP_DIR,
+            #                                     out_name='center.shp',
+            #                                     constraining_feature_class=self.temp_point,
+            #                                     number_of_points_or_field=1)
+            #
+            # arcpy.PointToRaster_conversion(in_features=os.path.join(s.TEMP_DIR, 'center.shp'),
+            #                                out_rasterdataset=os.path.join(self.OUTPUT_DIR, 'center.tif'))
+            #
+            # # while self.garden_area < self.garden_area_target:
+            # center = arcpy.Raster(os.path.join(self.OUTPUT_DIR, 'center.tif'))
+            # self.garden = arcpy.sa.Con(arcpy.sa.IsNull(center) == 0, s.GARDEN_ID)
+            #
+            # self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden.tif'))
+            #
+            # # Expand potential garden by a one cell ring around current garden
+            # zone = arcpy.sa.Expand(self.garden, 1, s.GARDEN_ID)
+            # zone.save(os.path.join(self.OUTPUT_DIR, 'zone.tif'))
 
 
 
 
 
-                    #     # Expand potential garden grid by one cell
-                    #     zone = arcpy.sa.Expand(self.garden, 1, [s.GARDEN_ID])
-                    #
-                    #     # where zone cells are coincident with unsuitable cells set null
-                    #
-                    #     # calculate focal mean suitability values, within a rectangular 3x3 window
-                    #     mean_suitability = arcpy.sa.FocalStatistics(suitability, "#", "MEAN", "#")
-                    #
-                    #     # Find maximum mean suitability value in zone
-                    #     zone_max = arcpy.sa.ZonalStatistics(clip, "VALUE", mean_suitability, "MEAN", "#")
-                    #
-                    #     # Expand garden to the most suitable locations
-                    #     garden = arcpy.sa.Con(zero == s.GARDEN_ID, s.GARDEN_ID,
-                    #                           arcpy.sa.Con(mean_suitability >= zone_max, s.GARDEN_ID, self.ecocommunities))
-                    #
-                    #     garcounter.save('garcounter%s.tif' % counter)
-                    #
-                    #     # re-count number of garden cells
-                    #     self.get_garden_area()
-                    #
-                    #     # Break if garden stops expanding before reaching required size
-                    #     if last_area == self.garden_area:
-                    #         break
-                    #
-                    #     gardenexists = 1
-                    #
-                    # print "This garden is done at %d cells!" % currentsize
-                    #
-                    # gardens = garcounter
-                    #
-                    # garcounter_nonull = arcpy.sa.Con(arcpy.sa.IsNull(garcounter), 0, garcounter)
-                    # lc1 = arcpy.sa.Con(garcounter_nonull == 10000, 650, lc)
-                    # age1 = arcpy.sa.Con(garcounter_nonull == 10000, 0, age)
-                    # lc = lc1
-                    #
-                    # age = age1
+            #     # Expand potential garden grid by one cell
+            #     zone = arcpy.sa.Expand(self.garden, 1, [s.GARDEN_ID])
+            #
+            #     # where zone cells are coincident with unsuitable cells set null
+            #
+            #     # calculate focal mean suitability values, within a rectangular 3x3 window
+            #     mean_suitability = arcpy.sa.FocalStatistics(suitability, "#", "MEAN", "#")
+            #
+            #     # Find maximum mean suitability value in zone
+            #     zone_max = arcpy.sa.ZonalStatistics(clip, "VALUE", mean_suitability, "MEAN", "#")
+            #
+            #     # Expand garden to the most suitable locations
+            #     garden = arcpy.sa.Con(zero == s.GARDEN_ID, s.GARDEN_ID,
+            #                           arcpy.sa.Con(mean_suitability >= zone_max, s.GARDEN_ID, self.ecocommunities))
+            #
+            #     garcounter.save('garcounter%s.tif' % counter)
+            #
+            #     # re-count number of garden cells
+            #     self.get_garden_area()
+            #
+            #     # Break if garden stops expanding before reaching required size
+            #     if last_area == self.garden_area:
+            #         break
+            #
+            #     gardenexists = 1
+            #
+            # print "This garden is done at %d cells!" % currentsize
+            #
+            # gardens = garcounter
+            #
+            # garcounter_nonull = arcpy.sa.Con(arcpy.sa.IsNull(garcounter), 0, garcounter)
+            # lc1 = arcpy.sa.Con(garcounter_nonull == 10000, 650, lc)
+            # age1 = arcpy.sa.Con(garcounter_nonull == 10000, 0, age)
+            # lc = lc1
+            #
+            # age = age1
 
     def run_year(self):
         """
