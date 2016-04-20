@@ -97,9 +97,13 @@ class FireDisturbance(s.Disturbance):
         self.flame_length_ascii = os.path.join(self.BURN_RASTERS, '%s_farsite_output.fml' % year)
         self.memory = None
 
+        self.garden_disturbance = None
+        self.pond_disturbance = None
+
         self.get_header()
         self.set_communities()
         self.climax_communities = self.ascii_to_array(self.EC_CLIMAX_ascii)
+        self.set_disturbances()
 
     def set_communities(self):
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
@@ -115,6 +119,16 @@ class FireDisturbance(s.Disturbance):
             arcpy.RasterToASCII_conversion(s.ecocommunities, self.ECOCOMMUNITIES_ascii)
 
         self.ecocommunities = self.ascii_to_array(self.ECOCOMMUNITIES_ascii)
+
+    def set_disturbances(self):
+        garden_dis = os.path.join(s.OUTPUT_DIR, 'garden', 'time_since_disturbance_%s.tif' % (self.year - 1))
+        pond_dis = os.path.join(s.OUTPUT_DIR, 'pond', 'time_since_disturbance_%s.tif' % (self.year - 1))
+
+        if arcpy.Exists(garden_dis):
+            self.garden_disturbance = arcpy.RasterToNumPyArray(garden_dis)
+
+        if arcpy.Exists(pond_dis):
+            self.pond_disturbance = arcpy.RasterToNumPyArray(pond_dis)
 
     def get_memory(self):
         # Reports current memory usage
@@ -280,24 +294,38 @@ class FireDisturbance(s.Disturbance):
         for attribute in self.header_text:
             out_asc.write(attribute)
 
+        # numpy.savetxt(out_asc, array)
         numpy.savetxt(out_asc, array, fmt="%4i")
         out_asc.close()
 
     def ecosystem_to_fuel(self):
-        self.fuel = numpy.empty((self.header['nrows'], self.header['ncols']))
 
-        for index, cell_value in numpy.ndenumerate(self.ecocommunities):
-            row_index = index[0]
-            col_index = index[1]
+        logging.info('converting ecosystem to fuel model')
 
-            if self.time_since_disturbance[row_index][col_index] > s.SUCCESSION_TIME_CLIMAX:
-                self.fuel[row_index][col_index] = self.translation_table[cell_value]['climax_fuel']
+        if self.fuel is None:
+            logging
+            self.fuel = numpy.empty((self.header['nrows'], self.header['ncols']))
+            self.fuel.astype(numpy.int32)
 
-            elif self.time_since_disturbance[row_index][col_index] > s.SUCCESSION_TIME_MID:
-                self.fuel[row_index][col_index] = self.translation_table[cell_value]['mid_fuel']
+        for key in self.translation_table.keys():
+            print key, type(key)
 
-            else:
-                self.fuel[row_index][col_index] = self.translation_table[cell_value]['new_fuel']
+            fuel_c = self.translation_table[key]['climax_fuel']
+            fuel_m = self.translation_table[key]['mid_fuel']
+            fuel_n = self.translation_table[key]['new_fuel']
+
+            self.fuel = numpy.where((self.ecocommunities == key) &
+                                    (self.time_since_disturbance < s.SUCCESSION_TIME_MID),
+                                    fuel_n, self.fuel)
+
+            self.fuel = numpy.where((self.ecocommunities == key) &
+                                    (self.time_since_disturbance >= s.SUCCESSION_TIME_MID) &
+                                    (self.time_since_disturbance < s.SUCCESSION_TIME_CLIMAX),
+                                    fuel_m, self.fuel)
+
+            self.fuel = numpy.where((self.ecocommunities == key) &
+                                    (self.time_since_disturbance >= s.SUCCESSION_TIME_CLIMAX),
+                                    fuel_c, self.fuel)
 
     def write_ignition(self):
         """
@@ -317,11 +345,29 @@ class FireDisturbance(s.Disturbance):
         if os.path.isfile(self.CANOPY_ascii):
             logging.info('Setting canopy')
             self.canopy = ascii_to_array(self.CANOPY_ascii)
+
+            # if self.garden_disturbance is not None:
+            self.canopy = numpy.where(self.ecocommunities == 650,
+                                      self.translation_table[650]['max_canopy'], self.canopy)
+
+            # self.canopy = numpy.where((self.ecocommunities == 635) & (self.garden_disturbance == s.TIME_TO_ABANDON),
+            #                           [0], self.canopy)
+
+            # if self.pond_disturbance is not None:
+            self.canopy = numpy.where((self.ecocommunities == 622),
+                                      self.translation_table[622]['max_canopy'], self.canopy)
+
+            # self.canopy = numpy.where((self.ecocommunities == 622) & (self.pond_disturbance == 10),
+            #                           self.translation_table[622]['max_canopy'], self.canopy)
+
         else:
             logging.info('Assigning initial values to canopy array')
             self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
-            for index, value in numpy.ndenumerate(self.ecocommunities):
-                self.canopy[index[0]][index[1]] = self.translation_table[int(value)]['max_canopy']
+
+            for key in self.translation_table.keys():
+                self.canopy = numpy.where((self.ecocommunities == key),
+                                          self.translation_table[key]['max_canopy'], self.canopy)
+
             self.array_to_ascii(self.CANOPY_ascii, self.canopy)
 
         self.get_memory()
@@ -333,11 +379,24 @@ class FireDisturbance(s.Disturbance):
             logging.info('Setting forest age')
             self.forest_age = ascii_to_array(self.FOREST_AGE_ascii)
 
+            self.forest_age = numpy.where((self.ecocommunities == 650), 0, self.forest_age)
+
+            # self.forest_age = numpy.where(
+            #     (self.ecocommunities == 635) & (self.garden_disturbance == s.TIME_TO_ABANDON), [1], self.forest_age)
+
+            self.forest_age = numpy.where((self.ecocommunities == 622), 0, self.forest_age)
+
+            # self.forest_age = numpy.where((self.ecocommunities == 622) &
+            #                               (self.pond_disturbance == s.SUCCESSION_TIME_MID),
+            #                                [1], self.forest_age)
+
         else:
             logging.info('Assigning initial values to forest age array')
             self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
-            for index, value in numpy.ndenumerate(self.ecocommunities):
-                self.forest_age[index[0]][index[1]] = self.translation_table[int(value)]['start_age']
+            for key in self.translation_table.keys():
+                self.forest_age = numpy.where((self.ecocommunities == key),
+                                              self.translation_table[key]['start_age'], self.canopy)
+
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
 
         self.get_memory()
@@ -352,6 +411,7 @@ class FireDisturbance(s.Disturbance):
         else:
             logging.info('Assigning initial values to time since disturbance array')
             self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
+            self.fuel.astype(numpy.int32)
             self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
             self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
 
@@ -360,35 +420,17 @@ class FireDisturbance(s.Disturbance):
 
     def set_fuel(self):
 
-        if os.path.isfile(self.FUEL_ascii):
-            logging.info('Setting fuel')
-            self.fuel = ascii_to_array(self.FUEL_ascii)
-
-        else:
-            logging.info('Assigning initial fuel values')
-            self.ecosystem_to_fuel()
-            self.array_to_ascii(self.FUEL_ascii, self.fuel)
+        # if os.path.isfile(self.FUEL_ascii):
+        #     logging.info('Setting fuel')
+        #     self.fuel = ascii_to_array(self.FUEL_ascii)
+        #
+        # else:
+        logging.info('Assigning initial fuel values')
+        self.ecosystem_to_fuel()
+        self.array_to_ascii(self.FUEL_ascii, self.fuel)
 
         self.get_memory()
         logging.info('memory usage: %r Mb' % self.memory)
-
-    def initial_from_ecocommunities(self, in_property):
-
-        reference = ''
-
-        if in_property == 'canopy':
-            reference = 'max_canopy'
-        elif in_property == 'forest_age':
-            reference = 'start_age'
-
-        array = numpy.empty((self.header['nrows'], self.header['ncols']))
-        for index, value in numpy.ndenumerate(self.ecocommunities):
-            array[index[0]][index[1]] = self.translation_table[int(value)][reference]
-
-        if in_property == 'canopy':
-            self.canopy = array
-        elif in_property == 'forest_age':
-            self.forest_age = array
 
     def get_ignition(self, in_ascii):
         array = ascii_to_array(in_ascii)
@@ -748,6 +790,13 @@ class FireDisturbance(s.Disturbance):
         self.set_time_since_disturbance()
         self.set_fuel()
 
+        self.array_to_ascii(self.FUEL_ascii, self.fuel)
+
+        self.garden_disturbance = None
+        self.pond_disturbance = None
+
+
+
         # Check for trail fires
         random_trail_fire = random.choice(range(1, 100))
         if s.PROB_TRAIL_ESCAPE > random_trail_fire:
@@ -789,7 +838,6 @@ class FireDisturbance(s.Disturbance):
             self.write_wnd()
 
             # Run Farsite
-
             self.run_farsite()
 
             # Create flame length array
@@ -855,31 +903,58 @@ class FireDisturbance(s.Disturbance):
         else:
             logging.info('No escaped fires for %r' % self.year)
 
-            # Revise ecosystem raster based on succesional sequence
-            for index, cell_value in numpy.ndenumerate(self.ecocommunities):
-                row_index = index[0]
-                col_index = index[1]
+            self.time_since_disturbance += 1
 
-                climax = self.climax_communities[row_index][col_index]
+            for key in self.translation_table.keys():
 
-                self.time_since_disturbance[row_index][col_index] += 1
+                # update forest canopy and age
+                if self.translation_table[key]['forest_shrub'] == 1:
+                    self.canopy = numpy.where((self.ecocommunities == key) &
+                                              (self.canopy < self.translation_table[key]['max_canopy']),
+                                              (self.canopy + 1), self.canopy)
 
-                if self.translation_table[cell_value]['forest_shrub'] == 1:
-                    self.canopy[row_index][col_index] += 1
-                    self.forest_age[row_index][col_index] += 1
+                    self.forest_age = numpy.where(self.ecocommunities == key, (self.forest_age + 1), self.forest_age)
 
-                    if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
-                        self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
+                if key == 649:
+                    self.ecocommunities = numpy.where((self.ecocommunities == key) &
+                                                      (self.canopy >= self.translation_table[key]['max_canopy']),
+                                                      self.climax_communities, self.ecocommunities)
+                if key == 635:
+                    self.canopy = numpy.where(self.ecocommunities == key, self.canopy + 2, self.canopy)
 
-                elif cell_value == 649:
-                    if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy'] / 2):
-                        self.ecocommunities[row_index][col_index] = climax
+                    self.ecocommunities = numpy.where((self.ecocommunities == key) &
+                                                      (self.canopy >= 10), 649, self.ecocommunities)
+            print self.canopy[0]
 
-                elif cell_value == 635:
-                    self.canopy[row_index][col_index] += 2
+            self.get_memory()
+            logging.info('memory usage: %r Mb' % self.memory)
 
-                    if self.canopy[row_index][col_index] > 10:
-                        self.ecocommunities[row_index][col_index] = 649
+                    # Revise ecosystem raster based on succesional sequence
+                    # for index, cell_value in numpy.ndenumerate(self.ecocommunities):
+                    #     row_index = index[0]
+                    #     col_index = index[1]
+                    #
+                    #     climax = self.climax_communities[row_index][col_index]
+                    #
+                    #     self.time_since_disturbance[row_index][col_index] += 1
+                    #
+                    #     if self.translation_table[cell_value]['forest_shrub'] == 1:
+                    #         self.canopy[row_index][col_index] += 1
+                    #         self.forest_age[row_index][col_index] += 1
+                    #
+                    #         if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
+                    #             self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
+                    #
+                    #     elif cell_value == 649:
+                    #         if self.canopy[row_index][col_index] >= (self.translation_table[climax]['max_canopy'] /
+                    #  2):
+                    #             self.ecocommunities[row_index][col_index] = climax
+                    #
+                    #     elif cell_value == 635:
+                    #         self.canopy[row_index][col_index] += 2
+                    #
+                    #         if self.canopy[row_index][col_index] > 10:
+                    #             self.ecocommunities[row_index][col_index] = 649
 
         logging.info('Area burned %r: %r acres' % (self.year, (self.area_burned * 100 * 0.000247105)))
 
