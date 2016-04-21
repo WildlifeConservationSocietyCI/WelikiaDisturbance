@@ -256,7 +256,7 @@ class GardenDisturbance():
             else:
                 random_cells = arcpy.sa.Con(new_cells, self.randrast)
 
-                print type(random_cells)
+                # print type(random_cells)
                 array = arcpy.RasterToNumPyArray(random_cells)
                 random_values = numpy.unique(array).tolist()
 
@@ -303,7 +303,7 @@ class GardenDisturbance():
         self.succession()
 
         for population, coordinates in zip(self.site_populations, self.coordinate_list):
-            print population, coordinates
+            # print population, coordinates
 
             self.population = population
             self.population_to_garden_area()
@@ -331,17 +331,17 @@ class GardenDisturbance():
                     self.time_since_disturbance = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, 1,
                                                                self.time_since_disturbance)
 
-                    print 'garden created'
+                    # print 'garden created'
 
-            else:
-                print 'no new gardens created'
+            # else:
+                # print 'no new gardens created'
 
             arcpy.env.extent = s.ecocommunities
 
         if arcpy.Exists((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))):
             arcpy.Delete_management((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
 
-        print type(self.ecocommunities)
+        # print type(self.ecocommunities)
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
