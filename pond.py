@@ -4,7 +4,6 @@ from settings import os
 import random
 import time
 import logging
-from arcpy import env
 
 
 class PondDisturbance(s.Disturbance):
@@ -31,6 +30,7 @@ class PondDisturbance(s.Disturbance):
 
         # self.clear_temp()
 
+        super(PondDisturbance, self).__init__(year)
         self.year = year
         self.initial_flag = False
         self.time_since_disturbance = None
@@ -46,13 +46,13 @@ class PondDisturbance(s.Disturbance):
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % year)
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (year - 1))
         if os.path.isfile(this_year_ecocomms):
-            print this_year_ecocomms
+            logging.info(this_year_ecocomms)
             self.ecocommunities = arcpy.Raster(this_year_ecocomms)
         elif os.path.isfile(last_year_ecocomms):
-            print last_year_ecocomms
+            logging.info(last_year_ecocomms)
             self.ecocommunities = arcpy.Raster(last_year_ecocomms)
         else:
-            print 'initial run'
+            logging.info('initial run')
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
 
         self.set_time_since_disturbance()
@@ -88,7 +88,6 @@ class PondDisturbance(s.Disturbance):
 
         coordinate_list = []
         for point in cursor:
-            # print point[0]
             coordinate_list.append((point[0][0], point[0][1]))
 
         self.coordinate_list = coordinate_list
@@ -132,25 +131,27 @@ class PondDisturbance(s.Disturbance):
         self.calculate_suitability()
 
         # choose pond locations
-        print 'selecting pond locations'
+        logging.info('selecting pond locations')
         self.reset_temp(self.pond_points)
-        print self.pond_points, type(self.pond_points)
+        logging.info(self.pond_points, type(self.pond_points))
         self.assign_pond_locations()
 
         # convert pond points feature to list of longitude latitude coordinates
-        print 'converting pond points to coordinate list'
+        logging.info('converting pond points to coordinate list')
         self.dam_points_coordinates()
-        print self.coordinate_list
+        logging.info(self.coordinate_list)
 
         # create new_ponds
         for p, i in zip(self.coordinate_list, range(len(self.coordinate_list))):
-            print 'calculating pond %s' % i
+            # logging.info('calculating pond %s' % i)
             self.reset_temp(self.temp_point)
             pond = self.flood_pond(coordinates=p)
             self.pond_list.append(pond)
 
-        self.new_ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(self.pond_list, 'SUM') > 0, 622, 0)
+        self.new_ponds = arcpy.sa.CellStatistics(self.pond_list, 'SUM')
+        # self.new_ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(self.pond_list, 'SUM') > 0, 622, 0)
         self.new_ponds.save('E:/_data/welikia/WelikiaDisturbance/outputs/pond/ponds_%s.tif' % self.year)
+        self.new_ponds = arcpy.sa.Con(self.new_ponds > 0, 622, 0)
 
     def calculate_territory(self):
         """
@@ -176,14 +177,10 @@ class PondDisturbance(s.Disturbance):
         :param in_raster:
         :rtype: object
         """
-
-        # print 'setting null'
         sum_ponds_set_null = arcpy.sa.SetNull(in_raster != 622, 1)
 
-        # print 'sum_ponds_set_null:', type(sum_ponds_set_null)
         # sum_ponds_set_null.save(os.path.join(s.TEMP_DIR, 'ponds_set_null_%s.tif' % self.year))
 
-        # print 'region grouping'
         self._region_group = arcpy.sa.RegionGroup(in_raster=sum_ponds_set_null,
                                                   number_neighbors='EIGHT',
                                                   zone_connectivity='CROSS')
@@ -198,19 +195,12 @@ class PondDisturbance(s.Disturbance):
         new_ponds as an integer and the region_group product as a raster object.
         :return:
         """
-        # print type(self._region_group)
-        # if self._region_group is None:
-        #     print "set region group"
-        #     self.set_region_group(self.ecocommunities)
-
-        # print type(self._region_group)
-
-        print 'getting count'
         pond_count = arcpy.GetRasterProperties_management(in_raster=self._region_group,
                                                           property_type='UNIQUEVALUECOUNT')
 
         pond_count = int(pond_count.getOutput(0))
 
+        logging.info('pond count: %s' % pond_count)
         self.pond_count = pond_count
 
     def calculate_suitability(self):
@@ -246,7 +236,7 @@ class PondDisturbance(s.Disturbance):
         all other cells are initiated with a value of 30.
         :return:
         """
-        print 'creating initial time since disturbance raster'
+        logging.info('creating initial time since disturbance raster')
         self.create_ponds()
 
         self.set_region_group(self.new_ponds)
@@ -271,6 +261,8 @@ class PondDisturbance(s.Disturbance):
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR,
                                                       'time_since_disturbance_%s.tif' % self.year))
+
+        self.ecocommunities = arcpy.sa.Con(self.new_ponds == 622, self.new_ponds, self.ecocommunities)
 
         self.new_ponds = None
 
@@ -305,32 +297,12 @@ class PondDisturbance(s.Disturbance):
                                                                  (self.time_since_disturbance >= 0),
                                                                  622, self.ecocommunities)))
 
-        # self.land_cover = arcpy.sa.Con(self.ecocommunities,
-        #                                arcpy.sa.Con((self.time_since_disturbance >= 30) &
-        #                                             (self.ecocommunities == 625), climax,
-        #                                             arcpy.sa.Con((self.time_since_disturbance < 30) &
-        #                                                          (self.time_since_disturbance >= 10) &
-        #                                                          (self.ecocommunities == 622), 625,
-        #                                                          arcpy.sa.Con((self.time_since_disturbance < 10) &
-        #                                                                       (self.time_since_disturbance >= 0),
-        #                                                                       622))))
-
-        self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (str(self.year) + 'a')))
-
-        if arcpy.Exists(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)):
-            arcpy.Delete_management(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
-
-        arcpy.Rename_management(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (str(self.year) + 'a')),
-                                os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
-
-        self.ecocommunities = arcpy.Raster(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
-
     def set_time_since_disturbance(self):
         this_year_time_since_disturbance = os.path.join(self.OUTPUT_DIR,
                                                         'time_since_disturbance_%s.tif' % (self.year - 1))
         if os.path.isfile(this_year_time_since_disturbance):
             self.time_since_disturbance = arcpy.Raster(this_year_time_since_disturbance)
-            print this_year_time_since_disturbance, type(self.time_since_disturbance)
+
         else:
             self.initial_time_since_disturbance()
             self.time_since_disturbance = arcpy.Raster(
@@ -341,23 +313,21 @@ class PondDisturbance(s.Disturbance):
 
         start_time = time.time()
 
-        print 'YEAR: %s' % self.year
-
-        print 'incrementing time since disturbance'
+        logging.info('incrementing time since disturbance')
         self.time_since_disturbance = arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
 
-        print 'calculating land_cover'
+        logging.info('calculating land_cover')
         self.succession()
 
         self.set_region_group(self.ecocommunities)
 
-        print 'counting number of active ponds'
+        logging.info('counting number of active ponds')
         self.count_ponds()
 
         if self.pond_count < s.CARRYING_CAPACITY and self.initial_flag is False:
             self._region_group = None
-            print 'number of active ponds [%s] is below carrying capacity [%s], creating new ponds' \
-                  % (self.pond_count, s.CARRYING_CAPACITY)
+            logging.info('number of active ponds [%s] is below carrying capacity [%s], creating new ponds' \
+                  % (self.pond_count, s.CARRYING_CAPACITY))
 
             self.create_ponds()
 
@@ -365,7 +335,11 @@ class PondDisturbance(s.Disturbance):
 
             self.update_time_since_disturbance()
 
+            self.ecocommunities = arcpy.sa.Con(self.new_ponds == 622, self.new_ponds, self.ecocommunities)
+
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
+
+        self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         end_time = time.time()
         logging.info('run time: %s' % ((end_time - start_time) / 60))
