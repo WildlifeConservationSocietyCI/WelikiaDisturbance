@@ -9,46 +9,29 @@ Python 2.7.10 [MSC v.1500 64 bit (AMD64)]
 pywinauto is dependent on pywin32 pip install did not work for me but this did
 
 [pywin32-214.win-amd64-py3.0.exe](https://sourceforge.net/projects/pywin32/files/pywin32/Build%20214/)
-## Settings
-This file contains the key parameters for each of the disturbance classes.
-## Fire
-The fire script calls FARSITE a fire simulation model and runs a trial, the outputs of the trial are used to update time_since_disturbance and canopy rasters, which subsequently become inputs for the successional model 
-### Inputs
-####Spatial
-- ecosystems
-- elevation.asc
-- slope.asc
-- aspect.asc
-- canopy.asc
-- fuel.asc
-- trails.asc
-- ignition.vct
- 
-####Tabular
-- weather.wtr
-- wind.wnd
-- fuel_adjustments.adj
-- custom_fuel.fmd
-- fuel_moisture.fms
-- translation_table.txt
+
+## Fire ##
+The fire class uses [FARSITE]() to simulate the historical burning regime. Fire spread is modeled by FARSITE and the outputs of burning events are used to update time_since_disturbance, forest age and canopy rasters. Changes to these rasters are then used to modify ecosystem type.
+
+### Inputs ###
+ - elevation.asc
+ - slope.asc
+ - aspect.asc
+ - canopy.asc
+ - fuel.asc
 
 ## Ponds 
-The pond class adds ponds to the shared ecosystem raster. 
+The pond class adds ponds to the ecosystem raster by flooding the DEM at randomly created dam points. Pond shape is determined by topography (flow direction -> watershed) and dam hieght (flooding depth). Location of ponds is random along the paths of mapped streams. Density is determined by a minimum territory distance parameter (1000 m).  
+
 ### Inputs
  - Hydrologically conditioned DEM with burned streams
  - flow direction
  - suitable streams
- - ecosystems
  
-## Garden
-Garden class uses a cellular growth method to add horticultural fields to the ecosystem raster.
+## Gardens
+This class uses a cellular growing method to add gardens to the ecosystem raster. Garden placement at the landscape scale is determined by the location of sites (ethnohistorical, cartagraphic, archaological records). At the local scale gardens are postioned based on horticultural suitability (slope, ecosystem, proximity to habitation site).
+
 ### Inputs
-####Spatial
-- ecosystems
-- slope_suitablity
-- proximity_suitability
-- sites.shp
 
-####Tabular
-- ecosystem_reclasiffy_table
-
+## Successional Model ##
+### Inputs ###
