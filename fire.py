@@ -303,12 +303,10 @@ class FireDisturbance(s.Disturbance):
         logging.info('converting ecosystem to fuel model')
 
         if self.fuel is None:
-            logging
             self.fuel = numpy.empty((self.header['nrows'], self.header['ncols']))
             self.fuel.astype(numpy.int32)
 
         for key in self.translation_table.keys():
-            print key, type(key)
 
             fuel_c = self.translation_table[key]['climax_fuel']
             fuel_m = self.translation_table[key]['mid_fuel']
@@ -411,7 +409,7 @@ class FireDisturbance(s.Disturbance):
         else:
             logging.info('Assigning initial values to time since disturbance array')
             self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
-            self.fuel.astype(numpy.int32)
+            self.time_since_disturbance.astype(numpy.int32)
             self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
             self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
 
@@ -519,7 +517,7 @@ class FireDisturbance(s.Disturbance):
 
             # Wait while FARSITE generates the landscape file
             landscape_generated = farsite.window_(title_re='.*Landscape Generated$')
-            landscape_generated.Wait('visible', timeout=1000, retry_interval=0.5)
+            landscape_generated.Wait('visible',timeout=1000, retry_interval=0.5)
             landscape_generated.SetFocus()
             landscape_generated[u'OK'].Click()
 
@@ -590,7 +588,6 @@ class FireDisturbance(s.Disturbance):
             set_fire_behavior.SetFocus()
             set_fire_behavior[u'Enable Crownfire'].UnCheck()
             set_fire_behavior[u'&OK'].Click()
-            # pyautogui.press(['space', 'enter'])
 
         except pywinauto.findwindows.WindowNotFoundError:
             logging.error('can not find FIRE BEHAVIOR OPTIONS window')
@@ -698,7 +695,7 @@ class FireDisturbance(s.Disturbance):
         logging.info('Starting simulation')
         farsite_main_win.SetFocus().MenuItem(u'&Simulate->&Start/Restart').Click()
         simulation_complete = farsite.window_(title_re='.*Simulation Complete')
-        simulation_complete.Wait('ready', timeout=s.SIMULATION_TIMEOUT)
+        simulation_complete.Wait(wait_for='ready', timeout=s.SIMULATION_TIMEOUT, retry_interval=0.5)
         simulation_complete.SetFocus()
         simulation_complete[u'OK'].Click()
 
