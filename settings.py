@@ -65,7 +65,7 @@ SHRUB_SUCCESSION = 36  # after 36 years abandoned garden turns to successional s
 FOREST_SUCCESSION = 80
 
 GARDEN_ID = 650  # ecosystem id for gardens (will look for this value when processing raster.
-OLD_FIELD_ID = 648  # ecosystem id for abandoned fields.
+OLD_FIELD_ID = 635  # 648  # ecosystem id for abandoned fields.
 SHRUBLAND_ID = 649
 
 
