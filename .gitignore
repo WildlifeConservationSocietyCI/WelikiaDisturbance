@@ -56,3 +56,4 @@ _scratch/info/arc.dir
 scratch.py
 *.lyr
 *.xml
+_log/
