@@ -35,22 +35,23 @@ class FireDisturbance(s.Disturbance):
     LOG_DIR = os.path.join(OUTPUT_DIR, 'log_rasters', '%s_%s.asc')
     FARSITE = 'farsite'
     SCRIPT = 'script'
+    BORO = 'bx'
 
     # Inputs
-    DEM_ascii = os.path.join(INPUT_DIR, FARSITE, 'dem.asc')
-    SLOPE_ascii = os.path.join(INPUT_DIR, FARSITE, 'slope.asc')
-    ASPECT_ascii = os.path.join(INPUT_DIR, FARSITE, 'aspect.asc')
-    EC_START_ascii = os.path.join(INPUT_DIR, SCRIPT, 'ec_start.asc')
-    EC_CLIMAX_ascii = os.path.join(INPUT_DIR, SCRIPT, 'ec_climax.asc')
+    DEM_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'dem.asc')
+    SLOPE_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'slope.asc')
+    ASPECT_ascii = os.path.join(INPUT_DIR, FARSITE, BORO,'aspect.asc')
+    EC_START_ascii = os.path.join(INPUT_DIR, SCRIPT, BORO, 'ec_start.asc')
+    EC_CLIMAX_ascii = os.path.join(INPUT_DIR, SCRIPT, BORO, 'ec_climax.asc')
 
-    FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, 'fuel.asc')
-    CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, 'canopy.asc')
-    FOREST_AGE_ascii = os.path.join(INPUT_DIR, FARSITE, 'forest_age.asc')
-    TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, FARSITE, 'time_since_disturbance.asc')
+    FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, BORO,'fuel.asc')
+    CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, BORO,'canopy.asc')
+    FOREST_AGE_ascii = os.path.join(INPUT_DIR, FARSITE, BORO,'forest_age.asc')
+    TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, FARSITE, BORO,'time_since_disturbance.asc')
 
-    TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, 'fire_trails.asc')
-    FPJ = os.path.join(INPUT_DIR, FARSITE, 'BK_Q.FPJ')
-    LCP = os.path.join(INPUT_DIR, FARSITE, 'BK_Q.LCP')
+    TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, BORO,'fire_trails.asc')
+    FPJ = os.path.join(INPUT_DIR, FARSITE, BORO, 'PROJECT.FPJ')
+    LCP = os.path.join(INPUT_DIR, FARSITE, BORO, 'LANDSCAPE.LCP')
     IGNITION = os.path.join(INPUT_DIR, FARSITE, 'ignition.vct')
     FMD = os.path.join(INPUT_DIR, FARSITE, 'custom_fuel.fmd')
     FMS = os.path.join(INPUT_DIR, FARSITE, 'fuel_moisture.fms')
@@ -67,7 +68,7 @@ class FireDisturbance(s.Disturbance):
         super(FireDisturbance, self).__init__(year)
 
         self.year = year
-        self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, 'ecocommunities_%s.asc' % year)
+        self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, self.BORO, 'ecocommunities_%s.asc' % year)
         self.ecocommunities = None  # self.ascii_to_array(self.EC_START_ascii)
         self.climax_communities = None
         self.drought = None
