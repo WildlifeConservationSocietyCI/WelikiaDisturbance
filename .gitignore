@@ -57,3 +57,5 @@ scratch.py
 *.lyr
 *.xml
 _log/
+*.dat
+*.nit
