@@ -52,12 +52,12 @@ class FireDisturbance(s.Disturbance):
     TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, BORO,'fire_trails.asc')
     FPJ = os.path.join(INPUT_DIR, FARSITE, BORO, 'PROJECT.FPJ')
     LCP = os.path.join(INPUT_DIR, FARSITE, BORO, 'LANDSCAPE.LCP')
-    IGNITION = os.path.join(INPUT_DIR, FARSITE, 'ignition.vct')
-    FMD = os.path.join(INPUT_DIR, FARSITE, 'custom_fuel.fmd')
-    FMS = os.path.join(INPUT_DIR, FARSITE, 'fuel_moisture.fms')
-    ADJ = os.path.join(INPUT_DIR, FARSITE, 'fuel_adjustment.adj')
-    WND = os.path.join(INPUT_DIR, FARSITE, 'wind.wnd')
-    WTR = os.path.join(INPUT_DIR, FARSITE, 'weather.wtr')
+    IGNITION = os.path.join(INPUT_DIR, FARSITE, BORO, 'ignition.vct')
+    FMD = os.path.join(INPUT_DIR, FARSITE, BORO, 'custom_fuel.fmd')
+    FMS = os.path.join(INPUT_DIR, FARSITE, BORO, 'fuel_moisture.fms')
+    ADJ = os.path.join(INPUT_DIR, FARSITE, BORO,'fuel_adjustment.adj')
+    WND = os.path.join(INPUT_DIR, FARSITE, BORO, 'wind.wnd')
+    WTR = os.path.join(INPUT_DIR, FARSITE, BORO, 'weather.wtr')
     BURN_RASTERS = os.path.join(INPUT_DIR, 'script', 'burn_rasters')
     FARSITE_OUTPUT = os.path.join(BURN_RASTERS, '%s_farsite_output')
     FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, '%s_farsite_output.fml')
@@ -74,7 +74,7 @@ class FireDisturbance(s.Disturbance):
         self.drought = None
         self.climate_years = None
         self.equivalent_climate_year = None
-        self.weather = None
+        self.weather = []
         self.translation_table = None
         self.header = None
         self.header_text = None
@@ -85,7 +85,6 @@ class FireDisturbance(s.Disturbance):
         self.camps = None
         self.ignition_site = None
         self.potential_ignition_sites = []
-        self.weather_lines = []
         self.start_date = None
         self.con_month = None
         self.con_day = None
@@ -149,7 +148,7 @@ class FireDisturbance(s.Disturbance):
         self.header = h
         self.header_text = header
 
-    def get_translation_table(self):
+    def set_translation_table(self):
         translation = {}
 
         with open(os.path.join(self.INPUT_DIR, 'script', 'mannahatta.ec.translators.2.txt'), 'r') as translation_file:
@@ -170,7 +169,7 @@ class FireDisturbance(s.Disturbance):
 
         self.translation_table = translation
 
-    def get_drought(self):
+    def set_drought_years(self):
         drought = {}
         with open(os.path.join(self.INPUT_DIR, 'script', 'mannahatta-psdi.txt'), 'r') as drought_file:
             for line in drought_file:
@@ -179,7 +178,7 @@ class FireDisturbance(s.Disturbance):
 
         self.drought = drought
 
-    def get_climate_years(self):
+    def set_climate_years(self):
         climate_years = {}
         with open(os.path.join(self.INPUT_DIR, 'script', 'psdi-years.txt'), 'r') as psdiyears_file:
             for line in psdiyears_file:
@@ -215,8 +214,15 @@ class FireDisturbance(s.Disturbance):
 
         self.equivalent_climate_year = random.choice(potential_years)
 
-    def set_weather_file(self):
-        self.weather = os.path.join(self.INPUT_DIR, 'wtr', '%s.wtr' % self.equivalent_climate_year)
+    def set_weather(self):
+        if len(self.weather) > 0:
+            return
+        weather = os.path.join(self.INPUT_DIR, 'wtr', '%s.wtr' % self.equivalent_climate_year)
+
+        with open(weather) as weather:
+            for line in weather:
+                record = line.split()
+                self.weather.append(record)
 
     def get_clear_day(self):
         """
@@ -231,7 +237,7 @@ class FireDisturbance(s.Disturbance):
         rain = True
         while rain is True:
             random_date = datetime.date.fromordinal(random.randint(start, end))
-            for i in self.weather_lines[1:]:
+            for i in self.weather[1:]:
                 if int(i[0]) == random_date.month and int(i[1]) == random_date.day:
                     if int(i[2]) == 0:
                         rain = False
@@ -241,13 +247,10 @@ class FireDisturbance(s.Disturbance):
         self.start_day = random_date.day
 
     def select_duration(self):
+        self.set_weather()
 
         # Select a start date without rain from the weather record
-        with open(self.weather) as weather:
-            for line in weather:
-                record = line.split()
-                self.weather_lines.append(record)
-            self.get_clear_day()
+        self.get_clear_day()
 
         # Calculate conditioning date
         conditioning_date = datetime.date.fromordinal(self.start_date.toordinal() - s.CONDITIONING_LENGTH)
@@ -255,10 +258,10 @@ class FireDisturbance(s.Disturbance):
         self.con_month = conditioning_date.month
         self.con_day = conditioning_date.day
 
-        for i in self.weather_lines[1:]:
+        for i in self.weather[1:]:
             if int(i[0]) == self.start_month and int(i[1]) == self.start_day:
-                start_index = self.weather_lines.index(i)
-                for e in self.weather_lines[start_index:]:
+                start_index = self.weather.index(i)
+                for e in self.weather[start_index:]:
                     if int(e[2]) > s.EXTINGUISH_THRESHOLD:
                         self.end_month = int(e[0])
                         self.end_day = int(e[1])
@@ -773,11 +776,11 @@ class FireDisturbance(s.Disturbance):
         logging.info('Year: %r' % self.year)
 
         # set weather and simulation duration
-        self.get_translation_table()
-        self.get_climate_years()
-        self.get_drought()
+        self.set_translation_table()
+        self.set_climate_years()
+        self.set_drought_years()
         self.select_climate_records()
-        self.set_weather_file()
+        self.set_weather()
         self.select_duration()
         self.write_wnd()
         self.get_header()
@@ -888,13 +891,13 @@ class FireDisturbance(s.Disturbance):
                             self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
 
                     if cell_value == 649:
-                        if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy'] / 2):
+                        if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy']):
                             self.ecocommunities[row_index][col_index] = climax
 
                     elif cell_value == 635:
                         self.canopy[row_index][col_index] += 2
 
-                        if self.canopy[row_index][col_index] > 10:
+                        if self.canopy[row_index][col_index] >= 10:
                             self.ecocommunities[row_index][col_index] = 649
 
         # No Fire
@@ -918,41 +921,18 @@ class FireDisturbance(s.Disturbance):
                                                       (self.canopy >= self.translation_table[key]['max_canopy']),
                                                       self.climax_communities, self.ecocommunities)
                 if key == 635:
-                    self.canopy = numpy.where(self.ecocommunities == key, self.canopy + 2, self.canopy)
 
-                    self.ecocommunities = numpy.where((self.ecocommunities == key) &
-                                                      (self.canopy >= 10), 649, self.ecocommunities)
+                    self.canopy[self.ecocommunities == key] += 2
+                    # self.canopy = numpy.where(self.ecocommunities == key, self.canopy + 2, self.canopy)
+
+                    self.ecocommunities[(self.ecocommunities == key) & (self.canopy >= 10)] = 649
+                    # self.ecocommunities = numpy.where((self.ecocommunities == key) &
+                    #                                   (self.canopy >= 10), 649, self.ecocommunities)
+
             print self.canopy[0]
 
             self.get_memory()
             logging.info('memory usage: %r Mb' % self.memory)
-
-                    # Revise ecosystem raster based on succesional sequence
-                    # for index, cell_value in numpy.ndenumerate(self.ecocommunities):
-                    #     row_index = index[0]
-                    #     col_index = index[1]
-                    #
-                    #     climax = self.climax_communities[row_index][col_index]
-                    #
-                    #     self.time_since_disturbance[row_index][col_index] += 1
-                    #
-                    #     if self.translation_table[cell_value]['forest_shrub'] == 1:
-                    #         self.canopy[row_index][col_index] += 1
-                    #         self.forest_age[row_index][col_index] += 1
-                    #
-                    #         if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
-                    #             self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
-                    #
-                    #     elif cell_value == 649:
-                    #         if self.canopy[row_index][col_index] >= (self.translation_table[climax]['max_canopy'] /
-                    #  2):
-                    #             self.ecocommunities[row_index][col_index] = climax
-                    #
-                    #     elif cell_value == 635:
-                    #         self.canopy[row_index][col_index] += 2
-                    #
-                    #         if self.canopy[row_index][col_index] > 10:
-                    #             self.ecocommunities[row_index][col_index] = 649
 
         logging.info('Area burned %r: %r acres' % (self.year, (self.area_burned * 100 * 0.000247105)))
 
