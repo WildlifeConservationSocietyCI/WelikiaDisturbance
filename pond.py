@@ -289,18 +289,22 @@ class PondDisturbance(s.Disturbance):
 
         climax = arcpy.Raster(s.ecocommunities)
 
-        self.ecocommunities = arcpy.sa.Con((self.time_since_disturbance >= 30) &
-                                       (self.ecocommunities == 625), climax,
-                                       arcpy.sa.Con((self.time_since_disturbance < 30) &
-                                                    (self.time_since_disturbance >= 10) &
-                                                    (self.ecocommunities == 622), 625,
-                                                    arcpy.sa.Con((self.time_since_disturbance < 10) &
-                                                                 (self.time_since_disturbance >= 0),
-                                                                 622, self.ecocommunities)))
+        self.ecocommunities = arcpy.sa.Con((self.ecocommunities == 622) & (self.time_since_disturbance == 10),
+                                           625, self.ecocommunities)
+
+        # self.ecocommunities = arcpy.sa.Con((self.time_since_disturbance >= 30) &
+        #                                (self.ecocommunities == 625), climax,
+        #                                arcpy.sa.Con((self.time_since_disturbance < 30) &
+        #                                             (self.time_since_disturbance >= 10) &
+        #                                             (self.ecocommunities == 622), 625,
+        #                                             arcpy.sa.Con((self.time_since_disturbance < 10) &
+        #                                                          (self.time_since_disturbance >= 0),
+        #                                                          622, self.ecocommunities)))
 
     def set_time_since_disturbance(self):
         this_year_time_since_disturbance = os.path.join(self.OUTPUT_DIR,
                                                         'time_since_disturbance_%s.tif' % (self.year - 1))
+
         if os.path.isfile(this_year_time_since_disturbance):
             self.time_since_disturbance = arcpy.Raster(this_year_time_since_disturbance)
 
