@@ -389,16 +389,9 @@ class FireDisturbance(s.Disturbance):
             logging.info('Setting forest age')
             self.forest_age = ascii_to_array(self.FOREST_AGE_ascii)
 
-            self.forest_age = numpy.where((self.ecocommunities == 650), 0, self.forest_age)
+            self.forest_age[(self.ecocommunities == 650) & (self.forest_age != 0)] = 0
 
-            # self.forest_age = numpy.where(
-            #     (self.ecocommunities == 635) & (self.garden_disturbance == s.TIME_TO_ABANDON), [1], self.forest_age)
-
-            self.forest_age = numpy.where((self.ecocommunities == 622), 0, self.forest_age)
-
-            # self.forest_age = numpy.where((self.ecocommunities == 622) &
-            #                               (self.pond_disturbance == s.SUCCESSION_TIME_MID),
-            #                                [1], self.forest_age)
+            self.forest_age[(self.ecocommunities == 622) & (self.forest_age != 0)] = 0
 
         else:
             logging.info('Assigning initial values to forest age array')
@@ -529,7 +522,7 @@ class FireDisturbance(s.Disturbance):
 
             # Wait while FARSITE generates the landscape file
             landscape_generated = farsite.window_(title_re='.*Landscape Generated$')
-            landscape_generated.Wait('visible',timeout=1000, retry_interval=0.5)
+            landscape_generated.Wait('visible', timeout=1000, retry_interval=0.5)
             landscape_generated.SetFocus()
             landscape_generated[u'OK'].Click()
 
@@ -807,8 +800,6 @@ class FireDisturbance(s.Disturbance):
         self.garden_disturbance = None
         self.pond_disturbance = None
 
-
-
         # Check for trail fires
         random_trail_fire = random.choice(range(1, 100))
         if s.PROB_TRAIL_ESCAPE > random_trail_fire:
@@ -926,24 +917,27 @@ class FireDisturbance(s.Disturbance):
 
                 # update forest canopy and age
                 if self.translation_table[key]['forest_shrub'] == 1:
-                    self.canopy = numpy.where((self.ecocommunities == key) &
-                                              (self.canopy < self.translation_table[key]['max_canopy']),
-                                              (self.canopy + 1), self.canopy)
+                    self.canopy[(self.ecocommunities == key) &
+                                (self.canopy < self.translation_table[key]['max_canopy'])] += 1
 
-                    self.forest_age = numpy.where(self.ecocommunities == key, (self.forest_age + 1), self.forest_age)
+                    # self.canopy = numpy.where((self.ecocommunities == key) &
+                    #                           (self.canopy < self.translation_table[key]['max_canopy']),
+                    #                           (self.canopy + 1), self.canopy)
 
+                    self.forest_age[self.ecocommunities == key] += 1
+                    # self.forest_age = numpy.where(self.ecocommunities == key, (self.forest_age + 1), self.forest_age)
+
+                # succeed shrubland
                 if key == 649:
                     self.ecocommunities = numpy.where((self.ecocommunities == key) &
                                                       (self.canopy >= self.translation_table[key]['max_canopy']),
                                                       self.climax_communities, self.ecocommunities)
-                if key == 635:
 
+                # update grassland canopy and succeed
+                if key == 635:
                     self.canopy[self.ecocommunities == key] += 2
-                    # self.canopy = numpy.where(self.ecocommunities == key, self.canopy + 2, self.canopy)
 
                     self.ecocommunities[(self.ecocommunities == key) & (self.canopy >= 10)] = 649
-                    # self.ecocommunities = numpy.where((self.ecocommunities == key) &
-                    #                                   (self.canopy >= 10), 649, self.ecocommunities)
 
             print self.canopy[0]
 
