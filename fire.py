@@ -330,11 +330,25 @@ class FireDisturbance(s.Disturbance):
         # Writes ignition site as vct file for FARSITE and shp file for logging
         logging.info(self.header)
         logging.info(self.ignition_site)
-        with open(self.IGNITION, 'w') as ignition_file:
-            x = (self.header['xllcorner'] + (self.header['cellsize'] * self.ignition_site[1]))
-            y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - self.ignition_site[0])))
+        point_geomtery_list = []
+        point = arcpy.Point()
+        for ignition, i in zip(self.ignition_site, range(len(self.ignition_site))):
+            x = (self.header['xllcorner'] + (self.header['cellsize'] * ignition[1]))
+            y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - ignition[0])))
+            point.X = x
+            point.Y = y
+            ptGeoms = arcpy.PointGeometry(point)
+            point_geomtery_list.append(ptGeoms)
 
-            ignition_file.write('1 %s %s\nEND' % (x, y))
+        arcpy.CopyFeatures_management(point_geomtery_list, self.IGNITION)
+
+        # with open(self.IGNITION, 'w') as ignition_file:
+        #     for s, i in zip(self.ignition_site, range(len(self.ignition_site))):
+        #         x = (self.header['xllcorner'] + (self.header['cellsize'] * s[1]))
+        #         y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - s[0])))
+        #
+        #         ignition_file.write('%s %s %s\n' % ((i + 1), x, y))
+        #     ignition_file.write('END')
 
     def set_canopy(self):
 
