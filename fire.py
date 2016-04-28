@@ -818,10 +818,14 @@ class FireDisturbance(s.Disturbance):
             logging.info('Creating trail array')
             trail_array = self.ascii_to_array(self.TRAIL_ascii)
 
-            for index, cell_value in numpy.ndenumerate(trail_array):
-                if cell_value == 1 and self.time_since_disturbance[index[0]][index[1]] >= s.TRAIL_OVERGROWN_YRS:
-                    if self.fuel[index[0]][index[1]] not in s.UN_BURNABLE:
-                        self.potential_ignition_sites.append(index)
+            rows, cols = numpy.where((trail_array == 1) &
+                                     (self.time_since_disturbance >= s.TRAIL_OVERGROWN_YRS))
+            for row, col in zip(rows, cols):
+                self.potential_ignition_sites.append((row, col))
+            # for index, cell_value in numpy.ndenumerate(trail_array):
+            #     if cell_value == 1 and self.time_since_disturbance[index[0]][index[1]] >= s.TRAIL_OVERGROWN_YRS:
+            #         if self.fuel[index[0]][index[1]] not in s.UN_BURNABLE:
+            #             self.potential_ignition_sites.append(index)
 
         initialize_time = time.time()
 
