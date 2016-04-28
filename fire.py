@@ -83,7 +83,7 @@ class FireDisturbance(s.Disturbance):
         self.time_since_disturbance = None
         self.fuel = None
         self.camps = None
-        self.ignition_site = None
+        self.ignition_site = []
         self.potential_ignition_sites = []
         self.start_date = None
         self.con_month = None
@@ -692,15 +692,18 @@ class FireDisturbance(s.Disturbance):
             set_ignition = farsite.window_(title='Select Vector Ignition File')
             set_ignition.SetFocus()
             set_ignition.Wait('ready')
+            set_ignition[u'Files of &type:ComboBox'].Select(u', SHAPE FILES (*.SHP)')
             set_ignition[u'File &name:Edit'].SetEditText(self.IGNITION)
             set_ignition[u'&Open'].DoubleClick()
-            contains_polygon = farsite.window_(title=self.IGNITION)
-            contains_polygon.SetFocus()
-            contains_polygon[u'&No'].Click()
-            contains_line = farsite.window_(title=self.IGNITION)
-            contains_line.SetFocus()
-            contains_line[u'&No'].Click()
-
+            try:
+                contains_polygon = farsite.window_(title=self.IGNITION)
+                contains_polygon.SetFocus()
+                contains_polygon[u'&No'].Click()
+                contains_line = farsite.window_(title=self.IGNITION)
+                contains_line.SetFocus()
+                contains_line[u'&No'].Click()
+            except:
+                print 'no poly line dialog'
         except farsite.findwindows.WindowNotFoundError:
             logging.error('can not find SELECT VECTOR IGNITION FILE window')
 
@@ -828,11 +831,12 @@ class FireDisturbance(s.Disturbance):
         if len(self.potential_ignition_sites) > 0:
 
             # Choose an ignition site
-            self.ignition_site = random.choice(self.potential_ignition_sites)
+            number_of_ignitions = numpy.random.poisson(lam=2)
+            for i in range(number_of_ignitions):
+                self.ignition_site.append(random.choice(self.potential_ignition_sites))
 
             logging.info('Creating ignition point')
-            # Write selected ignition sites to .vct file for FARSITE
-            # Write ignition sites to .shp for logging
+            # Write selected ignition sites to .shp file for FARSITE
             self.write_ignition()
 
             # Select climate file
