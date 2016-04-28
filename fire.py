@@ -311,23 +311,17 @@ class FireDisturbance(s.Disturbance):
             self.fuel.astype(numpy.int32)
 
         for key in self.translation_table.keys():
-
             fuel_c = self.translation_table[key]['climax_fuel']
             fuel_m = self.translation_table[key]['mid_fuel']
             fuel_n = self.translation_table[key]['new_fuel']
 
-            self.fuel = numpy.where((self.ecocommunities == key) &
-                                    (self.time_since_disturbance < s.SUCCESSION_TIME_MID),
-                                    fuel_n, self.fuel)
+            self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance < s.SUCCESSION_TIME_MID)] = fuel_n
 
-            self.fuel = numpy.where((self.ecocommunities == key) &
-                                    (self.time_since_disturbance >= s.SUCCESSION_TIME_MID) &
-                                    (self.time_since_disturbance < s.SUCCESSION_TIME_CLIMAX),
-                                    fuel_m, self.fuel)
+            self.fuel[(self.ecocommunities == key) &
+                      (self.time_since_disturbance >= s.SUCCESSION_TIME_MID) &
+                      (self.time_since_disturbance < s.SUCCESSION_TIME_CLIMAX)] = fuel_m
 
-            self.fuel = numpy.where((self.ecocommunities == key) &
-                                    (self.time_since_disturbance >= s.SUCCESSION_TIME_CLIMAX),
-                                    fuel_c, self.fuel)
+            self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance >= s.SUCCESSION_TIME_CLIMAX)] = fuel_c
 
     def write_ignition(self):
         """
