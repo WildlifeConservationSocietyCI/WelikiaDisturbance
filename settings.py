@@ -18,52 +18,53 @@ INPUT_FILES = [
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1532, 1610)
+RUN_LENGTH = range(1409, 1410)
 
-## Fire
-### initial parameters
+# FIRE
+# initial parameters
 INITIAL_TIME_SINCE_DISTURBANCE = 20
 TRAIL_OVERGROWN_YRS = 15
 
-### duration settings
+# duration settings
 FIRE_SEASON_START = (1, 3)
 FIRE_SEASON_END = (31, 5)
 
-### Rain in mm needed to extinguish a fire
+# Rain in mm needed to extinguish a fire
 EXTINGUISH_THRESHOLD = 10
 
-### Number of days used to condition fuel before the start of fire
+# Number of days used to condition fuel before the start of fire
 CONDITIONING_LENGTH = 15
 
-### escaped fire probabilities
-PROB_TRAIL_ESCAPE = 25
+# escaped fire probabilities
+PROB_TRAIL_ESCAPE = 100
 PROB_GARDEN_ESCAPE = 2.5
 PROB_HUNT_ESCAPE = 10
 
-### Un-burnable fuel types
-UN_BURNABLE = [14, 16, 98, 99]
+# nonburnable fuel types
+NONBURNABLE = [14, 16, 98, 99]
 
-### succession
-SUCCESSION_TIME_MID = 10
-SUCCESSION_TIME_CLIMAX = 20
+# fuel accumulation time
+TIME_TO_MID_FUEL = 10
+TIME_TO_CLIMAX_FUEL = 20
 
 # GUI controls
 INITIATE_RENDER_WAIT_TIME = 50
-SIMULATION_TIMEOUT = 2400
+SIMULATION_TIMEOUT = 5000
 
-## Ponds
-CARRYING_CAPACITY = 30
+# PONDS
+CARRYING_CAPACITY = 35
 MINIMUM_DISTANCE = 1000
 CELL_SIZE = 5
 DAM_HEIGHT = 9
 
-# Gardens
+# GARDENS
 PER_CAPITA_GARDEN_AREA = 1
 
-TIME_TO_ABANDON = 20  # abandon a garden after 20 years.
-SHRUB_SUCCESSION = 36  # after 36 years abandoned garden turns to successional shrubland.
-FOREST_SUCCESSION = 80
+TIME_TO_ABANDON = 20
+# SHRUB_SUCCESSION = 36
+# FOREST_SUCCESSION = 80
 
+# COMMUNITY CODES
 GARDEN_ID = 650  # ecosystem id for gardens (will look for this value when processing raster.
 OLD_FIELD_ID = 635  # 648  # ecosystem id for abandoned fields.
 SHRUBLAND_ID = 649
