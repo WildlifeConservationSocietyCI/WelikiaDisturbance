@@ -294,7 +294,10 @@ class GardenDisturbance():
 
         :return:
         """
+        s.logging.info('starting garden disturbance for year: %s' % self.year)
+
         self.calculate_suitability()
+
 
         self.points_to_coordinates()
         self.set_populations()
@@ -303,6 +306,7 @@ class GardenDisturbance():
 
         self.succession()
 
+        s.logging.info('checking for existing gardens')
         for population, coordinates in zip(self.site_populations, self.coordinate_list):
             # print population, coordinates
 

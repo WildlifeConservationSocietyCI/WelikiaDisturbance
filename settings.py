@@ -2,6 +2,7 @@ import os
 import arcpy
 from arcpy import env
 import sys
+import logging
 
 # DIRECTORIES
 ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance')
@@ -16,13 +17,17 @@ INPUT_FILES = [
     ecocommunities,
 ]
 
+# LOGGING
+logging.basicConfig(filename=os.path.join('C:\\', 'Users', 'LabGuest', 'Dropbox', 'disturbance_log.txt'),
+                    level=logging.DEBUG)
+
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1410)
+RUN_LENGTH = range(1409, 1610)
 
 # FIRE
 # initial parameters
-INITIAL_TIME_SINCE_DISTURBANCE = 20
+INITIAL_TIME_SINCE_DISTURBANCE = 10
 TRAIL_OVERGROWN_YRS = 15
 
 # duration settings
@@ -36,16 +41,16 @@ EXTINGUISH_THRESHOLD = 10
 CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities
-PROB_TRAIL_ESCAPE = 100
-PROB_GARDEN_ESCAPE = 2.5
+EXPECTED_TRAIL_ESCAPE = 0.75
+EXPECTED_GARDEN_ESCAPE = 0.10
 PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types
 NONBURNABLE = [14, 16, 98, 99]
 
 # fuel accumulation time
-TIME_TO_MID_FUEL = 10
-TIME_TO_CLIMAX_FUEL = 20
+TIME_TO_MID_FUEL = 20
+TIME_TO_CLIMAX_FUEL = 80
 
 # GUI controls
 INITIATE_RENDER_WAIT_TIME = 50
