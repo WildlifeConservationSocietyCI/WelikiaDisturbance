@@ -987,12 +987,17 @@ class FireDisturbance(s.Disturbance):
         self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
 
         # save the updated community raster to the shared disturbance directory
-        arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
-                                       os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+        x = arcpy.NumPyArrayToRaster(self.ecocommunities,
+                                 arcpy.Point(self.header['xllcorner'], self.header['yllcorner']),
+                                 self.header['cellsize'])
+        x.save(os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))
+
+        # arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
+        #                                os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         # Yearly outputs
         if self.area_burned > 0:
-            s.logging.info('copying outputs to log folder')
+            # s.logging.info('copying outputs to log folder')
             shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
             shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
             shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
