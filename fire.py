@@ -844,97 +844,102 @@ class FireDisturbance(s.Disturbance):
                     self.potential_garden_ignition_sites.append((row, col))
 
             # Select i sites from potential sites and appended to ignition_sites
-            for i in range(number_of_garden_ignitions):
-                self.ignition_sites.append(random.choice(self.potential_garden_ignition_sites))
+            if len(self.potential_garden_ignition_sites) > 0:
+                for i in range(number_of_garden_ignitions):
+                    self.ignition_sites.append(random.choice(self.potential_garden_ignition_sites))
 
-        s.logging.info('escaped trail fires: %s' % number_of_trail_ignitions)
-        s.logging.info('escaped garden fires: %s' % number_of_garden_ignitions)
+        # s.logging.info('escaped trail fires: %s' % number_of_trail_ignitions)
+        # s.logging.info('escaped garden fires: %s' % number_of_garden_ignitions)
 
-        if self.ignition_sites > 0:
+        # s.logging.info('%s' % self.ignition_sites)
 
-            s.logging.info('Creating ignition point')
+        if len(self.ignition_sites) > 0:
+
+            # s.logging.info('Creating ignition point')
             # Write selected ignition sites to .shp file for FARSITE
             self.write_ignition()
 
             # Select climate file
             self.select_climate_records()
-            s.logging.info('Selected climate equivalent-year: %r' % self.equivalent_climate_year)
+            # s.logging.info('Selected climate equivalent-year: %r' % self.equivalent_climate_year)
 
             # Get matching climate year file for FARSITE
             shutil.copyfile(os.path.join(self.INPUT_DIR, 'wtr', '%r.wtr' % self.equivalent_climate_year),
                             os.path.join(self.INPUT_DIR, 'farsite', 'weather.wtr'))
 
-            # create wind file
+            # Create wind file
             self.write_wnd()
 
             # Run Farsite
             self.run_farsite()
 
             # Create flame length array
-            flame_length_array = ascii_to_array(self.FLAME_LENGTH_ascii % self.year)
+            if os.path.exists(self.FLAME_LENGTH_ascii % self.year):
+                flame_length_array = ascii_to_array(self.FLAME_LENGTH_ascii % self.year)
 
-            # Revise ecosystem raster based on fire
-            for index, cell_value in numpy.ndenumerate(self.ecocommunities):
-                row_index = index[0]
-                col_index = index[1]
+                # Revise ecosystem raster based on fire
+                for index, cell_value in numpy.ndenumerate(self.ecocommunities):
+                    row_index = index[0]
+                    col_index = index[1]
 
-                climax = self.climax_communities[row_index][col_index]
+                    climax = self.climax_communities[row_index][col_index]
 
-                flame_length = flame_length_array[row_index][col_index]
+                    flame_length = flame_length_array[row_index][col_index]
 
-                if flame_length > 0:
-                    self.area_burned += 1
+                    if flame_length > 0:
+                        self.area_burned += 1
 
-                    # Reset last disturbance array
-                    self.time_since_disturbance[row_index][col_index] = 1
+                        # Reset last disturbance array
+                        self.time_since_disturbance[row_index][col_index] = 1
 
-                    # Calculate tree mortality due to fire
-                    if self.translation_table[cell_value]['forest'] == 1:
-                        age = self.forest_age[row_index][col_index]
-                        if age == 0:
-                            age = 1
+                        # Calculate tree mortality due to fire
+                        if self.translation_table[cell_value]['forest'] == 1:
+                            age = self.forest_age[row_index][col_index]
+                            if age == 0:
+                                age = 1
 
-                        percent_mortality = self.tree_mortality(flame_length, age)
+                            percent_mortality = self.tree_mortality(flame_length, age)
 
-                        # Revise canopy cover according to tree mortality
-                        self.canopy[row_index][col_index] = int(self.canopy[row_index][col_index] *
-                                                                (1 - percent_mortality))
+                            # Revise canopy cover according to tree mortality
+                            self.canopy[row_index][col_index] = int(self.canopy[row_index][col_index] *
+                                                                    (1 - percent_mortality))
 
-                        # Revise ecosystems based on new canopy
-                        # Convert burned forest to shrubland
-                        if self.canopy[row_index][col_index] < (self.translation_table[cell_value]['max_canopy'] / 2):
-                            self.ecocommunities[row_index][col_index] = 649
-                            self.forest_age[row_index][col_index] = 1
+                            # Revise ecosystems based on new canopy
+                            # Convert burned forest to shrubland
+                            if self.canopy[row_index][col_index] < (
+                                self.translation_table[cell_value]['max_canopy'] / 2):
+                                self.ecocommunities[row_index][col_index] = s.SHRUBLAND_ID
+                                self.forest_age[row_index][col_index] = 1
 
-                    # Convert burned shrubland to grassland
-                    elif cell_value == 649 and self.canopy[row_index][col_index] < 10:
-                        self.ecocommunities[row_index][col_index] = 635
+                        # Convert burned shrubland to grassland
+                        elif cell_value == 649 and self.canopy[row_index][col_index] < s.SHRUBLAND_CANOPY:
+                            self.ecocommunities[row_index][col_index] = s.GRASSLAND_ID
 
-                elif flame_length < 0:
+                    elif flame_length < 0:
 
-                    # increment last disturbance array
-                    self.time_since_disturbance[row_index][col_index] += 1
+                        # increment last disturbance array
+                        self.time_since_disturbance[row_index][col_index] += 1
 
-                    if self.translation_table[cell_value]['forest_shrub'] == 1:
-                        self.canopy[row_index][col_index] += 1
-                        self.forest_age[row_index][col_index] += 1
+                        if self.translation_table[cell_value]['forest_shrub'] == 1:
+                            self.canopy[row_index][col_index] += 1
+                            self.forest_age[row_index][col_index] += 1
 
-                        if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
-                            self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
+                            if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
+                                self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
 
-                    if cell_value == 649:
-                        if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy']):
-                            self.ecocommunities[row_index][col_index] = climax
+                        if cell_value == s.SHRUBLAND_ID:
+                            if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy']):
+                                self.ecocommunities[row_index][col_index] = climax
 
-                    elif cell_value == 635:
-                        self.canopy[row_index][col_index] += 2
+                        elif cell_value == s.GRASSLAND_ID:
+                            self.canopy[row_index][col_index] += 2
 
-                        if self.canopy[row_index][col_index] >= 10:
-                            self.ecocommunities[row_index][col_index] = 649
+                            if self.canopy[row_index][col_index] >= s.SHRUBLAND_CANOPY:
+                                self.ecocommunities[row_index][col_index] = s.SHRUBLAND_ID
 
         # No Fire
         else:
-            s.logging.info('No escaped fires for %r' % self.year)
+            # s.logging.info('No escaped fires for %r' % self.year)
 
             self.time_since_disturbance += 1
 
