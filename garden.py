@@ -124,7 +124,7 @@ class GardenDisturbance():
         """
 
         self.ecocommunities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID) &
-                                           (self.time_since_disturbance > s.TIME_TO_ABANDON), s.OLD_FIELD_ID,
+                                           (self.time_since_disturbance > s.TIME_TO_ABANDON), s.GRASSLAND_ID,
                                            self.ecocommunities)
 
 
@@ -367,3 +367,6 @@ class GardenDisturbance():
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
+
+        self.calculate_garden_area()
+        print 'garden area: %s' % self.new_garden_area
