@@ -50,6 +50,8 @@ class GardenDisturbance():
         self.local_suitability = None
         self.local_ecocommunities = None
 
+        self.new_garden_area = 0
+
         self.set_ecocommunities()
         self.set_time_since_disturbance()
 
