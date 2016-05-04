@@ -345,8 +345,13 @@ class GardenDisturbance():
                     self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, self.garden,
                                                        self.ecocommunities)
 
-                    self.time_since_disturbance = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, 1,
-                                                               self.time_since_disturbance)
+                    if self.year == s.RUN_LENGTH[0]:
+                        random_age = numpy.random.random_integers(1, 19)
+                        self.time_since_disturbance = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, random_age,
+                                                                   self.time_since_disturbance)
+                    else:
+                        self.time_since_disturbance = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, 1,
+                                                                   self.time_since_disturbance)
 
                     # print 'garden created'
 
