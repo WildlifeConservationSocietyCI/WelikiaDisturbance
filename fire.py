@@ -832,8 +832,9 @@ class FireDisturbance(s.Disturbance):
                 self.potential_trail_ignition_sites.append((row, col))
 
             # Select i sites from potential sites and appended to ignition_sites
-            for i in range(number_of_trail_ignitions):
-                self.ignition_sites.append(random.choice(self.potential_trail_ignition_sites))
+            if len(self.potential_trail_ignition_sites) > 0:
+                for i in range(number_of_trail_ignitions):
+                    self.ignition_sites.append(random.choice(self.potential_trail_ignition_sites))
 
         # Check if garden fires escaped
         number_of_garden_ignitions = numpy.random.poisson(lam=s.EXPECTED_GARDEN_ESCAPE)
