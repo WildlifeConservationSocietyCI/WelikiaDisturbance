@@ -220,8 +220,7 @@ class FireDisturbance(s.Disturbance):
         self.equivalent_climate_year = random.choice(potential_years)
 
     def set_weather(self):
-        if len(self.weather) > 0:
-            return
+
         weather = os.path.join(self.INPUT_DIR, 'wtr', '%s.wtr' % self.equivalent_climate_year)
 
         with open(weather) as weather:
