@@ -281,6 +281,16 @@ class GardenDisturbance():
 
             self.garden_area = self.get_garden_area(self.garden)
 
+    def calculate_garden_area(self):
+
+        time_since_disturbance = os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year)
+        field_names = ['VALUE', 'COUNT']
+
+        with arcpy.da.SearchCursor(time_since_disturbance, field_names=field_names) as sc:
+            for row in sc:
+                if row[0] == 1:
+                    self.new_garden_area = row[1] * s.CELL_SIZE
+
     def set_populations(self):
         """
 
