@@ -6,7 +6,6 @@ import numpy
 import linecache
 import arcpy
 import pywinauto
-import re
 import time
 import datetime
 import random
@@ -40,8 +39,6 @@ class FireDisturbance(s.Disturbance):
     DEM_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'dem.asc')
     SLOPE_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'slope.asc')
     ASPECT_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'aspect.asc')
-    EC_START_ascii = os.path.join(INPUT_DIR, SCRIPT, BORO, 'ec_start.asc')
-    EC_CLIMAX_ascii = os.path.join(INPUT_DIR, SCRIPT, BORO, 'ec_climax.asc')
 
     FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'fuel.asc')
     CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'canopy.asc')
@@ -67,8 +64,8 @@ class FireDisturbance(s.Disturbance):
         super(FireDisturbance, self).__init__(year)
 
         self.year = year
-        self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, self.BORO, 'ecocommunities_%s.asc' % year)
-        self.ecocommunities = None  # self.ascii_to_array(self.EC_START_ascii)
+        # self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, self.BORO, 'ecocommunities_%s.asc' % year)
+        self.ecocommunities = None
         self.climax_communities = None
         self.drought = None
         self.climate_years = None
@@ -102,23 +99,31 @@ class FireDisturbance(s.Disturbance):
 
         self.get_header()
         self.set_communities()
-        self.climax_communities = self.ascii_to_array(self.EC_CLIMAX_ascii)
+        self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities)
         self.set_disturbances()
 
     def set_communities(self):
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
 
-        if os.path.isfile(this_year_ecocomms):
-            arcpy.RasterToASCII_conversion(this_year_ecocomms, self.ECOCOMMUNITIES_ascii)
+        if arcpy.Exists(this_year_ecocomms):
+            self.ecocommunities = arcpy.RasterToNumPyArray(this_year_ecocomms)
 
-        elif os.path.isfile(last_year_ecocomms):
-            arcpy.RasterToASCII_conversion(last_year_ecocomms, self.ECOCOMMUNITIES_ascii)
+            # arcpy.RasterToASCII_conversion(this_year_ecocomms, self.ECOCOMMUNITIES_ascii)
+
+        elif arcpy.Exists(last_year_ecocomms):
+            self.ecocommunities = arcpy.RasterToNumPyArray(last_year_ecocomms)
+
+            # arcpy.RasterToASCII_conversion(last_year_ecocomms, self.ECOCOMMUNITIES_ascii)
 
         else:
-            arcpy.RasterToASCII_conversion(s.ecocommunities, self.ECOCOMMUNITIES_ascii)
+            self.ecocommunities = arcpy.RasterToNumPyArray(s.ecocommunities)
 
-        self.ecocommunities = self.ascii_to_array(self.ECOCOMMUNITIES_ascii)
+            # arcpy.RasterToASCII_conversion(s.ecocommunities, self.ECOCOMMUNITIES_ascii)
+
+        # self.ecocommunities = self.ascii_to_array(self.ECOCOMMUNITIES_ascii)
+
+
 
     def set_disturbances(self):
         this_year_garden = os.path.join(s.OUTPUT_DIR, 'garden', 'time_since_disturbance_%s.tif' % self.year)
@@ -138,7 +143,7 @@ class FireDisturbance(s.Disturbance):
         self.memory = int(result[0].WorkingSet) / 1000000.0
 
     def get_header(self):
-        header = [linecache.getline(self.EC_CLIMAX_ascii, i) for i in range(1, 7)]
+        header = [linecache.getline(self.DEM_ascii, i) for i in range(1, 7)]
         h = {}
 
         for line in header:
