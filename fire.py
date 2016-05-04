@@ -263,6 +263,10 @@ class FireDisturbance(s.Disturbance):
         self.con_month = conditioning_date.month
         self.con_day = conditioning_date.day
 
+        # conditioning may start on 2/29, check and set to 2/28
+        if self.con_month == 2 and self.con_day > 28:
+            self.con_day = 28
+
         for i in self.weather[1:]:
             if int(i[0]) == self.start_month and int(i[1]) == self.start_day:
                 start_index = self.weather.index(i)
