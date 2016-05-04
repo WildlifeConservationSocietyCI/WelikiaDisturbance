@@ -65,16 +65,16 @@ class GardenDisturbance():
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
 
         if os.path.isfile(this_year_ecocomms):
-            print this_year_ecocomms
+            # print this_year_ecocomms
             self.ecocommunities = arcpy.Raster(this_year_ecocomms)
 
         elif os.path.isfile(last_year_ecocomms):
-            print last_year_ecocomms
+            # print last_year_ecocomms
             self.ecocommunities = arcpy.Raster(last_year_ecocomms)
         else:
             print 'initial run'
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
-            self.ecocommunities.save(os.path.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+            # self.ecocommunities.save(os.path.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
     def set_time_since_disturbance(self):
         """
@@ -86,7 +86,7 @@ class GardenDisturbance():
                                                         'time_since_disturbance_%s.tif' % (self.year - 1))
         if os.path.isfile(this_year_time_since_disturbance):
             self.time_since_disturbance = arcpy.Raster(this_year_time_since_disturbance)
-            print this_year_time_since_disturbance, type(self.time_since_disturbance)
+            # print this_year_time_since_disturbance, type(self.time_since_disturbance)
         else:
             # set initial time since disturbance
             self.time_since_disturbance = arcpy.sa.Con(arcpy.Raster(s.ecocommunities), 20)
@@ -196,7 +196,7 @@ class GardenDisturbance():
         randrastclip = arcpy.sa.Con(maxsuit, self.randrast)
         # randrastclip.save(os.path.join(self.OUTPUT_DIR, 'randrastclip.tif'))
 
-        print "selecting garden center"
+        # print "selecting garden center"
         gardencenter = arcpy.sa.Con(randrastclip == randrastclip.maximum, s.GARDEN_ID)
         # gardencenter.save(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
 
