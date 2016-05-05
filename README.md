@@ -1,14 +1,18 @@
 # WelikiaDisturbance
 Integrated fire and horticulture disturbance modeling
 ## Requirements ##
-Python 2.7.10 [MSC v.1500 64 bit (AMD64)]
 
+# ESRI python distribution which contains arcpy library (license required)
+64-bit Background Geoprocessing Python 2.7.10 [MSC v.1500 64 bit (AMD64)]
 
 [GDAL 2.0.2 x64 bindings](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
 
 pywinauto is dependent on pywin32 pip install did not work for me but this did
-
 [pywin32-214.win-amd64-py3.0.exe](https://sourceforge.net/projects/pywin32/files/pywin32/Build%20214/)
+
+[FARSITE 4.1.055](http://www.firelab.org/document/farsite-software)
+
+
 
 ## Fire ##
 The fire class uses [FARSITE]() to simulate the historical burning regime. Fire spread is modeled by FARSITE and the outputs of burning events are used to update time_since_disturbance, forest age and canopy rasters. Changes to these rasters are then used to modify ecosystem type.
