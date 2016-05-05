@@ -2,8 +2,9 @@
 Integrated fire and horticulture disturbance modeling
 ## Requirements ##
 
-# ESRI python distribution which contains arcpy library (license required)
+ESRI python distribution which contains arcpy library ([license information](https://docs.google.com/document/d/1Mene0tUbbVP063KYKkhCV-sOWz3elkcMEq0bak3vxtE/edit#))
 64-bit Background Geoprocessing Python 2.7.10 [MSC v.1500 64 bit (AMD64)]
+
 
 [GDAL 2.0.2 x64 bindings](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
 
