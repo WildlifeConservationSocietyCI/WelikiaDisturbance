@@ -5,12 +5,13 @@ import sys
 import logging
 
 # DIRECTORIES
-ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance')
-# ROOT_DIR = os.path.join('E:\\', 'FIRE_MODELING', 'fire_model_python', '_bk_q_test_5m')
+ROOT_DIR = os.path.join('D:\\', '_data', 'welikia', 'WelikiaDisturbance')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = os.path.join('C:\\', 'Users', 'LabGuest', 'Dropbox')
+LOG_DIR = os.path.join('C:\\', 'Users', 'Kim', 'Dropbox')
+
+BORO = 'bx'
 
 ecocommunities = os.path.join(INPUT_DIR, 'ecocommunities.tif')
 
