@@ -107,21 +107,15 @@ class FireDisturbance(s.Disturbance):
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
 
         if arcpy.Exists(this_year_ecocomms):
-            self.ecocommunities = arcpy.RasterToNumPyArray(this_year_ecocomms)
+            self.ecocommunities = arcpy.RasterToNumPyArray(this_year_ecocomms, nodata_to_value=-9999)
 
-            # arcpy.RasterToASCII_conversion(this_year_ecocomms, self.ECOCOMMUNITIES_ascii)
 
         elif arcpy.Exists(last_year_ecocomms):
-            self.ecocommunities = arcpy.RasterToNumPyArray(last_year_ecocomms)
+            self.ecocommunities = arcpy.RasterToNumPyArray(last_year_ecocomms, nodata_to_value=-9999)
 
-            # arcpy.RasterToASCII_conversion(last_year_ecocomms, self.ECOCOMMUNITIES_ascii)
 
         else:
-            self.ecocommunities = arcpy.RasterToNumPyArray(s.ecocommunities)
-
-            # arcpy.RasterToASCII_conversion(s.ecocommunities, self.ECOCOMMUNITIES_ascii)
-
-        # self.ecocommunities = self.ascii_to_array(self.ECOCOMMUNITIES_ascii)
+            self.ecocommunities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
 
 
 
@@ -936,6 +930,10 @@ class FireDisturbance(s.Disturbance):
                             if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy']):
                                 self.ecocommunities[row_index][col_index] = climax
 
+                        if cell_value == 625:
+                            if self.canopy[row_index][col_index] >= (self.translation_table[cell_value]['max_canopy']):
+                                self.ecocommunities[row_index][col_index] = climax
+
                         elif cell_value == s.GRASSLAND_ID:
                             self.canopy[row_index][col_index] += 2
 
@@ -959,6 +957,11 @@ class FireDisturbance(s.Disturbance):
 
                 # succeed shrubland
                 if key == s.SHRUBLAND_ID:
+                    self.ecocommunities = numpy.where((self.ecocommunities == key) &
+                                                      (self.canopy >= self.translation_table[key]['max_canopy']),
+                                                      self.climax_communities, self.ecocommunities)
+
+                if key == 625:
                     self.ecocommunities = numpy.where((self.ecocommunities == key) &
                                                       (self.canopy >= self.translation_table[key]['max_canopy']),
                                                       self.climax_communities, self.ecocommunities)
