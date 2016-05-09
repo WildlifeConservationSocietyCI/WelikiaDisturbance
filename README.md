@@ -6,12 +6,53 @@ ESRI python distribution which contains arcpy library ([license information](htt
 
 64-bit Background Geoprocessing Python 2.7.10 [MSC v.1500 64 bit (AMD64)]
 
-
+####GDAL
 [GDAL 2.0.2 x64 bindings](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
 
+**GDAL Setup**
+
+*Download GDAL*
+
+GDAL has two components: 
+
+ - Core: Generic installer for the GDAL core components
+	
+ - Binaries: Installer for the GDAL python bindings (requires to install the GDAL core)
+
+When downloading check that versions of the GDAL components match both one another and the version and bit of your python installation.
+
+*Install Directions*
+
+1. Make sure the version of Python that you will be using is in the set in the system environment variables
+	
+ - Path: 'directory_containing_python.exe' ex. C:\Python27\ArcGISx6410.4\
+	
+ - PYTHONPATH: paths for the Lib, lib-tk, DLLs ex.
+		  
+    - C:\Python27\ArcGISx6410.4\;
+		  
+    - C:\Python27\ArcGISx6410.4\Lib;
+		  
+    - C:\Python27\ArcGISx6410.4\Lib\lib-tk;
+		  
+    - C:\Python27\ArcGISx6410.4\DLLs
+		
+2. Install core components
+
+3. Install corresponding bindings
+
+4. Edit system environment variables
+	- create GDAL_DATA: 'GDAL_data_directory' ex. C:\gdal_27_64\GDAL-2.0.2-cp27-none-win_amd64\GDAL-2.0.2.data
+	- add GDAL to Path variable ex. C:\Program Files (x86)\GDAL
+	 
+	
+5. Open IDE and test gdal import
+
+#### pywinauto
 pywinauto is dependent on pywin32 pip install did not work for me but this did
 [pywin32-214.win-amd64-py3.0.exe](https://sourceforge.net/projects/pywin32/files/pywin32/Build%20214/)
 
+#### FARSITE
 [FARSITE 4.1.055](http://www.firelab.org/document/farsite-software)
 
 
