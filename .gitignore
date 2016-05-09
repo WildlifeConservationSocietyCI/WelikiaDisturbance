@@ -19,3 +19,12 @@ _log/
 *.nit
 
 pond.py.rej
+*.shp
+*.tif
+*.tfw
+*.ovr
+*.dbf
+*.shx
+*.sbx
+*.cpg
+*.sbn
