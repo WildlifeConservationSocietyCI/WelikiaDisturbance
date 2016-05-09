@@ -20,12 +20,12 @@ class PondDisturbance(s.Disturbance):
     # Pond Directories
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'pond')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'pond')
-    BORO = 'bx'
+
 
     # Constant Inputs
-    DEM = os.path.join(INPUT_DIR, BORO, 'bx_dem.tif')
-    FLOW_DIRECTION = os.path.join(INPUT_DIR, BORO, 'flow_direction.tif')
-    SUITABLE_STREAMS = os.path.join(INPUT_DIR, BORO, 'suitability_surface.tif')
+    DEM = os.path.join(INPUT_DIR, s.BORO, 'dem.tif')
+    FLOW_DIRECTION = os.path.join(INPUT_DIR, s.BORO, 'flow_direction.tif')
+    SUITABLE_STREAMS = os.path.join(INPUT_DIR, s.BORO, 'suitability_surface.tif')
 
     def __init__(self, year):
 

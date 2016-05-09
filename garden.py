@@ -16,14 +16,14 @@ class GardenDisturbance():
     # Garden Directories
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'garden')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'garden')
-    BORO = 'bx'
+
 
     # Constant Inputs
     CLIMAX_COMMUNITIES = s.ecocommunities
-    SLOPE_SUITABILITY = os.path.join(INPUT_DIR, BORO, 'slope_suitability.tif')
-    PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, BORO, 'proximity_suitability.tif')
+    SLOPE_SUITABILITY = os.path.join(INPUT_DIR, s.BORO, 'slope_suitability.tif')
+    PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, s.BORO, 'proximity_suitability.tif')
     COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, 'lc_reclass2.csv')
-    SITES = os.path.join(INPUT_DIR, BORO, 'garden_sites.shp')
+    SITES = os.path.join(INPUT_DIR, s.BORO, 'garden_sites.shp')
 
     def __init__(self, year):
 

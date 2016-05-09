@@ -33,27 +33,27 @@ class FireDisturbance(s.Disturbance):
     LOG_DIR = os.path.join(OUTPUT_DIR, 'log_rasters', '%s_%s.asc')
     FARSITE = 'farsite'
     SCRIPT = 'script'
-    BORO = 'bx'
+
 
     # Inputs
-    DEM_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'dem.asc')
-    SLOPE_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'slope.asc')
-    ASPECT_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'aspect.asc')
+    DEM_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'dem.asc')
+    SLOPE_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'slope.asc')
+    ASPECT_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'aspect.asc')
 
-    FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'fuel.asc')
-    CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'canopy.asc')
-    FOREST_AGE_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'forest_age.asc')
-    TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, FARSITE, BORO, 'time_since_disturbance.asc')
+    FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'fuel.asc')
+    CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'canopy.asc')
+    FOREST_AGE_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'forest_age.asc')
+    TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'time_since_disturbance.asc')
 
-    TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, BORO, 'fire_trails.asc')
-    FPJ = os.path.join(INPUT_DIR, FARSITE, BORO, 'PROJECT.FPJ')
-    LCP = os.path.join(INPUT_DIR, FARSITE, BORO, 'LANDSCAPE.LCP')
-    IGNITION = os.path.join(INPUT_DIR, FARSITE, BORO, 'ignition.shp')
-    FMD = os.path.join(INPUT_DIR, FARSITE, BORO, 'custom_fuel.fmd')
-    FMS = os.path.join(INPUT_DIR, FARSITE, BORO, 'fuel_moisture.fms')
-    ADJ = os.path.join(INPUT_DIR, FARSITE, BORO, 'fuel_adjustment.adj')
-    WND = os.path.join(INPUT_DIR, FARSITE, BORO, 'wind.wnd')
-    WTR = os.path.join(INPUT_DIR, FARSITE, BORO, 'weather.wtr')
+    TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, s.BORO, 'fire_trails.asc')
+    FPJ = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'PROJECT.FPJ')
+    LCP = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'LANDSCAPE.LCP')
+    IGNITION = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'ignition.shp')
+    FMD = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'custom_fuel.fmd')
+    FMS = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'fuel_moisture.fms')
+    ADJ = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'fuel_adjustment.adj')
+    WND = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'wind.wnd')
+    WTR = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'weather.wtr')
     BURN_RASTERS = os.path.join(INPUT_DIR, 'script', 'burn_rasters')
     FARSITE_OUTPUT = os.path.join(BURN_RASTERS, '%s_farsite_output')
     FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, '%s_farsite_output.fml')
@@ -64,7 +64,7 @@ class FireDisturbance(s.Disturbance):
         super(FireDisturbance, self).__init__(year)
 
         self.year = year
-        # self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, self.BORO, 'ecocommunities_%s.asc' % year)
+        # self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, s.BORO, 'ecocommunities_%s.asc' % year)
         self.ecocommunities = None
         self.climax_communities = None
         self.drought = None
@@ -116,8 +116,6 @@ class FireDisturbance(s.Disturbance):
 
         else:
             self.ecocommunities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
-
-
 
     def set_disturbances(self):
         this_year_garden = os.path.join(s.OUTPUT_DIR, 'garden', 'time_since_disturbance_%s.tif' % self.year)
@@ -906,7 +904,7 @@ class FireDisturbance(s.Disturbance):
                             # Revise ecosystems based on new canopy
                             # Convert burned forest to shrubland
                             if self.canopy[row_index][col_index] < (
-                                self.translation_table[cell_value]['max_canopy'] / 2):
+                                        self.translation_table[cell_value]['max_canopy'] / 2):
                                 self.ecocommunities[row_index][col_index] = s.SHRUBLAND_ID
                                 self.forest_age[row_index][col_index] = 1
 
@@ -992,8 +990,9 @@ class FireDisturbance(s.Disturbance):
 
         # save the updated community raster to the shared disturbance directory
         x = arcpy.NumPyArrayToRaster(self.ecocommunities,
-                                 arcpy.Point(self.header['xllcorner'], self.header['yllcorner']),
-                                 self.header['cellsize'])
+                                     arcpy.Point(self.header['xllcorner'], self.header['yllcorner']),
+                                     self.header['cellsize'])
+        
         x.save(os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))
 
         # arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
