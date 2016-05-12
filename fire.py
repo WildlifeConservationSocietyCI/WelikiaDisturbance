@@ -140,7 +140,13 @@ class FireDisturbance(s.Disturbance):
 
         for line in header:
             attribute, value = line.split()
-            h[attribute] = float(value)
+            h[attribute] = value
+
+        h['ncols'] = int(h['ncols'])
+        h['nrows'] = int(h['nrows'])
+        h['cellsize'] = int(h['cellsize'])
+        h['xllcorner'] = float(h['xllcorner'])
+        h['yllcorner'] = float(h['yllcorner'])
 
         self.header = h
         self.header_text = header

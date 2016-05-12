@@ -25,7 +25,7 @@ class PondDisturbance(s.Disturbance):
     # Constant Inputs
     DEM = os.path.join(INPUT_DIR, s.BORO, 'dem.tif')
     FLOW_DIRECTION = os.path.join(INPUT_DIR, s.BORO, 'flow_direction.tif')
-    SUITABLE_STREAMS = os.path.join(INPUT_DIR, s.BORO, 'suitability_surface.tif')
+    SUITABLE_STREAMS = os.path.join(INPUT_DIR, s.BORO, 'stream_suitability.tif')
 
     def __init__(self, year):
 
