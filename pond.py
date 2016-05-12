@@ -21,11 +21,10 @@ class PondDisturbance(s.Disturbance):
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'pond')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'pond')
 
-
     # Constant Inputs
     DEM = os.path.join(INPUT_DIR, s.BORO, 'dem.tif')
     FLOW_DIRECTION = os.path.join(INPUT_DIR, s.BORO, 'flow_direction.tif')
-    SUITABLE_STREAMS = os.path.join(INPUT_DIR, s.BORO, 'suitability_surface.tif')
+    SUITABLE_STREAMS = os.path.join(INPUT_DIR, s.BORO, 'stream_suitability.tif')
 
     def __init__(self, year):
 
@@ -328,10 +327,7 @@ class PondDisturbance(s.Disturbance):
                 if row[0] == 1:
                     self.new_pond_area = row[1] * s.CELL_SIZE
 
-
     def run_year(self):
-
-        start_time = time.time()
 
         # logging.info('incrementing time since disturbance')
         self.time_since_disturbance = arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
@@ -346,8 +342,8 @@ class PondDisturbance(s.Disturbance):
 
         if self.pond_count < s.CARRYING_CAPACITY and self.initial_flag is False:
             self._region_group = None
-            s.logging.info('number of active ponds [%s] is below carrying capacity [%s], creating new ponds' \
-                  % (self.pond_count, s.CARRYING_CAPACITY))
+            s.logging.info('number of active ponds [%s] is below carrying capacity [%s], creating new ponds'
+                           % (self.pond_count, s.CARRYING_CAPACITY))
 
             self.create_ponds()
 
@@ -363,5 +359,4 @@ class PondDisturbance(s.Disturbance):
 
         self.set_pond_area()
 
-        end_time = time.time()
         # logging.info('run time: %s' % ((end_time - start_time) / 60))

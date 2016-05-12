@@ -470,7 +470,8 @@ class FireDisturbance(s.Disturbance):
         # full extent test input_dir
 
         farsite = pywinauto.Application()
-        farsite.start(r"C:\\Program Files (x86)\\farsite4.exe")
+        farsite.start(os.path.join('C:\\', 'Program Files (x86)', 'FARSITE 4', 'farsite4.exe'))
+
 
         # Load FARSITE project file
         # s.logging.info('Loading FARSITE project file')
@@ -868,7 +869,7 @@ class FireDisturbance(s.Disturbance):
 
             # Get matching climate year file for FARSITE
             shutil.copyfile(os.path.join(self.INPUT_DIR, 'wtr', '%r.wtr' % self.equivalent_climate_year),
-                            os.path.join(self.INPUT_DIR, 'farsite', 'weather.wtr'))
+                            os.path.join(self.INPUT_DIR, 'farsite', s.BORO, 'weather.wtr'))
 
             # Create wind file
             self.write_wnd()
