@@ -152,7 +152,7 @@ class PondDisturbance(s.Disturbance):
 
         self.new_ponds = arcpy.sa.CellStatistics(self.pond_list, 'SUM')
         # self.new_ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(self.pond_list, 'SUM') > 0, 622, 0)
-        self.new_ponds.save('E:/_data/welikia/WelikiaDisturbance/outputs/pond/ponds_%s.tif' % self.year)
+        self.new_ponds.save(os.path.join(self.INPUT_DIR, 'ponds_%s.tif' % self.year))
         self.new_ponds = arcpy.sa.Con(self.new_ponds > 0, 622, 0)
 
     def calculate_territory(self):
