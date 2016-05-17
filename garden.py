@@ -20,10 +20,10 @@ class GardenDisturbance(s.Disturbance):
 
     # Constant Inputs
     CLIMAX_COMMUNITIES = s.ecocommunities
-    SLOPE_SUITABILITY = os.path.join(INPUT_DIR, s.BORO, 'slope_suitability.tif')
-    PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, s.BORO, 'proximity_suitability.tif')
+    SLOPE_SUITABILITY = os.path.join(INPUT_DIR, s.REGION, 'slope_suitability.tif')
+    PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, s.REGION, 'proximity_suitability.tif')
     COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, 'lc_reclass2.csv')
-    SITES = os.path.join(INPUT_DIR, s.BORO, 'garden_sites.shp')
+    SITES = os.path.join(INPUT_DIR, s.REGION, 'garden_sites.shp')
 
     def __init__(self, year):
 
@@ -325,6 +325,7 @@ class GardenDisturbance(s.Disturbance):
             self.population = population
             self.population_to_garden_area()
 
+            print coordinates[0], coordinates[1]
             self.site_center = arcpy.Point(coordinates[0], coordinates[1])
 
             self.set_local_extent()

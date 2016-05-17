@@ -30,31 +30,37 @@ class FireDisturbance(s.Disturbance):
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'fire')
     # INPUT_DIR = s.INPUT_DIR
     # OUTPUT_DIR = s.OUTPUT_DIR
-    LOG_DIR = os.path.join(OUTPUT_DIR, 'log_rasters', '%s_%s.asc')
-    FARSITE = 'farsite'
-    SCRIPT = 'script'
-
+    LOG_DIR = os.path.join(OUTPUT_DIR, '%s_%s.asc')
+    # FARSITE = 'farsite'
+    # SCRIPT = 'script'
+    SPATIAL = 'spatial'
+    TABULAR = 'tabular'
 
     # Inputs
-    DEM_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'dem.asc')
-    SLOPE_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'slope.asc')
-    ASPECT_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'aspect.asc')
+    DEM_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'dem.asc')
+    SLOPE_ascii = os.path.join(INPUT_DIR, SPATIAL,s.REGION, 'slope.asc')
+    ASPECT_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'aspect.asc')
 
-    FUEL_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'fuel.asc')
-    CANOPY_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'canopy.asc')
-    FOREST_AGE_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'forest_age.asc')
-    TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'time_since_disturbance.asc')
+    FUEL_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'fuel.asc')
+    CANOPY_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'canopy.asc')
+    FOREST_AGE_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'forest_age.asc')
+    TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'time_since_disturbance.asc')
 
-    TRAIL_ascii = os.path.join(INPUT_DIR, SCRIPT, s.BORO, 'fire_trails.asc')
-    FPJ = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'PROJECT.FPJ')
-    LCP = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'LANDSCAPE.LCP')
-    IGNITION = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'ignition.shp')
-    FMD = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'custom_fuel.fmd')
-    FMS = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'fuel_moisture.fms')
-    ADJ = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'fuel_adjustment.adj')
-    WND = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'wind.wnd')
-    WTR = os.path.join(INPUT_DIR, FARSITE, s.BORO, 'weather.wtr')
-    BURN_RASTERS = os.path.join(INPUT_DIR, 'script', 'burn_rasters')
+    TRAIL_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'fire_trails.asc')
+    FPJ = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'PROJECT.FPJ')
+    LCP = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'LANDSCAPE.LCP')
+    IGNITION = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'ignition.shp')
+
+    FMD = os.path.join(INPUT_DIR, TABULAR, 'custom_fuel.fmd')
+    FMS = os.path.join(INPUT_DIR, TABULAR, 'fuel_moisture.fms')
+    ADJ = os.path.join(INPUT_DIR, TABULAR, 'fuel_adjustment.adj')
+    WND = os.path.join(INPUT_DIR, TABULAR, 'wind.wnd')
+    WTR = os.path.join(INPUT_DIR, TABULAR, 'weather.wtr')
+    TRANSLATOR = os.path.join(INPUT_DIR, TABULAR, 'ec_translator.txt')
+    PSDI_YEARS = os.path.join(INPUT_DIR, TABULAR, 'psdi-years.txt')
+    DROUGHT_YEARS = os.path.join(INPUT_DIR, TABULAR, 'mannahatta-psdi.txt')
+
+    BURN_RASTERS = os.path.join(OUTPUT_DIR, 'burn_rasters')
     FARSITE_OUTPUT = os.path.join(BURN_RASTERS, '%s_farsite_output')
     FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, '%s_farsite_output.fml')
 
@@ -64,7 +70,7 @@ class FireDisturbance(s.Disturbance):
         super(FireDisturbance, self).__init__(year)
 
         self.year = year
-        # self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, s.BORO, 'ecocommunities_%s.asc' % year)
+        # self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, s.REGION, 'ecocommunities_%s.asc' % year)
         self.ecocommunities = None
         self.climax_communities = None
         self.drought = None
@@ -154,7 +160,7 @@ class FireDisturbance(s.Disturbance):
     def set_translation_table(self):
         translation = {}
 
-        with open(os.path.join(self.INPUT_DIR, 'script', 'bx', 'ec_translator.txt'), 'r') as translation_file:
+        with open(self.TRANSLATOR) as translation_file:
             for line in translation_file:
                 ecid, fuel2, fuel1, fuel10, can_val, first_age, for_bin, forshrubin, obstruct_bin = line.split('\t')
 
@@ -174,7 +180,7 @@ class FireDisturbance(s.Disturbance):
 
     def set_drought_years(self):
         drought = {}
-        with open(os.path.join(self.INPUT_DIR, 'script', 'mannahatta-psdi.txt'), 'r') as drought_file:
+        with open(self.DROUGHT_YEARS, 'r') as drought_file:
             for line in drought_file:
                 year, psdi = line.split('\t')
                 drought[int(year)] = float(psdi)
@@ -183,7 +189,7 @@ class FireDisturbance(s.Disturbance):
 
     def set_climate_years(self):
         climate_years = {}
-        with open(os.path.join(self.INPUT_DIR, 'script', 'psdi-years.txt'), 'r') as psdiyears_file:
+        with open(self.PSDI_YEARS, 'r') as psdiyears_file:
             for line in psdiyears_file:
                 c_list = line.strip('\n').split('\t')
                 climate_years[float(c_list[0])] = []
@@ -471,7 +477,6 @@ class FireDisturbance(s.Disturbance):
 
         farsite = pywinauto.Application()
         farsite.start(os.path.join('C:\\', 'Program Files (x86)', 'FARSITE 4', 'farsite4.exe'))
-
 
         # Load FARSITE project file
         # s.logging.info('Loading FARSITE project file')
@@ -852,11 +857,11 @@ class FireDisturbance(s.Disturbance):
                 for i in range(number_of_garden_ignitions):
                     self.ignition_sites.append(random.choice(self.potential_garden_ignition_sites))
 
-        # s.logging.info('escaped trail fires: %s' % number_of_trail_ignitions)
-        # s.logging.info('escaped garden fires: %s' % number_of_garden_ignitions)
+        s.logging.info('escaped trail fires: %s' % number_of_trail_ignitions)
+        s.logging.info('escaped garden fires: %s' % number_of_garden_ignitions)
 
         # s.logging.info('%s' % self.ignition_sites)
-
+        s.logging.info('ignition sites: %s' % self.ignition_sites)
         if len(self.ignition_sites) > 0:
 
             # s.logging.info('Creating ignition point')
@@ -868,8 +873,7 @@ class FireDisturbance(s.Disturbance):
             # s.logging.info('Selected climate equivalent-year: %r' % self.equivalent_climate_year)
 
             # Get matching climate year file for FARSITE
-            shutil.copyfile(os.path.join(self.INPUT_DIR, 'wtr', '%r.wtr' % self.equivalent_climate_year),
-                            os.path.join(self.INPUT_DIR, 'farsite', s.BORO, 'weather.wtr'))
+            shutil.copyfile(os.path.join(self.INPUT_DIR, 'wtr', '%r.wtr' % self.equivalent_climate_year), self.WTR)
 
             # Create wind file
             self.write_wnd()
@@ -996,11 +1000,13 @@ class FireDisturbance(s.Disturbance):
         self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
 
         # save the updated community raster to the shared disturbance directory
-        x = arcpy.NumPyArrayToRaster(self.ecocommunities,
-                                     arcpy.Point(self.header['xllcorner'], self.header['yllcorner']),
-                                     self.header['cellsize'])
-        
-        x.save(os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))
+        out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
+                                              lower_left_corner=arcpy.Point(self.header['xllcorner'],
+                                                                            self.header['yllcorner']),
+                                              x_cell_size=self.header['cellsize'],
+                                              value_to_nodata=-9999)
+
+        out_raster.save(os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))
 
         # arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
         #                                os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
