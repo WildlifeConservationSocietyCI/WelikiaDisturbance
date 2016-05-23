@@ -1017,7 +1017,7 @@ class FireDisturbance(s.Disturbance):
             shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
             shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
             shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
-            shutil.copyfile(self.TIME_SINCE_DISTURBANCE_ascii, self.LOG_DIR % (self.year, 'time_since_disturbance'))
+        shutil.copyfile(self.TIME_SINCE_DISTURBANCE_ascii, self.LOG_DIR % (self.year, 'time_since_disturbance'))
 
         end_time = time.time()
 
