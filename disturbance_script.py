@@ -34,9 +34,9 @@ def clear_dir(directory):
 
 # log trial settings
 shutil.copyfile(os.path.join(s.ROOT_DIR, 'settings.py'),
-                os.path.join(s.LOG_DIR, 'disturbance_logs', 'kane_test_2', 'settings.py'))
+                os.path.join(s.LOG_DIR, 'settings.py'))
 
-clear_dir(os.path.join(s.OUTPUT_DIR, 'fire', 'burn_rasters'))
+# clear_dir(os.path.join(s.OUTPUT_DIR, 'fire', 'burn_rasters'))
 
 clear_dir(s.TEMP_DIR)
 
@@ -69,7 +69,7 @@ for year in s.RUN_LENGTH:
         fire_dis = fire.FireDisturbance(year)
         fire_dis.run_year()
         disturbance_table.loc[year]['fire_occurrence'] = len(fire_dis.ignition_sites)
-        disturbance_table.loc[year]['fire_area'] = fire_dis.area_burned * s.CELL_SIZE
+        disturbance_table.loc[year]['fire_area'] = fire_dis.area_burned
 
     # beaver pond
     if s.POND:
@@ -84,7 +84,7 @@ for year in s.RUN_LENGTH:
 
     # track disturbances
     disturbance_table.to_csv(path_or_buf=os.path.join(s.OUTPUT_DIR, 'disturbance_table.csv'))
-    disturbance_table.to_csv(path_or_buf=os.path.join(s.LOG_DIR, 'disturbance_logs', 'kane_test_2', 'disturbance_table.csv'))
+    disturbance_table.to_csv(path_or_buf=os.path.join(s.LOG_DIR, 'disturbance_table.csv'))
 
 s.logging.info('______simulation completed')
 
