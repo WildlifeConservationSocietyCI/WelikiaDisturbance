@@ -21,7 +21,7 @@ REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi.shp')
 PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.csv')
 SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass2.csv')
 
-GARDEN_SLOPE_SUITABILITY = os.path.join(INPUT_DIR, 'garden_slope_suitability.tif')
+GARDEN_SLOPE_SUITABILITY = os.path.join(INPUT_DIR, 'slope_suitability.tif')
 PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, 'proximity_suitability.tif')
 STREAM_SUITABILITY = os.path.join(INPUT_DIR, 'stream_suitability.tif')
 TRAILS = os.path.join(INPUT_DIR, 'fire_trails.tif')
@@ -44,61 +44,77 @@ def reset_arc_env():
     arcpy.env.outputCoordinateSystem = None
     arcpy.env.cartographicCoordinateSystem = None
 
-# first order DEM derived inputs
+# create full extent products
 
 # dem
-logging.info('creating ascii dem')
-# arcpy.RasterToASCII_conversion(DEM, os.path.join(INPUT_DIR, 'dem.asc'))
+if arcpy.Exists(os.path.join(INPUT_DIR, 'dem.asc')) is False:
+    logging.info('creating ascii dem')
+    arcpy.RasterToASCII_conversion(DEM, os.path.join(INPUT_DIR, 'dem.asc'))
 
 # slope
-logging.info('creating ascii dem')
-slope = arcpy.sa.Slope(DEM, output_measurement='DEGREE')
-# arcpy.RasterToASCII_conversion(slope, os.path.join(INPUT_DIR, 'slope.asc'))
+if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.asc')) is False:
+    logging.info('creating ascii slope')
+    slope = arcpy.sa.Slope(DEM, output_measurement='DEGREE')
+    arcpy.RasterToASCII_conversion(slope, os.path.join(INPUT_DIR, 'slope.asc'))
+else:
+    slope = arcpy.Raster(os.path.join(INPUT_DIR, 'slope.asc'))
 
 # aspect
-logging.info('creating ascii dem')
-aspect = arcpy.sa.Aspect(DEM)
-# arcpy.RasterToASCII_conversion(slope, os.path.join(INPUT_DIR, 'aspect.asc'))
+if arcpy.Exists(os.path.join(INPUT_DIR, 'aspect.asc')) is False:
+    logging.info('creating ascii aspect')
+    aspect = arcpy.sa.Aspect(DEM)
+    arcpy.RasterToASCII_conversion(aspect, os.path.join(INPUT_DIR, 'aspect.asc'))
+else:
+    aspect = arcpy.Raster(os.path.join(INPUT_DIR, 'aspect.asc'))
 
 # flow direction
-logging.info('creating ascii dem')
-flow_direction = arcpy.sa.FlowDirection(DEM, force_flow='NORMAL')
-# flow_direction.save(os.path.join(INPUT_DIR, 'flow_direction.tif'))
-
-# second order DEM derived inputs
+if arcpy.Exists(os.path.join(INPUT_DIR, 'flow_direction.tif')) is False:
+    logging.info('creating flow direction raster')
+    flow_direction = arcpy.sa.FlowDirection(DEM, force_flow='NORMAL')
+    flow_direction.save(os.path.join(INPUT_DIR, 'flow_direction.tif'))
+else:
+    flow_direction = arcpy.Raster(os.path.join(INPUT_DIR, 'flow_direction.tif'))
 
 # garden slope suitability
-logging.info('creating ascii dem')
-garden_slope_suitability = arcpy.sa.ReclassByTable(in_raster=slope,
-                                                   in_remap_table=SLOPE_RECLASS,
-                                                   from_value_field='Field1',
-                                                   to_value_field='Field2',
-                                                   output_value_field='Field3')
-
-logging.info('creating ascii dem')
-# garden_slope_suitability.save(os.path.join(INPUT_DIR, 'garden_slope_suitability.tif'))
-
-# stream suitability
-logging.info('creating stream suitability')
-stream_suitability = arcpy.sa.Con((ECOSYSTEMS == 616) &
-                                  (slope <= 8), 1, 0)
-
-# stream_suitability.save(os.path.join(INPUT_DIR, 'stream_suitability.tif'))
-
-# Other
-# proximity suitability
-logging.info('creating proximity suitability')
-euclidian_distance = arcpy.sa.EucDistance(SITES,
-                                          maximum_distance=s.PROXIMITY_BUFFER,
-                                          cell_size=s.CELL_SIZE)
-
-proximity_suitability = arcpy.sa.ReclassByTable(euclidian_distance,
-                                                in_remap_table=PROXIMITY_RECLASS,
+if arcpy.Exists(os.path.join(INPUT_DIR, 'slope_suitability.tif')) is False:
+    logging.info('creating slope suitability raster')
+    slope_suitability = arcpy.sa.ReclassByTable(in_raster=slope,
+                                                in_remap_table=SLOPE_RECLASS,
                                                 from_value_field='Field1',
                                                 to_value_field='Field2',
                                                 output_value_field='Field3')
 
-# proximity_suitability.save(os.path.join(INPUT_DIR, 'proximity_suitability.tif'))
+    slope_suitability.save(os.path.join(INPUT_DIR, 'slope_suitability.tif'))
+else:
+    slope_suitability = arcpy.Raster(os.path.join(INPUT_DIR, 'slope_suitability.tif'))
+
+# stream suitability
+if arcpy.Exists(os.path.join(INPUT_DIR, 'stream_suitability.tif')) is False:
+
+    logging.info('creating stream suitability')
+    stream_suitability = arcpy.sa.Con((ECOSYSTEMS == 616) &
+                                      (slope <= 8), 1, 0)
+
+    stream_suitability.save(os.path.join(INPUT_DIR, 'stream_suitability.tif'))
+else:
+    stream_suitability = arcpy.Raster(os.path.join(INPUT_DIR, 'stream_suitability.tif'))
+
+# proximity suitability
+if arcpy.Exisits(os.path.join(INPUT_DIR, 'proximity_suitability.tif')) is False:
+    logging.info('creating proximity suitability')
+    euclidian_distance = arcpy.sa.EucDistance(SITES,
+                                              maximum_distance=s.PROXIMITY_BUFFER,
+                                              cell_size=s.CELL_SIZE)
+
+    proximity_suitability = arcpy.sa.ReclassByTable(euclidian_distance,
+                                                    in_remap_table=PROXIMITY_RECLASS,
+                                                    from_value_field='Field1',
+                                                    to_value_field='Field2',
+                                                    output_value_field='Field3')
+
+    proximity_suitability.save(os.path.join(INPUT_DIR, 'proximity_suitability.tif'))
+else:
+    proximity_suitability = arcpy.Raster(os.path.join(INPUT_DIR, 'proximity_suitability.tif'))
 
 env.workspace = INPUT_DIR
 
@@ -173,10 +189,10 @@ for feature in cursor:
 
         stream_suitability_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif'))
 
-    # garden_slope_suitability = os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')
+    # slope_suitability = os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')
     if arcpy.Exists(os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')) is False:
 
-        slope_suitability_clip = arcpy.sa.Con(dem_ref, garden_slope_suitability)
+        slope_suitability_clip = arcpy.sa.Con(dem_ref, slope_suitability)
 
         slope_suitability_clip.save(os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'slope_suitability.tif'))
 
