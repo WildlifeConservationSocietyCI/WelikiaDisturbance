@@ -116,7 +116,7 @@ class GardenDisturbance(s.Disturbance):
         calculate the area, in cells, needed to feed population at a given site
         :return:
         """
-        self.garden_area_target = self.population * s.PER_CAPITA_GARDEN_AREA
+        self.garden_area_target = int(self.population * s.PER_CAPITA_GARDEN_AREA / (s.CELL_SIZE ** 2))
 
     def succession(self):
         """
@@ -162,6 +162,8 @@ class GardenDisturbance(s.Disturbance):
 
         :return:
         """
+        if arcpy.Exists(self.temp_point):
+            arcpy.Delete_management(self.temp_point)
 
         arcpy.CopyFeatures_management(in_features=arcpy.PointGeometry(self.site_center),
                                       out_feature_class=self.temp_point)
@@ -326,7 +328,7 @@ class GardenDisturbance(s.Disturbance):
         with arcpy.da.SearchCursor(time_since_disturbance, field_names=field_names) as sc:
             for row in sc:
                 if row[0] == 1:
-                    self.new_garden_area = row[1] * s.CELL_SIZE
+                    self.new_garden_area = row[1]
 
     def set_populations(self):
         """
