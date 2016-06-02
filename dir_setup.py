@@ -1,7 +1,7 @@
 import os
 import arcpy
 
-ROOT_DIR = os.path.join('D:\\', '_data', 'Welikia', 'WelikiaDisturbance')
+ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance_kane_test')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 
@@ -42,3 +42,5 @@ for region in regions:
     mkdir(os.path.join(INPUT_DIR, 'fire', 'spatial', '%s' % region))
     mkdir(os.path.join(INPUT_DIR, 'garden', 'spatial', '%s' % region))
     mkdir(os.path.join(INPUT_DIR, 'pond', '%s' % region))
+
+mkdir(os.path.join(ROOT_DIR, 'temp'))
