@@ -9,7 +9,7 @@ ROOT_DIR = os.path.join('D:\\', '_data', 'Welikia', 'WelikiaDisturbance')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = os.path.join('C:\\', 'Users', 'Kim', 'Dropbox')
+LOG_DIR = os.path.join('C:\\', 'Users', 'Kim', 'Dropbox', 'disturbance_logs', 'kane_test_2')
 
 REGION = '2'
 
@@ -28,16 +28,16 @@ FIRE = True
 POND = True
 
 # LOGGING
-logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_logs', 'kane_test_2', 'disturbance_log.txt'),
+logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
                     level=logging.DEBUG)
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1610)
+RUN_LENGTH = range(1487, 1610)
 
 # FIRE
 # initial parameters
-INITIAL_TIME_SINCE_DISTURBANCE = 20
+INITIAL_TIME_SINCE_DISTURBANCE = 10
 TRAIL_OVERGROWN_YRS = 15
 
 # duration settings
@@ -45,7 +45,7 @@ FIRE_SEASON_START = (1, 3)
 FIRE_SEASON_END = (31, 5)
 
 # Rain in mm needed to extinguish a fire
-EXTINGUISH_THRESHOLD = 10
+EXTINGUISH_THRESHOLD = 100
 
 # Number of days used to condition fuel before the start of fire
 CONDITIONING_LENGTH = 15
@@ -67,7 +67,7 @@ SHRUBLAND_CANOPY = 10
 
 # GUI controls
 INITIATE_RENDER_WAIT_TIME = 10
-SIMULATION_TIMEOUT = 5000
+SIMULATION_TIMEOUT = 100000
 
 # PONDS
 CARRYING_CAPACITY = 35
@@ -77,7 +77,7 @@ DAM_HEIGHT = 9
 
 # GARDENS
 PROXIMITY_BUFFER = 500
-PER_CAPITA_GARDEN_AREA = 1
+PER_CAPITA_GARDEN_AREA = 76.6
 
 TIME_TO_ABANDON = 20
 # SHRUB_SUCCESSION = 36

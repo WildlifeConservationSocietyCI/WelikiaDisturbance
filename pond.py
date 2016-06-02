@@ -310,7 +310,7 @@ class PondDisturbance(s.Disturbance):
         with arcpy.da.SearchCursor(time_since_disturbance, field_names=field_names) as sc:
             for row in sc:
                 if row[0] == 1:
-                    self.new_pond_area = row[1] * s.CELL_SIZE
+                    self.new_pond_area = row[1] # * (s.CELL_SIZE ** 2)
 
     def run_year(self):
         if s.DEBUG_MODE:
