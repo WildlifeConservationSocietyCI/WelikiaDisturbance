@@ -15,6 +15,7 @@ INPUT_DIR = os.path.join(s.ROOT_DIR, '_inputs_full_extent')
 DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'dem.tif')
 ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'ecocommunities.tif')
 SITES = os.path.join(INPUT_DIR, 'GARDEN_SITES.shp')
+TRAILS = os.path.join(INPUT_DIR, 'fire_trails.tif')
 REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi.shp')
 
 # Tabular Inputs
@@ -24,7 +25,7 @@ SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass2.c
 GARDEN_SLOPE_SUITABILITY = os.path.join(INPUT_DIR, 'slope_suitability.tif')
 PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, 'proximity_suitability.tif')
 STREAM_SUITABILITY = os.path.join(INPUT_DIR, 'stream_suitability.tif')
-TRAILS = os.path.join(INPUT_DIR, 'fire_trails.tif')
+
 
 
 def set_arc_env(in_raster):
@@ -100,7 +101,7 @@ else:
     stream_suitability = arcpy.Raster(os.path.join(INPUT_DIR, 'stream_suitability.tif'))
 
 # proximity suitability
-if arcpy.Exisits(os.path.join(INPUT_DIR, 'proximity_suitability.tif')) is False:
+if arcpy.Exists(os.path.join(INPUT_DIR, 'proximity_suitability.tif')) is False:
     logging.info('creating proximity suitability')
     euclidian_distance = arcpy.sa.EucDistance(SITES,
                                               maximum_distance=s.PROXIMITY_BUFFER,
@@ -125,8 +126,6 @@ cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
 
 for feature in cursor:
 
-
-    # arcpy.env.extent = feature
     print feature.BoroName
     boro_code = str(feature.BoroCode)
     print boro_code
@@ -139,8 +138,9 @@ for feature in cursor:
         arcpy.RasterToASCII_conversion(dem_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc'))
 
     dem_ref = os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')
-    set_arc_env(dem_ref)
 
+    # set environment
+    set_arc_env(dem_ref)
 
     ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities.tif' % boro_code)
     if arcpy.Exists(ecocommunities) is False:
@@ -148,7 +148,6 @@ for feature in cursor:
         ecocommunities_clip = arcpy.sa.Con(dem_ref, ECOSYSTEMS)
 
         ecocommunities_clip.save(ecocommunities)
-
 
     if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc')) is False:
 
