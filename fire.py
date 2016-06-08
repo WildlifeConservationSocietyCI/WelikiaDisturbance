@@ -232,6 +232,8 @@ class FireDisturbance(s.Disturbance):
                 record = line.split()
                 self.weather.append(record)
 
+        shutil.copyfile(os.path.join(self.INPUT_DIR, 'wtr', '%r.wtr' % self.equivalent_climate_year), self.WTR)
+
     def get_clear_day(self):
         """
         :return:
@@ -476,7 +478,7 @@ class FireDisturbance(s.Disturbance):
         # full extent test input_dir
 
         farsite = pywinauto.Application()
-        farsite.start(os.path.join('C:\\', 'Program Files (x86)', 'FARSITE 4', 'farsite4.exe'))
+        farsite.start(os.path.join('C:\\', 'Program Files (x86)', 'farsite4.exe'))
 
         # Load FARSITE project file
         # s.logging.info('Loading FARSITE project file')
