@@ -1011,8 +1011,8 @@ class FireDisturbance(s.Disturbance):
         # arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
         #                                os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
-        # Yearly outputs
-        if self.area_burned > 0:
+        # log outputs when a fire occurs and on the file year
+        if self.area_burned > 0 or self.year == max(s.RUN_LENGTH):
             # s.logging.info('copying outputs to log folder')
             shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
             shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
