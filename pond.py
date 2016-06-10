@@ -223,6 +223,7 @@ class PondDisturbance(s.Disturbance):
 
         suitability_surface_set_null = arcpy.sa.SetNull(suitability_surface, suitability_surface, "VALUE = 0")
 
+
         arcpy.RasterToPoint_conversion(in_raster=suitability_surface_set_null,
                                        out_point_features=self.suitability_points)
 

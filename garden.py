@@ -5,6 +5,7 @@ import numpy
 import random
 
 
+
 class GardenDisturbance(s.Disturbance):
     # CLASS VARIABLES
     year = None

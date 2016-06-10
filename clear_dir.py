@@ -2,6 +2,7 @@ import os
 import shutil
 import settings as s
 
+
 def clear_dir(directory):
     file_list = os.listdir(directory)
     for file_name in file_list:
@@ -13,3 +14,4 @@ def clear_dir(directory):
 
 clear_dir(s.OUTPUT_DIR)
 clear_dir(os.path.join(s.OUTPUT_DIR, 'garden'))
+clear_dir(os.path.join(s.OUTPUT_DIR, 'fire'))
