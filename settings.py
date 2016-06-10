@@ -4,12 +4,13 @@ from arcpy import env
 import sys
 import logging
 
+# TODO
 # DIRECTORIES
-ROOT_DIR = os.path.join('D:\\', '_data', 'Welikia', 'WelikiaDisturbance')
+ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance_kane_test')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = os.path.join('C:\\', 'Users', 'Kim', 'Dropbox', 'disturbance_logs', 'kane_test_2')
+LOG_DIR = r'C:\Users\LabGuest\Dropbox\disturbance_logs\fire_refactor_test'
 
 REGION = '2'
 
@@ -25,7 +26,7 @@ DEBUG_MODE = False
 # DISTURBANCE FLAG TOGGLE
 GARDEN = True
 FIRE = True
-POND = True
+POND = False
 
 # LOGGING
 logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
@@ -33,11 +34,11 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1487, 1610)
+RUN_LENGTH = range(1409, 1420)
 
 # FIRE
 # initial parameters
-INITIAL_TIME_SINCE_DISTURBANCE = 10
+INITIAL_TIME_SINCE_DISTURBANCE = 20
 TRAIL_OVERGROWN_YRS = 15
 
 # duration settings
@@ -45,14 +46,14 @@ FIRE_SEASON_START = (1, 3)
 FIRE_SEASON_END = (31, 5)
 
 # Rain in mm needed to extinguish a fire
-EXTINGUISH_THRESHOLD = 100
+EXTINGUISH_THRESHOLD = 10
 
 # Number of days used to condition fuel before the start of fire
 CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities
-EXPECTED_TRAIL_ESCAPE = 0.25
-EXPECTED_GARDEN_ESCAPE = 0.02
+EXPECTED_TRAIL_ESCAPE = 0
+EXPECTED_GARDEN_ESCAPE = 0
 PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types
@@ -77,7 +78,7 @@ DAM_HEIGHT = 9
 
 # GARDENS
 PROXIMITY_BUFFER = 500
-PER_CAPITA_GARDEN_AREA = 76.6
+PER_CAPITA_GARDEN_AREA = 15
 
 TIME_TO_ABANDON = 20
 # SHRUB_SUCCESSION = 36
