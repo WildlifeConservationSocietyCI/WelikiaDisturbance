@@ -5,6 +5,7 @@ import numpy
 import random
 
 
+
 class GardenDisturbance(s.Disturbance):
     # CLASS VARIABLES
     year = None
@@ -16,14 +17,15 @@ class GardenDisturbance(s.Disturbance):
     # Garden Directories
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'garden')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'garden')
-
+    SPATIAL = 'spatial'
+    TABULAR = 'tabular'
 
     # Constant Inputs
     CLIMAX_COMMUNITIES = s.ecocommunities
-    SLOPE_SUITABILITY = os.path.join(INPUT_DIR, s.BORO, 'slope_suitability.tif')
-    PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, s.BORO, 'proximity_suitability.tif')
-    COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, 'lc_reclass2.csv')
-    SITES = os.path.join(INPUT_DIR, s.BORO, 'garden_sites.shp')
+    SLOPE_SUITABILITY = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'slope_suitability.tif')
+    PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'proximity_suitability.tif')
+    COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, TABULAR, 'lc_reclass2.csv')
+    SITES = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'garden_sites.shp')
 
     def __init__(self, year):
 
@@ -115,7 +117,7 @@ class GardenDisturbance(s.Disturbance):
         calculate the area, in cells, needed to feed population at a given site
         :return:
         """
-        self.garden_area_target = self.population * s.PER_CAPITA_GARDEN_AREA
+        self.garden_area_target = int(self.population * s.PER_CAPITA_GARDEN_AREA / (s.CELL_SIZE ** 2))
 
     def succession(self):
         """
@@ -142,12 +144,17 @@ class GardenDisturbance(s.Disturbance):
         return count of garden cells in community raster
         :return:
         """
-        cursor = arcpy.SearchCursor(in_raster)
         count = 0
-        # print"Checking if a garden exists..."
-        for row in cursor:
-            if row.getValue('VALUE') == s.GARDEN_ID:
-                count = row.getValue('Count')
+        a = arcpy.RasterToNumPyArray(in_raster)
+        unique_values = numpy.unique(a, return_counts=True)
+        d = dict(zip(unique_values[0], unique_values[1]))
+        if s.GARDEN_ID in d.keys():
+            count = d[s.GARDEN_ID]
+
+        # # print"Checking if a garden exists..."
+        # for row in cursor:
+        #     if row.getValue('VALUE') == s.GARDEN_ID:
+        #         count = row.getValue('Count')
 
         return count
 
@@ -156,6 +163,8 @@ class GardenDisturbance(s.Disturbance):
 
         :return:
         """
+        if arcpy.Exists(self.temp_point):
+            arcpy.Delete_management(self.temp_point)
 
         arcpy.CopyFeatures_management(in_features=arcpy.PointGeometry(self.site_center),
                                       out_feature_class=self.temp_point)
@@ -170,13 +179,17 @@ class GardenDisturbance(s.Disturbance):
         arcpy.env.extent = self.temp_buffer
 
         local_ecocommunities = arcpy.sa.ExtractByMask(self.ecocommunities, self.temp_buffer)
-        # local_ecocommunities.save(os.path.join(self.OUTPUT_DIR, 'local_ecosystem.tif'))
+
+        if s.DEBUG_MODE:
+            local_ecocommunities.save(os.path.join(self.OUTPUT_DIR, 'local_ecosystem.tif'))
 
         self.garden_area = self.get_garden_area(local_ecocommunities)
 
         print self.garden_area
         self.local_suitability = arcpy.sa.ExtractByMask(self.suitability, self.temp_buffer)
-        # self.local_suitability.save(os.path.join(self.OUTPUT_DIR, 'local_suitability.tif'))
+
+        if s.DEBUG_MODE:
+            self.local_suitability.save(os.path.join(self.OUTPUT_DIR, 'local_suitability.tif'))
 
 
     def set_garden_center(self):
@@ -187,18 +200,26 @@ class GardenDisturbance(s.Disturbance):
         """
 
         maxsuit = arcpy.sa.Con(self.local_suitability == self.local_suitability.maximum, self.local_suitability)
-        # maxsuit.save(os.path.join(self.OUTPUT_DIR, 'maxsuit.tif'))
+
+        if s.DEBUG_MODE:
+            maxsuit.save(os.path.join(self.OUTPUT_DIR, 'maxsuit.tif'))
 
         # Create random raster to associate with most suitable areas to randomly select garden centroid cell
         self.randrast = arcpy.sa.CreateRandomRaster(345, self.local_suitability, self.local_suitability)
-        # randrast.save(os.path.join(self.OUTPUT_DIR, 'randrast.tif'))
+
+        if s.DEBUG_MODE:
+            self.randrast.save(os.path.join(self.OUTPUT_DIR, 'randrast.tif'))
 
         randrastclip = arcpy.sa.Con(maxsuit, self.randrast)
-        # randrastclip.save(os.path.join(self.OUTPUT_DIR, 'randrastclip.tif'))
+
+        if s.DEBUG_MODE:
+            randrastclip.save(os.path.join(self.OUTPUT_DIR, 'randrastclip.tif'))
 
         # print "selecting garden center"
         gardencenter = arcpy.sa.Con(randrastclip == randrastclip.maximum, s.GARDEN_ID)
-        # gardencenter.save(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
+
+        if s.DEBUG_MODE:
+            gardencenter.save(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
 
         self.garden = gardencenter
 
@@ -219,36 +240,53 @@ class GardenDisturbance(s.Disturbance):
         create a new garden
         :return:
         """
+        if s.DEBUG_MODE:
+            counter = 0
 
         while self.garden_area < self.garden_area_target:
             # print 'garden area: %s' % self.garden_area
 
             # Set nodata values in garden grid to 0
             zero = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 1, 0, self.garden)
-            # zero.save(os.path.join(self.OUTPUT_DIR, "zero_%s.tif" % counter))
+            if s.DEBUG_MODE:
+                zero.save(os.path.join(self.OUTPUT_DIR, "zero_%s.tif" % counter))
 
             # Create another grid where current garden is NODATA and all other values = 0
             nullgard = arcpy.sa.SetNull(zero == s.GARDEN_ID, 0)
-            # nullgard.save(os.path.join(self.OUTPUT_DIR, "nullgard_%s.tif" % counter))
+            if s.DEBUG_MODE:
+                nullgard.save(os.path.join(self.OUTPUT_DIR, "nullgard_%s.tif" % counter))
 
             # Expand potential garden grid by one cell
             zone = arcpy.sa.Expand(self.garden, 1, s.GARDEN_ID)
-            # zone.save(os.path.join(self.OUTPUT_DIR, "zone_%s.tif" % counter))
+            if s.DEBUG_MODE:
+                zone.save(os.path.join(self.OUTPUT_DIR, "zone_%s.tif" % counter))
 
             # Create a clipping raster for gardens
             zapped = arcpy.sa.Plus(nullgard, self.local_suitability)
-            # zapped.save(os.path.join(self.OUTPUT_DIR, "zapped_%s.tif" % counter))
+            if s.DEBUG_MODE:
+                zapped.save(os.path.join(self.OUTPUT_DIR, "zapped_%s.tif" % counter))
 
             # Clip expanded garden grid by removing unsuitable areas and places where garden currently exists
             #  "NODATA"
+
             clip = arcpy.sa.ExtractByMask(zone, zapped)
-            # clip.save(os.path.join(self.OUTPUT_DIR, 'clip_%s.tif' % counter))
+            array = arcpy.RasterToNumPyArray(clip)
+            unique_values = numpy.unique(array, return_counts=True)
+            d = dict(zip(unique_values[0], unique_values[1]))
+            if s.GARDEN_ID not in d.keys():
+                print 'no new cells can be added'
+                break
+
+            if s.DEBUG_MODE:
+                clip.save(os.path.join(self.OUTPUT_DIR, 'clip_%s.tif' % counter))
 
             ring_suitability = arcpy.sa.Con(clip, self.local_suitability)
-            # ring_suitability.save(os.path.join(self.OUTPUT_DIR, 'ring_suitability_%s.tif' % counter))
+            if s.DEBUG_MODE:
+                ring_suitability.save(os.path.join(self.OUTPUT_DIR, 'ring_suitability_%s.tif' % counter))
 
             new_cells = arcpy.sa.Con(ring_suitability == ring_suitability.maximum, s.GARDEN_ID)
-            # new_cells.save(os.path.join(self.OUTPUT_DIR, 'new_cells_%s.tif' % counter))
+            if s.DEBUG_MODE:
+                new_cells.save(os.path.join(self.OUTPUT_DIR, 'new_cells_%s.tif' % counter))
 
             new_cells_area = self.get_garden_area(new_cells)
 
@@ -274,10 +312,12 @@ class GardenDisturbance(s.Disturbance):
 
                     self.garden = arcpy.sa.Con(arcpy.sa.IsNull(new_cell) == 0, new_cell, self.garden)
 
-                    # self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden_%s.tif' % counter_1))
+                    if s.DEBUG_MODE:
+                        self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden_%s.tif' % counter))
 
                     self.garden_area = self.get_garden_area(self.garden)
-                    # new_cell.save(os.path.join(self.OUTPUT_DIR, 'new_cell_%s.tif' % counter_1))
+                    if s.DEBUG_MODE:
+                        new_cell.save(os.path.join(self.OUTPUT_DIR, 'new_cell_%s.tif' % counter))
 
             self.garden_area = self.get_garden_area(self.garden)
 
@@ -289,7 +329,7 @@ class GardenDisturbance(s.Disturbance):
         with arcpy.da.SearchCursor(time_since_disturbance, field_names=field_names) as sc:
             for row in sc:
                 if row[0] == 1:
-                    self.new_garden_area = row[1] * s.CELL_SIZE
+                    self.new_garden_area = row[1]
 
     def set_populations(self):
         """
@@ -325,6 +365,7 @@ class GardenDisturbance(s.Disturbance):
             self.population = population
             self.population_to_garden_area()
 
+            print coordinates[0], coordinates[1]
             self.site_center = arcpy.Point(coordinates[0], coordinates[1])
 
             self.set_local_extent()

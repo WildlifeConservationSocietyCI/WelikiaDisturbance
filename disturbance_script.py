@@ -9,6 +9,7 @@ import time
 from arcpy import env
 import pandas as pd
 import datetime
+import analysis
 
 # set environment
 
@@ -32,13 +33,22 @@ def clear_dir(directory):
         if os.path.isdir(path):
             shutil.rmtree(path)
 
+# log trial settings
+shutil.copyfile(os.path.join(s.ROOT_DIR, 'settings.py'),
+                os.path.join(s.LOG_DIR, 'settings.py'))
 
-clear_dir(os.path.join(s.INPUT_DIR, 'fire', 'script', 'burn_rasters'))
+clear_dir(os.path.join(s.OUTPUT_DIR, 'fire', 'burn_rasters'))
 
 clear_dir(s.TEMP_DIR)
 
 dist_type = ['fire_area', 'fire_occurrence', 'pond_area', 'garden_area']
-disturbance_table = pd.DataFrame(columns=dist_type, index=s.RUN_LENGTH)
+
+# create or load disturbance data frame
+if os.path.isfile(os.path.join(s.LOG_DIR, 'disturbance_table.csv')):
+    disturbance_table = pd.read_csv(os.path.join(s.LOG_DIR, 'disturbance_table.csv'), index_col=0)
+    print disturbance_table.head()
+else:
+    disturbance_table = pd.DataFrame(columns=dist_type, index=s.RUN_LENGTH)
 
 s.logging.info('starting %s year simulation' % len(s.RUN_LENGTH))
 full_run_start = time.time()
@@ -66,7 +76,7 @@ for year in s.RUN_LENGTH:
         fire_dis = fire.FireDisturbance(year)
         fire_dis.run_year()
         disturbance_table.loc[year]['fire_occurrence'] = len(fire_dis.ignition_sites)
-        disturbance_table.loc[year]['fire_area'] = fire_dis.area_burned * s.CELL_SIZE
+        disturbance_table.loc[year]['fire_area'] = fire_dis.area_burned
 
     # beaver pond
     if s.POND:
@@ -88,3 +98,6 @@ s.logging.info('______simulation completed')
 full_run_end = time.time()
 s.logging.info('end time: %s' % x.now)
 s.logging.info('full run time: %s minutes' % ((full_run_end - full_run_start) / 60))
+
+s.logging.info('creating ecosystem areas table')
+analysis.ecosystem_areas()

@@ -4,25 +4,29 @@ from arcpy import env
 import sys
 import logging
 
+# TODO
 # DIRECTORIES
-ROOT_DIR = os.path.join('D:\\', '_data', 'welikia', 'WelikiaDisturbance')
+ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance_kane_test')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = os.path.join('C:\\', 'Users', 'Kim', 'Dropbox')
+LOG_DIR = r'C:\Users\LabGuest\Dropbox\disturbance_logs\fire_refactor_test'
 
-BORO = 'bx'
+REGION = '2'
 
-ecocommunities = os.path.join(INPUT_DIR, 'ecocommunities.tif')
+ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities.tif' % REGION)
 
 INPUT_FILES = [
-    ecocommunities,
+    ecocommunities
 ]
+
+#
+DEBUG_MODE = False
 
 # DISTURBANCE FLAG TOGGLE
 GARDEN = True
 FIRE = True
-POND = True
+POND = False
 
 # LOGGING
 logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
@@ -30,11 +34,11 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1610)
+RUN_LENGTH = range(1409, 1420)
 
 # FIRE
 # initial parameters
-INITIAL_TIME_SINCE_DISTURBANCE = 10
+INITIAL_TIME_SINCE_DISTURBANCE = 20
 TRAIL_OVERGROWN_YRS = 15
 
 # duration settings
@@ -48,8 +52,8 @@ EXTINGUISH_THRESHOLD = 10
 CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities
-EXPECTED_TRAIL_ESCAPE = 0.15
-EXPECTED_GARDEN_ESCAPE = .02
+EXPECTED_TRAIL_ESCAPE = 0
+EXPECTED_GARDEN_ESCAPE = 0
 PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types
@@ -64,7 +68,7 @@ SHRUBLAND_CANOPY = 10
 
 # GUI controls
 INITIATE_RENDER_WAIT_TIME = 10
-SIMULATION_TIMEOUT = 5000
+SIMULATION_TIMEOUT = 100000
 
 # PONDS
 CARRYING_CAPACITY = 35
@@ -74,7 +78,7 @@ DAM_HEIGHT = 9
 
 # GARDENS
 PROXIMITY_BUFFER = 500
-PER_CAPITA_GARDEN_AREA = 1
+PER_CAPITA_GARDEN_AREA = 15
 
 TIME_TO_ABANDON = 20
 # SHRUB_SUCCESSION = 36

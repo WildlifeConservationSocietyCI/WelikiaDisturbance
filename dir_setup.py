@@ -1,12 +1,22 @@
 import os
+import arcpy
 
-
-ROOT_DIR = os.path.join('C:\\', 'Users', 'Jesse Moy','Documents', 'WelikiaDisturbance')
+ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance_kane_test')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 
-regions = [1, 2, 3, 4]
-dis = ['fire', 'pond', 'garden']
+REGION_BOUNDARIES = os.path.join(ROOT_DIR, '_inputs_full_extent', 'nybbwi.shp')
+
+regions = []
+
+cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
+for feature in cursor:
+    region_code = feature.BoroCode
+    regions.append(region_code)
+
+print regions
+
+disturbance_types = ['fire', 'pond', 'garden']
 
 
 def mkdir(path):
@@ -15,19 +25,22 @@ def mkdir(path):
 
 mkdir(INPUT_DIR)
 
-for i in dis:
+for i in disturbance_types:
     mkdir(os.path.join(INPUT_DIR, '%s' % i))
 
-mkdir(os.path.join(INPUT_DIR, 'fire', 'farsite'))
-mkdir(os.path.join(INPUT_DIR, 'fire', 'script'))
+mkdir(os.path.join(INPUT_DIR, 'fire', 'spatial'))
+mkdir(os.path.join(INPUT_DIR, 'fire', 'tabular'))
+mkdir(os.path.join(INPUT_DIR, 'garden', 'spatial'))
+mkdir(os.path.join(INPUT_DIR, 'garden', 'tabular'))
 
 mkdir(OUTPUT_DIR)
 
-for i in dis:
+for i in disturbance_types:
     mkdir(os.path.join(OUTPUT_DIR, '%s' % i))
 
 for region in regions:
-    mkdir(os.path.join(INPUT_DIR, 'fire', 'farsite', '%s' % region))
-    mkdir(os.path.join(INPUT_DIR, 'fire', 'script', '%s' % region))
-    mkdir(os.path.join(INPUT_DIR, 'garden', '%s' % region))
+    mkdir(os.path.join(INPUT_DIR, 'fire', 'spatial', '%s' % region))
+    mkdir(os.path.join(INPUT_DIR, 'garden', 'spatial', '%s' % region))
     mkdir(os.path.join(INPUT_DIR, 'pond', '%s' % region))
+
+mkdir(os.path.join(ROOT_DIR, 'temp'))
