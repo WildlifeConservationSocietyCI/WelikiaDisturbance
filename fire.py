@@ -97,6 +97,7 @@ class FireDisturbance(s.Disturbance):
         self.end_month = None
         self.end_day = None
         self.area_burned = 0
+        self.upland_area = 0
         self.farsite_output = os.path.join(self.BURN_RASTERS, '%s_farsite_output' % year)
         self.flame_length_ascii = os.path.join(self.BURN_RASTERS, '%s_farsite_output.fml' % year)
         self.memory = None
@@ -108,6 +109,7 @@ class FireDisturbance(s.Disturbance):
         self.set_communities()
         self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities)
         self.set_disturbances()
+        self.set_upland_area()
 
     def set_communities(self):
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
@@ -441,20 +443,6 @@ class FireDisturbance(s.Disturbance):
         self.get_memory()
         # s.logging.info('memory usage: %r Mb' % self.memory)
 
-    # def set_fuel(self):
-    #
-    #     # if os.path.isfile(self.FUEL_ascii):
-    #     #     logging.info('Setting fuel')
-    #     #     self.fuel = ascii_to_array(self.FUEL_ascii)
-    #     #
-    #     # else:
-    #     logging.info('Assigning initial fuel values')
-    #     self.ecosystem_to_fuel()
-    #     self.array_to_ascii(self.FUEL_ascii, self.fuel)
-    #
-    #     self.get_memory()
-    #     logging.info('memory usage: %r Mb' % self.memory)
-
     def get_ignition(self, in_ascii):
         array = ascii_to_array(in_ascii)
         for index, cell_value in numpy.ndenumerate(array):
@@ -731,6 +719,14 @@ class FireDisturbance(s.Disturbance):
         # Exit FARSITE
         farsite.Kill_()
 
+    def set_upland_area(self):
+        unique = numpy.unique(self.ecocommunities, return_counts=True)
+        d = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
+        for i in s.UPLAND_COMMUNITIES:
+            if i in d.keys():
+                self.upland_area += d[i]
+
+
     def tree_mortality(self, flame, age):
         """
             Tree_mortality calculates the percentage of the canopy in a cell killed during a burning event
@@ -820,7 +816,8 @@ class FireDisturbance(s.Disturbance):
         # s.logging.info('initialize run time: %s' % (initialize_time - start_time))
 
         # Check if trail fires escaped
-        number_of_trail_ignitions = numpy.random.poisson(lam=s.EXPECTED_TRAIL_ESCAPE)
+        scaled_expected_trail_escape = s.EXPECTED_TRAIL_ESCAPE * self.upland_area
+        number_of_trail_ignitions = numpy.random.poisson(lam=scaled_expected_trail_escape)
         if number_of_trail_ignitions > 0:
 
             # Get list of potential trail fire sites
@@ -962,70 +959,6 @@ class FireDisturbance(s.Disturbance):
                 succession_end = time.time()
 
                 s.logging.info('succession run time: %s minutes' % ((succession_end - succession_start) / 60))
-                # for index, cell_value in numpy.ndenumerate(self.ecocommunities):
-                #     row_index = index[0]
-                #     col_index = index[1]
-                #
-                #     climax = self.climax_communities[row_index][col_index]
-                #
-                #     flame_length = flame_length_array[row_index][col_index]
-                #
-                #     if flame_length > 0:
-                #         self.area_burned += 1
-                #
-                #         # Reset last disturbance array
-                #         self.time_since_disturbance[row_index][col_index] = 1
-                #
-                #         # Calculate tree mortality due to fire
-                #         if self.translation_table[cell_value]['forest'] == 1:
-                #             age = self.forest_age[row_index][col_index]
-                #             if age == 0:
-                #                 age = 1
-                #
-                #             percent_mortality = self.tree_mortality(flame_length, age)
-                #
-                #             # Revise canopy cover according to tree mortality
-                #             self.canopy[row_index][col_index] = int(self.canopy[row_index][col_index] *
-                #                                                     (1 - percent_mortality))
-                #
-                #             # Revise ecosystems based on new canopy
-                #             # Convert burned forest to shrubland
-                #             if self.canopy[row_index][col_index] < (
-                #                         self.translation_table[cell_value]['max_canopy'] / 2):
-                #                 self.ecocommunities[row_index][col_index] = s.SHRUBLAND_ID
-                #                 self.forest_age[row_index][col_index] = 1
-                #
-                #         # Convert burned shrubland to grassland
-                #         elif cell_value == 649 and self.canopy[row_index][col_index] < s.SHRUBLAND_CANOPY:
-                #             self.ecocommunities[row_index][col_index] = s.GRASSLAND_ID
-                #
-                #     elif flame_length < 0:
-                #
-                #         # increment last disturbance array
-                #         self.time_since_disturbance[row_index][col_index] += 1
-                #
-                #         if self.translation_table[cell_value]['forest_shrub'] == 1:
-                #             self.canopy[row_index][col_index] += 1
-                #             self.forest_age[row_index][col_index] += 1
-                #
-                #             if self.canopy[row_index][col_index] > self.translation_table[cell_value]['max_canopy']:
-                #                 self.canopy[row_index][col_index] = self.translation_table[cell_value]['max_canopy']
-                #
-                #         if cell_value == s.SHRUBLAND_ID:
-                #             if self.canopy[row_index][col_index] >= (self.translation_table[cell_value][
-                # 'max_canopy']):
-                #                 self.ecocommunities[row_index][col_index] = climax
-                #
-                #         if cell_value == 625:
-                #             if self.canopy[row_index][col_index] >= (self.translation_table[cell_value][
-                # 'max_canopy']):
-                #                 self.ecocommunities[row_index][col_index] = climax
-                #
-                #         elif cell_value == s.GRASSLAND_ID:
-                #             self.canopy[row_index][col_index] += 2
-                #
-                #             if self.canopy[row_index][col_index] >= s.SHRUBLAND_CANOPY:
-                #                 self.ecocommunities[row_index][col_index] = s.SHRUBLAND_ID
 
         # No Fire
         else:
