@@ -726,7 +726,6 @@ class FireDisturbance(s.Disturbance):
             if i in d.keys():
                 self.upland_area += d[i]
 
-
     def tree_mortality(self, flame, age):
         """
             Tree_mortality calculates the percentage of the canopy in a cell killed during a burning event

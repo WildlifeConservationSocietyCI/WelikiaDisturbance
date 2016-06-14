@@ -6,16 +6,16 @@ import logging
 
 # TODO
 # DIRECTORIES
-ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance_kane_test')
+ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
+OUTPUT_DIR = os.path.join(r"E:\_data\welikia\disturbance_log\sensitivity_tests\per-capita_garden_area\200_yr_trial_dependence_60\outputs")
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r'C:\Users\LabGuest\Dropbox\disturbance_logs\fire_refactor_test'
+LOG_DIR = r'C:\Users\LabGuest\Dropbox\disturbance_logs\sensitivity_tests\per-capita_garden_area\200_yr_trial_dependence_60'
 
 REGION = '2'
 
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities.tif' % REGION)
-
+UPLAND_COMMUNITIES = [616, 621, 622, 625, 629, 632, 635, 644, 647, 649, 650, 654]
 INPUT_FILES = [
     ecocommunities
 ]
