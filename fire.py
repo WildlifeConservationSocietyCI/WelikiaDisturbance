@@ -89,6 +89,7 @@ class FireDisturbance(s.Disturbance):
         self.ignition_sites = []
         self.potential_trail_ignition_sites = []
         self.potential_garden_ignition_sites = []
+        self.potential_lightning_ignition_sites = []
         self.start_date = None
         self.con_month = None
         self.con_day = None
@@ -816,6 +817,8 @@ class FireDisturbance(s.Disturbance):
 
         # Check if trail fires escaped
         scaled_expected_trail_escape = s.EXPECTED_TRAIL_ESCAPE * self.upland_area
+        s.logging.info('upland area: %s | scaled expected trail fire: %s'
+                       % (self.upland_area, scaled_expected_trail_escape))
         number_of_trail_ignitions = numpy.random.poisson(lam=scaled_expected_trail_escape)
         if number_of_trail_ignitions > 0:
 
@@ -855,8 +858,29 @@ class FireDisturbance(s.Disturbance):
                 for i in range(number_of_garden_ignitions):
                     self.ignition_sites.append(random.choice(self.potential_garden_ignition_sites))
 
+        # Check if lightning fires
+        scaled_expected_lightning_fire = s.EXPECTED_LIGHTNING_FIRE * self.upland_area
+        s.logging.info('upland area: %s | scaled expected lightning fire: %s'
+                       % (self.upland_area, scaled_expected_lightning_fire))
+        number_of_lightning_ignitions = numpy.random.poisson(lam=scaled_expected_lightning_fire)
+        if number_of_lightning_ignitions > 0:
+            rows, cols = numpy.where(((self.fuel != 14) &
+                                      (self.fuel != 16) &
+                                      (self.fuel != 98) &
+                                      (self.fuel != 99)))
+
+            for row, col in zip(rows, cols):
+                self.potential_lightning_ignition_sites.append((row, col))
+
+
+            # Select i sites from potential sites and appended to ignition_sites
+            if len(self.potential_lightning_ignition_sites) > 0:
+                for i in range(number_of_lightning_ignitions):
+                    self.ignition_sites.append(random.choice(self.potential_lightning_ignition_sites))
+
         s.logging.info('escaped trail fires: %s' % number_of_trail_ignitions)
         s.logging.info('escaped garden fires: %s' % number_of_garden_ignitions)
+        s.logging.info('lightning fires: %s' % number_of_lightning_ignitions)
 
         # s.logging.info('%s' % self.ignition_sites)
         s.logging.info('ignition sites: %s' % self.ignition_sites)
