@@ -38,4 +38,5 @@ def ecosystem_areas():
             d = get_counts(array)
             df.loc[year] = pd.Series(d)
 
+    df.fillna(value=0, inplace=True)
     df.to_csv(path_or_buf=os.path.join(s.LOG_DIR, 'ecosystem_areas.csv'))
