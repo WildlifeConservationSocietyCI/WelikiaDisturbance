@@ -27,7 +27,9 @@ for file in weather_files:
 
     # print df.head()
 
-    x = df[df['precip'] > 0]
+    slice = df.ix[df['month'] >= 3]
+    print slice.head()
+    x = slice[slice['precip'] > 0]
     precip_events += x['precip'].tolist()
 
 # pp(precip_events)
