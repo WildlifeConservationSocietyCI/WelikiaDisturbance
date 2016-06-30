@@ -15,6 +15,8 @@ def clear_dir(directory):
 clear_dir(s.OUTPUT_DIR)
 clear_dir(os.path.join(s.OUTPUT_DIR, 'garden'))
 clear_dir(os.path.join(s.OUTPUT_DIR, 'fire'))
+clear_dir(os.path.join(s.OUTPUT_DIR, 'fire', 'burn_rasters'))
+clear_dir(os.path.join(s.OUTPUT_DIR, 'pond'))
 
 # remove canopy, forest age, fuel and time since disturbance from the input dir
 rasters = ['canopy.asc', 'forest_age.asc', 'fuel.asc', 'time_since_disturbance.asc']
