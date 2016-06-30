@@ -117,17 +117,27 @@ class GardenDisturbance(s.Disturbance):
         calculate the area, in cells, needed to feed population at a given site
         :return:
         """
-        self.garden_area_target = int(self.population * s.PER_CAPITA_GARDEN_AREA / (s.CELL_SIZE ** 2))
+
+        x = random.choice(s.REQUIREMENT_VARIANCE)
+        self.garden_area_target = int(self.population * s.PER_CAPITA_GARDEN_AREA / (s.CELL_SIZE ** 2)) + x
 
     def succession(self):
         """
         update communities based on age and current type
         :return:
         """
+        if random.randint(0,100) <= s.ABANDONMENT_PROBABILITY:
+            print '**************abandoning garden'
+            local_communities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID), s.GRASSLAND_ID,
+                                               self.ecocommunities)
+            arcpy.env.extent = s.ecocommunities
 
-        self.ecocommunities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID) &
-                                           (self.time_since_disturbance > s.TIME_TO_ABANDON), s.GRASSLAND_ID,
-                                           self.ecocommunities)
+            self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(local_communities) == 0, local_communities,
+                                               self.ecocommunities)
+
+        # self.ecocommunities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID) &
+        #                                    (self.time_since_disturbance > s.TIME_TO_ABANDON), s.GRASSLAND_ID,
+        #                                    self.ecocommunities)
 
 
         # update age
@@ -178,6 +188,10 @@ class GardenDisturbance(s.Disturbance):
 
         arcpy.env.extent = self.temp_buffer
 
+        self.succession()
+
+        arcpy.env.extent = self.temp_buffer
+
         local_ecocommunities = arcpy.sa.ExtractByMask(self.ecocommunities, self.temp_buffer)
 
         if s.DEBUG_MODE:
@@ -190,7 +204,6 @@ class GardenDisturbance(s.Disturbance):
 
         if s.DEBUG_MODE:
             self.local_suitability.save(os.path.join(self.OUTPUT_DIR, 'local_suitability.tif'))
-
 
     def set_garden_center(self):
         """
@@ -350,13 +363,13 @@ class GardenDisturbance(s.Disturbance):
 
         self.calculate_suitability()
 
-
         self.points_to_coordinates()
+
         self.set_populations()
 
         self.time_since_disturbance = arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
 
-        self.succession()
+        # self.succession()
 
         s.logging.info('checking for existing gardens')
         for population, coordinates in zip(self.site_populations, self.coordinate_list):
@@ -370,6 +383,8 @@ class GardenDisturbance(s.Disturbance):
 
             self.set_local_extent()
             # check for gardens in area buffered around site
+
+            # self.succession()
 
             if self.garden_area == 0:
 
