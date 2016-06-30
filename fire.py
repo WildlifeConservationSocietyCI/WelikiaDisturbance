@@ -483,11 +483,10 @@ class FireDisturbance(s.Disturbance):
         try:
             load_project = farsite.window_(title='Select Project File')
             load_project.Wait('ready').SetFocus()
-
             load_project[u'File &name:Edit'].SetEditText(self.FPJ)
             load_project[u'&Open'].Click()
-            time.sleep(.5)
-            farsite[u'Custom Fuel Model File Converted to new Format'].SetFocus()
+            # time.sleep(.5)
+            farsite[u'Custom Fuel Model File Converted to new Format'].Wait('ready').SetFocus()
             farsite[u'Custom Fuel Model File Converted to new Format'][u'OK'].Click()
             # s.logging.info('Project file loaded')
 
@@ -532,7 +531,7 @@ class FireDisturbance(s.Disturbance):
 
             # Wait while FARSITE generates the landscape file
             landscape_generated = farsite.window_(title_re='.*Landscape Generated$')
-            landscape_generated.Wait('visible', timeout=1000, retry_interval=0.5)
+            landscape_generated.Wait('visible', timeout=10000, retry_interval=0.5)
             landscape_generated.SetFocus()
             landscape_generated[u'OK'].Click()
 
@@ -909,6 +908,7 @@ class FireDisturbance(s.Disturbance):
             if os.path.exists(self.FLAME_LENGTH_ascii % self.year):
                 flame_length_array = ascii_to_array(self.FLAME_LENGTH_ascii % self.year)
                 flame_length_array[flame_length_array == -1] = 0
+                self.area_burned = numpy.count_nonzero(flame_length_array)
                 # Revise ecosystem raster based on fire
                 self.time_since_disturbance[flame_length_array > 0] = 0
                 self.time_since_disturbance[flame_length_array <= 0] += 1
