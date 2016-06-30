@@ -10,6 +10,7 @@ import glob
 import re
 import settings as s
 import arcpy
+from scipy import stats
 
 plt.style.use('ggplot')
 
@@ -20,44 +21,28 @@ def ascii_to_array(in_ascii_path):
     array = gdal_array.DatasetReadAsArray(ascii)
     return array
 
-for i in range(1, 2):
+def time_since_fire(path, ecocommunities):
     # load time_since_disturbance into np_array
-    path = os.path.join(ROOT_DIR % i, 'test.tif')
-    # extent = ascii_to_array(r"E:\_data\welikia\disturbance_log\200_yr_trial_%s\outputs\ecocommunities_1609.tif" % i)
+    extent = ascii_to_array(ecocommunities)
     time_since_disturbance = ascii_to_array(path)
     # time_since_disturbance = np.where((extent != 600) | (extent != 609) | (extent != 608) | (extent != -9999),
     #                                   time_since_disturbance, -9999)
 
-    print time_since_disturbance.shape
+    time_since_disturbance[(extent == 600) | (extent == 609) | (extent == 608) | (extent == -9999)] = -9999
+    table = stats.itemfreq(time_since_disturbance)
+    x = table[:, 0]
+    y = table[:, 1]
+    l = []
+    for val, freq in zip(x, y):
+        if val >= 0 & val <= 190:
+            for count in range(0, freq):
+                l.append(val)
+    plt.hist(l, bins=20)
+    plt.xlim(0, 190)
+    plt.ylim(0, 1000000)
+    plt.show()
+    # print l
 
-    # create data frame of unique values and counts
-
-    unique = np.unique(time_since_disturbance, return_counts=True)
-
-    d = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
-    # df = pd.DataFrame(data={'count': unique[1]}, index=unique[0])
-    del d[2147483647]
-    # total = sum(d.values())
-    # for z in d:
-    #     d[z] = d[z] / total
-    pp(d)
-
-    plt.subplot(4, 2, i)
-    plt.hist(d.keys(), weights=d.values(), bins=50, color='black')
-    if i == 6 or i == 7:
-        plt.xlabel('years since fire')
-
-    plt.ylim(0, 20)
-    plt.xlim(0, 200)
-    plt.ylabel('area ($km^2$)')
-    plt.title('trial %s' % i)
-
-    # ll_corner = arcpy.Point(589779.34038235,4515478.8842849)
-    # out_ras = arcpy.NumPyArrayToRaster(time_since_disturbance,
-    #                                     value_to_nodata=-9999,
-    #                                     lower_left_corner=ll_corner,
-    #                                     x_cell_size=5)
-    #
-    # out_ras.save(r'E:\_data\welikia\disturbance_log\200_yr_trial_%s\clip_tsd.tif' % i)
-
-plt.show()
+t_path = os.path.join(ROOT_DIR, 'outputs', 'fire', '1609_time_since_disturbance.asc')
+c_path = os.path.join(ROOT_DIR, 'outputs', 'ecocommunities_1609.tif')
+time_since_fire(t_path, c_path)
