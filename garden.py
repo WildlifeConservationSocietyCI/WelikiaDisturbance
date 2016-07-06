@@ -126,6 +126,7 @@ class GardenDisturbance(s.Disturbance):
         update communities based on age and current type
         :return:
         """
+
         if random.randint(0,100) <= s.ABANDONMENT_PROBABILITY:
             print '**************abandoning garden'
             local_communities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID), s.GRASSLAND_ID,
@@ -134,11 +135,6 @@ class GardenDisturbance(s.Disturbance):
 
             self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(local_communities) == 0, local_communities,
                                                self.ecocommunities)
-
-        # self.ecocommunities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID) &
-        #                                    (self.time_since_disturbance > s.TIME_TO_ABANDON), s.GRASSLAND_ID,
-        #                                    self.ecocommunities)
-
 
         # update age
 

@@ -4,6 +4,7 @@ from settings import os
 import random
 import time
 import logging
+import numpy
 
 
 class PondDisturbance(s.Disturbance):
@@ -43,6 +44,7 @@ class PondDisturbance(s.Disturbance):
         self.temp_point = os.path.join(s.TEMP_DIR, 'temp_point.shp')
         self.pond_list = []
         self.new_pond_area = 0
+        self.upland_area = 0
 
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % year)
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (year - 1))
@@ -57,6 +59,14 @@ class PondDisturbance(s.Disturbance):
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
 
         self.set_time_since_disturbance()
+        self.set_upland_area()
+
+    def set_upland_area(self):
+        unique = numpy.unique(self.ecocommunities, return_counts=True)
+        d = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
+        for i in s.UPLAND_COMMUNITIES:
+            if i in d.keys():
+                self.upland_area += d[i]
 
     def reset_temp(self, filename):
         if arcpy.Exists(filename):
@@ -68,7 +78,7 @@ class PondDisturbance(s.Disturbance):
         suitable habitat.
         :return:
         """
-        num_points = s.CARRYING_CAPACITY - self.pond_count
+        num_points = int(s.DENSITY * self.upland_area) - self.pond_count
 
         # constraint is the area of all suitable loacations for new_ponds
         # num_points is the maximum number of new_ponds that should be assigned
@@ -329,10 +339,10 @@ class PondDisturbance(s.Disturbance):
 
         self.count_ponds()
 
-        if self.pond_count < s.CARRYING_CAPACITY and self.initial_flag is False:
+        if self.pond_count < s.DENSITY and self.initial_flag is False:
             self._region_group = None
             s.logging.info('number of active ponds [%s] is below carrying capacity [%s], creating new ponds'
-                           % (self.pond_count, s.CARRYING_CAPACITY))
+                           % (self.pond_count, s.DENSITY))
 
             self.create_ponds()
 
