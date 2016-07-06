@@ -3,14 +3,18 @@ import arcpy
 from arcpy import env
 import sys
 import logging
+import numpy
 
 # TODO
 # DIRECTORIES
+TRIAL_NAME = 'test'
+
 ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.path.join(r"E:\_data\welikia\disturbance_log\sensitivity_tests\per-capita_garden_area\200_yr_trial_dependence_60\outputs")
+OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
+# OUTPUT_DIR = os.path.join(r"E:\_data\welikia\disturbance_log\%s" % TRIAL_NAME)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r'C:\Users\LabGuest\Dropbox\disturbance_logs\sensitivity_tests\per-capita_garden_area\200_yr_trial_dependence_60'
+LOG_DIR = r'C:\Users\LabGuest\Dropbox\disturbance_logs\%s' % TRIAL_NAME
 
 REGION = '2'
 
