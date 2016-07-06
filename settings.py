@@ -51,10 +51,11 @@ EXTINGUISH_THRESHOLD = 10
 # Number of days used to condition fuel before the start of fire
 CONDITIONING_LENGTH = 15
 
-# escaped fire probabilities
-EXPECTED_TRAIL_ESCAPE = 0
-EXPECTED_GARDEN_ESCAPE = 0
-PROB_HUNT_ESCAPE = 10
+# escaped fire probabilities number of fires / km^2
+EXPECTED_LIGHTNING_FIRE = 0.0005425
+EXPECTED_TRAIL_ESCAPE = 0.002222222222
+EXPECTED_GARDEN_ESCAPE = 0.0002777777778
+# PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types
 NONBURNABLE = [14, 16, 98, 99]
@@ -71,7 +72,8 @@ INITIATE_RENDER_WAIT_TIME = 10
 SIMULATION_TIMEOUT = 100000
 
 # PONDS
-CARRYING_CAPACITY = 35
+# carrying capacity is
+DENSITY = 0.8
 MINIMUM_DISTANCE = 1000
 CELL_SIZE = 5
 DAM_HEIGHT = 9
@@ -80,7 +82,7 @@ DAM_HEIGHT = 9
 PROXIMITY_BUFFER = 500
 PER_CAPITA_GARDEN_AREA = 15
 REQUIREMENT_VARIANCE = range(-5, 6)
-ABANDONMENT_PROBABILITY = 25
+ABANDONMENT_PROBABILITY = 5
 
 # TIME_TO_ABANDON = 20
 # SHRUB_SUCCESSION = 36
@@ -102,6 +104,7 @@ class Disturbance(object):
     def __init__(self, year):
         self.setup_dirs()
         self.check_inputs()
+
 
     # ensure that dir structure exists
     def setup_dirs(self):
