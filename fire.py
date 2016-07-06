@@ -925,7 +925,7 @@ class FireDisturbance(s.Disturbance):
 
                 # burned area
                 # isolate burned area (mask unburned)
-                canopy_burned = numpy.ma.masked_array(self.canopy, mask=(flame_length_array <= 0))
+                canopy_burned = numpy.ma.masked_array(self.canopy, mask=(flame_length_array == -1))
 
                 # update community based on burned canopy
 
@@ -944,7 +944,7 @@ class FireDisturbance(s.Disturbance):
 
                 # unburned
                 # isolate unburned area (mask out burned)
-                canopy_unburned = numpy.ma.masked_array(self.canopy, mask=(flame_length_array > 0))
+                canopy_unburned = numpy.ma.masked_array(self.canopy, mask=(flame_length_array != -1))
 
                 # increment canopy and update community
                 for key in self.translation_table.keys():
@@ -984,7 +984,7 @@ class FireDisturbance(s.Disturbance):
                 s.logging.info('succession run time: %s minutes' % ((succession_end - succession_start) / 60))
 
         # No Fire
-        else:
+        elif len(self.ignition_sites) == 0:
             # s.logging.info('No escaped fires for %r' % self.year)
 
             self.time_since_disturbance += 1
@@ -1051,6 +1051,9 @@ class FireDisturbance(s.Disturbance):
             shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
             shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
             shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
+        shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
+        shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
+        shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
         shutil.copyfile(self.TIME_SINCE_DISTURBANCE_ascii, self.LOG_DIR % (self.year, 'time_since_disturbance'))
 
         end_time = time.time()
