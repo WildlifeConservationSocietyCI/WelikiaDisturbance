@@ -329,7 +329,7 @@ class PondDisturbance(s.Disturbance):
 
         self.count_ponds()
 
-        if self.pond_count < s.CARRYING_CAPACITY and self.initial_flag is False:
+        if self.pond_count < s.DENSITY * self.upland and self.initial_flag is False:
             self._region_group = None
             s.logging.info('number of active ponds [%s] is below carrying capacity [%s], creating new ponds'
                            % (self.pond_count, s.CARRYING_CAPACITY))
