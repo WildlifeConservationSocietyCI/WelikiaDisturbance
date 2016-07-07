@@ -59,6 +59,7 @@ class GardenDisturbance(d.Disturbance):
         self.set_ecocommunities()
         self.set_time_since_disturbance()
 
+
     def set_ecocommunities(self):
         """
 
@@ -123,12 +124,12 @@ class GardenDisturbance(d.Disturbance):
         x = random.choice(s.REQUIREMENT_VARIANCE)
         self.garden_area_target = int(self.population * s.PER_CAPITA_GARDEN_AREA / (s.CELL_SIZE ** 2)) + x
 
-    def succession(self):
+    def abandon_garden(self):
         """
         update communities based on age and current type
         :return:
         """
-        if random.randint(0,100) <= s.ABANDONMENT_PROBABILITY:
+        if random.randint(0, 100) <= s.ABANDONMENT_PROBABILITY:
             print '**************abandoning garden'
             local_communities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID), s.GRASSLAND_ID,
                                                self.ecocommunities)
@@ -137,12 +138,6 @@ class GardenDisturbance(d.Disturbance):
             self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(local_communities) == 0, local_communities,
                                                self.ecocommunities)
 
-        # self.ecocommunities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID) &
-        #                                    (self.time_since_disturbance > s.TIME_TO_ABANDON), s.GRASSLAND_ID,
-        #                                    self.ecocommunities)
-
-
-        # update age
 
     def update_time_since_disturbance(self):
         """
@@ -190,7 +185,7 @@ class GardenDisturbance(d.Disturbance):
 
         arcpy.env.extent = self.temp_buffer
 
-        self.succession()
+        self.abandon_garden()
 
         arcpy.env.extent = self.temp_buffer
 
