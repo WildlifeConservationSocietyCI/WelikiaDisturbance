@@ -13,7 +13,13 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib import  colors
 
+plt.style.use('ggplot')
+
+new_style = {'grid': False}
+matplotlib.rc('axes', **new_style)
 
 class Succession():
 
@@ -29,17 +35,17 @@ class Succession():
         self.pond_time_since_disturbance = None
         self.garden_time_since_disturbance = None
         self.succession_table = pd.read_csv(r'E:\_data\welikia\WelikiaDisturbance\inputs\succession_table .csv')
-        self.com_list = self.succession_table['from_ID']
+        self.com_list = [624] #self.succession_table['from_ID']
 
 
         # TEST ARRAYS
         self.shape = (10, 10)
-        # self.communities = np.empty(shape=self.shape)
-        #
-        # # create random land cover grid
-        # for index, val in np.ndenumerate(self.communities):
-        #     self.communities[index[0]][index[1]] = np.random.choice(self.com_list)
-        self.communities = np.full(shape=self.shape, fill_value=648)
+        self.communities = np.empty(shape=self.shape)
+
+        # create random land cover grid
+        for index, val in np.ndenumerate(self.communities):
+            self.communities[index[0]][index[1]] = np.random.choice(self.com_list)
+        # self.communities = np.full(shape=self.shape, fill_value=648)
         self.canopy = np.random.randint(30, size=self.shape)
         self.forest_age = np.random.randint(30, size=self.shape)
         self.climax_communities = np.full(shape=self.shape, fill_value=644)
@@ -118,17 +124,20 @@ class Succession():
 
         self.get_memory()
         # s.logging.info('memory usage: %r Mb' % self.memory)
-   
+
     def grow(self):
 
         for index, row in self.succession_table.iterrows():
 
-            # increment forest age
+            # increment forest age and canopy
             if row['type'] == 'forest':
                 self.forest_age[self.communities == row['from_ID']] += 1
+                self.canopy[(self.communities == row['from_ID']) &
+                            (self.canopy < 100)] += row['canopy_growth']
 
             # increment canopy
-            self.canopy[self.communities == row['from_ID']] += row['canopy_growth']
+            else:
+                self.canopy[self.communities == row['from_ID']] += row['canopy_growth']
 
     def transition(self):
 
@@ -138,70 +147,50 @@ class Succession():
             # SUCCESSIONAL GRASSLAND
             if key == 635:
                 self.communities[(self.communities == key) &
-                                 (self.canopy >= row['max_canopy'])] = row['to_ID']
+                                 (self.canopy > row['max_canopy'])] = row['to_ID']
 
             # SUCCESSIONAL OLD FIELD
             if key == 648:
                 self.communities[(self.communities == key) &
-                                 (self.canopy >= row['max_canopy'])] = row['to_ID']
-
-            # SUCCESSIONAL FERN MEADOW
-            if key == 730:
-                self.communities[(self.communities == key) &
-                                 (self.canopy >= row['max_canopy'])] = row['to_ID']
-
-            # SUCCESSIONAL SAND-PLAIN GRASSLAND
-            if key == 732:
-                self.communities[(self.communities == key) &
-                                 (self.canopy >= row['max_canopy'])] = row['to_ID']
+                                 (self.canopy > row['max_canopy'])] = row['to_ID']
 
             # SUCCESSIONAL SHRUBLAND
             if key == 649:
                 self.communities[(self.communities == key) &
-                                 (self.canopy >= row['max_canopy'])] = row['to_ID'] = row['to_ID']
+                                 (self.canopy > row['max_canopy'])] = row['to_ID'] = row['to_ID']
 
-            # SUCCESSIONAL SWAMP SHRUBLAND
-            if key == 625:
-                self.communities = numpy.where((self.communities == key) &
-                                               (self.canopy >= row['max_canopy']),
-                                               self.climax_communities, self.communities)
-
-            # SUCCESSIONAL BLUEBERRY HEATH
-            if key == 731:
-                self.communities = numpy.where((self.communities == key) &
-                                               (self.canopy >= row['max_canopy']),
-                                               self.climax_communities, self.communities)
-
-            # SUCCESSIONAL NORTHERN HARDWOOD
+            # SUCCESSIONAL HARDWOOD FOREST
             if key == 733:
                 self.communities = numpy.where((self.communities == key) &
-                                               (self.canopy >= row['max_canopy']),
+                                               (self.canopy > row['max_canopy']),
                                                self.climax_communities, self.communities)
 
-            # SUCCESSIONAL SOUTHERN HARDWOOD
-            if key == 734:
+            # SHALLOW EMERGENT MARSH
+            if key == 624:
+                self.communities[(self.communities == key) &
+                                 (self.canopy > row['max_canopy'])] = row['to_ID']
+
+            # SHRUB SWAMP
+            if key == 625:
+                self.communities[(self.communities == key) &
+                                 (self.canopy > row['max_canopy'])] = row['to_ID']
+
+            # RED MAPLE HARDWOOD SWAMP
+            if key == 629:
                 self.communities = numpy.where((self.communities == key) &
-                                               (self.canopy >= row['max_canopy']),
-                                               self.climax_communities, self.communities)
-
-            # SUCCESSIONAL MARITIME HARDWOOD
-            if key == 735:
-                self.communities = numpy.where((self.communities == key) &
-                                               (
-                                                   self.canopy >= row['max_canopy']),
-                                               self.climax_communities, self.communities)
+                                               (self.forest_age > row['max_canopy']),
+                                                self.climax_communities, self.communities)
 
 
-s = Succession(1409)
-
-print s.succession_table.head()
-
-print type(s.succession_table['to_ID'][0]), s.succession_table['to_ID'][0]
-print type(s.succession_table['from_ID'][3]), s.succession_table['from_ID'][3]
-print type(s.succession_table['fire_last_disturbance'][3]), s.succession_table['fire_last_disturbance'][3]
 
 s1 = Succession(1)
-for year in range(0, 10):
+
+print 'communities \n'
+print s1.communities
+print 'canopy \n'
+print s1.canopy
+run = range(0, 25)
+for year in run:
     print 'year: %s' % year
     s1.grow()
     s1.transition()
@@ -209,10 +198,45 @@ for year in range(0, 10):
     print s1.communities
     print 'canopy \n'
     print s1.canopy
-    # if year == 19:
-    #     plt.imshow(s1.communities, interpolation='none')
-    #     plt.show()
-    #     print s1.communities
-    #     plt.imshow(s1.canopy, interpolation='none', cmap='hot')
-    #     plt.show()
-    #     print s1.canopy
+
+    if year == max(run):
+        # communities
+        ax = plt.subplot(311)
+        ax.imshow(s1.communities, interpolation='none')
+        min_val, max_val = 0, s1.shape[0]
+        ind_array = np.arange(min_val, max_val, 1.0)
+        x, y = np.meshgrid(ind_array, ind_array)
+
+        for x_val, y_val, com in zip(x.flatten(), y.flatten(), s1.communities.flatten()):
+            c = int(com)
+            ax.text(x_val, y_val, c, va='center', ha='center', color='white')
+
+        # print s1.communities
+        ax2 = plt.subplot(312)
+        ax2.imshow(s1.communities, interpolation='none')
+
+        # canopy
+        min_val, max_val = 0, s1.shape[0]
+        ind_array = np.arange(min_val, max_val, 1.0)
+        x, y = np.meshgrid(ind_array, ind_array)
+
+        for x_val, y_val, com in zip(x.flatten(), y.flatten(), s1.canopy.flatten()):
+            c = int(com)
+            ax2.text(x_val, y_val, c, va='center', ha='center', color='red')
+
+        ax2.imshow(s1.canopy, interpolation='none', cmap='Greens')
+
+        # forest age
+        ax3 = plt.subplot(313)
+        ax3.imshow(s1.forest_age, interpolation='none')
+        min_val, max_val = 0, s1.shape[0]
+        ind_array = np.arange(min_val, max_val, 1.0)
+        x, y = np.meshgrid(ind_array, ind_array)
+
+        for x_val, y_val, com in zip(x.flatten(), y.flatten(), s1.forest_age.flatten()):
+            c = int(com)
+            ax3.text(x_val, y_val, c, va='center', ha='center', color='red')
+
+        ax3.imshow(s1.forest_age, interpolation='none', cmap='Blues')
+        plt.show()
+        # print s1.canopy
