@@ -1,12 +1,14 @@
 import settings as s
+import disturbance as d
 from settings import arcpy
 from settings import os
 import random
 import time
+import numpy as np
 import logging
 
 
-class PondDisturbance(s.Disturbance):
+class PondDisturbance(d.Disturbance):
     # CLASS VARIABLES
     year = None
     ecocommunities = None
@@ -27,10 +29,8 @@ class PondDisturbance(s.Disturbance):
     SUITABLE_STREAMS = os.path.join(INPUT_DIR, s.REGION, 'stream_suitability.tif')
 
     def __init__(self, year):
-
-        # self.clear_temp()
-
         super(PondDisturbance, self).__init__(year)
+
         self.year = year
         self.initial_flag = False
         self.time_since_disturbance = None

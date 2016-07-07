@@ -1,4 +1,5 @@
 import settings as s
+import disturbance as d
 from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo import gdal_array
@@ -21,7 +22,7 @@ def ascii_to_array(in_ascii_path):
     return array
 
 
-class FireDisturbance(s.Disturbance):
+class FireDisturbance(d.Disturbance):
     # CLASS VARIABLES
 
     # Directories

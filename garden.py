@@ -1,12 +1,13 @@
 import os
 import settings as s
+import disturbance as d
 import arcpy
 import numpy
 import random
 
 
 
-class GardenDisturbance(s.Disturbance):
+class GardenDisturbance(d.Disturbance):
     # CLASS VARIABLES
     year = None
     ecocommunities = None
@@ -28,6 +29,7 @@ class GardenDisturbance(s.Disturbance):
     SITES = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'garden_sites.shp')
 
     def __init__(self, year):
+        super(GardenDisturbance, self).__init__(year)
 
         self.site_populations = []
         self.coordinate_list = []
