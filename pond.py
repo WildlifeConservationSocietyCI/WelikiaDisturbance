@@ -276,6 +276,31 @@ class PondDisturbance(s.Disturbance):
         # setting the age of new ponds to 1 instead of 0 seems to solve this problem for now
         self.time_since_disturbance = arcpy.sa.Con(self.new_ponds == 622, 1, self.time_since_disturbance)
 
+    def abandon_pond(self):
+
+        # get raster attributes
+        lowerLeft = arcpy.Point(self.ecocommunities.extent.XMin, self.ecocommunities.extent.YMin)
+        cellSize = self.ecocommunities.meanCellWidth
+
+        # convert community raster to array
+        com_array = arcpy.RasterToNumPyArray(self.ecocommunities)
+
+        # idenetify individual ponds using region group
+        ponds = arcpy.sa.SetNull(self.ecocommunities != 622, 622)
+
+        region_group = arcpy.sa.RegionGroup(in_raster=ponds,
+                                            number_neighbors='EIGHT',
+                                            zone_connectivity='CROSS',
+                                            )
+        # create region group array
+        group_array = arcpy.RasterToNumPyArray(region_group)
+        pond_list = np.unique(group_array)
+        print pond_list
+        for i in pond_list:
+            if np.random.randint(0, 100) <= s.POND_ABANDONMENT_PROBABILITY:
+                print '***********abandon pond'
+                com_array[group_array == i] = 624
+        self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lowerLeft, cellSize)
     def succession(self):
         """
         succession: this method uses a nested conditional statement
