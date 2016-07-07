@@ -53,9 +53,10 @@ if arcpy.Exists(os.path.join(INPUT_DIR, 'dem.asc')) is False:
     arcpy.RasterToASCII_conversion(DEM, os.path.join(INPUT_DIR, 'dem.asc'))
 
 # slope
-if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.asc')) is False:
+if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.tif')) is False:
     logging.info('creating ascii slope')
     slope = arcpy.sa.Slope(DEM, output_measurement='DEGREE')
+    slope.save(os.path.join(INPUT_DIR, 'slope.tif'))
     arcpy.RasterToASCII_conversion(slope, os.path.join(INPUT_DIR, 'slope.asc'))
 else:
     slope = arcpy.Raster(os.path.join(INPUT_DIR, 'slope.asc'))
