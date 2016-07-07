@@ -3,14 +3,18 @@ import arcpy
 from arcpy import env
 import sys
 import logging
+import numpy
 
 # TODO
 # DIRECTORIES
+TRIAL_NAME = 'test'
+
 ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.path.join(r"E:\_data\welikia\disturbance_log\sensitivity_tests\per-capita_garden_area\200_yr_trial_dependence_60\outputs")
+OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
+# OUTPUT_DIR = os.path.join(r"E:\_data\welikia\disturbance_log\%s" % TRIAL_NAME)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r'C:\Users\LabGuest\Dropbox\disturbance_logs\sensitivity_tests\per-capita_garden_area\200_yr_trial_dependence_60'
+LOG_DIR = r'C:\Users\LabGuest\Dropbox\disturbance_logs\%s' % TRIAL_NAME
 
 REGION = '2'
 
@@ -24,9 +28,9 @@ INPUT_FILES = [
 DEBUG_MODE = False
 
 # DISTURBANCE FLAG TOGGLE
-GARDEN = True
-FIRE = True
-POND = False
+GARDEN = False
+FIRE = False
+POND = True
 
 # LOGGING
 logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
@@ -34,7 +38,7 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1420)
+RUN_LENGTH = range(1409, 1411)
 
 # FIRE
 # initial parameters
@@ -51,10 +55,11 @@ EXTINGUISH_THRESHOLD = 10
 # Number of days used to condition fuel before the start of fire
 CONDITIONING_LENGTH = 15
 
-# escaped fire probabilities
-EXPECTED_TRAIL_ESCAPE = 0
-EXPECTED_GARDEN_ESCAPE = 0
-PROB_HUNT_ESCAPE = 10
+# escaped fire probabilities number of fires / km^2
+EXPECTED_LIGHTNING_FIRE = 0.0005425
+EXPECTED_TRAIL_ESCAPE = 0.002222222222
+EXPECTED_GARDEN_ESCAPE = 0.0002777777778
+# PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types
 NONBURNABLE = [14, 16, 98, 99]
@@ -71,8 +76,10 @@ INITIATE_RENDER_WAIT_TIME = 10
 SIMULATION_TIMEOUT = 100000
 
 # PONDS
-CARRYING_CAPACITY = 35
+# carrying capacity is
+DENSITY = 0.8
 MINIMUM_DISTANCE = 1000
+POND_ABANDONMENT_PROBABILITY = 10
 CELL_SIZE = 5
 DAM_HEIGHT = 9
 
@@ -80,7 +87,7 @@ DAM_HEIGHT = 9
 PROXIMITY_BUFFER = 500
 PER_CAPITA_GARDEN_AREA = 15
 REQUIREMENT_VARIANCE = range(-5, 6)
-ABANDONMENT_PROBABILITY = 25
+ABANDONMENT_PROBABILITY = 5
 
 # TIME_TO_ABANDON = 20
 # SHRUB_SUCCESSION = 36
@@ -94,23 +101,6 @@ SHRUBLAND_ID = 649
 
 # Disturbance Class Test
 
-class Disturbance(object):
-    ROOT_DIR = ROOT_DIR
-    INPUT_DIR = INPUT_DIR
-    OUTPUT_DIR = OUTPUT_DIR
-
-    def __init__(self, year):
-        self.setup_dirs()
-        self.check_inputs()
-
-    # ensure that dir structure exists
-    def setup_dirs(self):
-        if not os.path.isdir(ROOT_DIR):
-            pass
-
-    def check_inputs(self):
-        for file in INPUT_FILES:
-            pass
 
 
 # Environment Setting
