@@ -926,7 +926,7 @@ class FireDisturbance(d.Disturbance):
 
                 # burned area
                 # isolate burned area (mask unburned)
-                canopy_burned = numpy.ma.masked_array(self.canopy, mask=(flame_length_array <= 0))
+                canopy_burned = numpy.ma.masked_array(self.canopy, mask=(flame_length_array == -1))
 
                 # update community based on burned canopy
 
@@ -943,79 +943,79 @@ class FireDisturbance(d.Disturbance):
                         self.ecocommunities[(self.ecocommunities == key) &
                                             (canopy_burned < s.SHRUBLAND_CANOPY)] = s.GRASSLAND_ID
 
-                # unburned
-                # isolate unburned area (mask out burned)
-                canopy_unburned = numpy.ma.masked_array(self.canopy, mask=(flame_length_array > 0))
-
-                # increment canopy and update community
-                for key in self.translation_table.keys():
-
-                    # update forest canopy and age
-                    if self.translation_table[key]['forest_shrub'] == 1:
-                        canopy_unburned[(self.ecocommunities == key) &
-                                        (canopy_unburned < self.translation_table[key]['max_canopy'])] += 1
-
-                        self.forest_age[self.ecocommunities == key] += 1
-
-                    # shrubland succession
-                    if key == s.SHRUBLAND_ID:
-                        self.ecocommunities = numpy.where((self.ecocommunities == key) &
-                                                          (
-                                                          canopy_unburned >= self.translation_table[key]['max_canopy']),
-                                                          self.climax_communities, self.ecocommunities)
-                    # shrub swamp succession
-                    if key == 625:
-                        self.ecocommunities = numpy.where((self.ecocommunities == key) &
-                                                          (
-                                                          canopy_unburned >= self.translation_table[key]['max_canopy']),
-                                                          self.climax_communities, self.ecocommunities)
-
-                    # update grassland canopy and succession
-                    if key == s.GRASSLAND_ID:
-                        canopy_unburned[self.ecocommunities == key] += 2
-
-                        self.ecocommunities[(self.ecocommunities == key) &
-                                            (canopy_unburned >= s.SHRUBLAND_CANOPY)] = s.SHRUBLAND_ID
-
-                # integrate burned and unburned canopy
-                self.canopy = numpy.where(canopy_unburned, canopy_unburned, canopy_burned)
-
-                succession_end = time.time()
-
-                s.logging.info('succession run time: %s minutes' % ((succession_end - succession_start) / 60))
-
-        # No Fire
-        else:
-            # s.logging.info('No escaped fires for %r' % self.year)
-
-            self.time_since_disturbance += 1
-
-            for key in self.translation_table.keys():
-
-                # update forest canopy and age
-                if self.translation_table[key]['forest_shrub'] == 1:
-                    self.canopy[(self.ecocommunities == key) &
-                                (self.canopy < self.translation_table[key]['max_canopy'])] += 1
-
-                    self.forest_age[self.ecocommunities == key] += 1
-
-                # succeed shrubland
-                if key == s.SHRUBLAND_ID:
-                    self.ecocommunities = numpy.where((self.ecocommunities == key) &
-                                                      (self.canopy >= self.translation_table[key]['max_canopy']),
-                                                      self.climax_communities, self.ecocommunities)
-
-                if key == 625:
-                    self.ecocommunities = numpy.where((self.ecocommunities == key) &
-                                                      (self.canopy >= self.translation_table[key]['max_canopy']),
-                                                      self.climax_communities, self.ecocommunities)
-
-                # update grassland canopy and succeed
-                if key == s.GRASSLAND_ID:
-                    self.canopy[self.ecocommunities == key] += 2
-
-                    self.ecocommunities[(self.ecocommunities == key) &
-                                        (self.canopy >= s.SHRUBLAND_CANOPY)] = s.SHRUBLAND_ID
+        #         # unburned
+        #         # isolate unburned area (mask out burned)
+        #         canopy_unburned = numpy.ma.masked_array(self.canopy, mask=(flame_length_array > 0))
+        #
+        #         # increment canopy and update community
+        #         for key in self.translation_table.keys():
+        #
+        #             # update forest canopy and age
+        #             if self.translation_table[key]['forest_shrub'] == 1:
+        #                 canopy_unburned[(self.ecocommunities == key) &
+        #                                 (canopy_unburned < self.translation_table[key]['max_canopy'])] += 1
+        #
+        #                 self.forest_age[self.ecocommunities == key] += 1
+        #
+        #             # shrubland succession
+        #             if key == s.SHRUBLAND_ID:
+        #                 self.ecocommunities = numpy.where((self.ecocommunities == key) &
+        #                                                   (
+        #                                                   canopy_unburned >= self.translation_table[key]['max_canopy']),
+        #                                                   self.climax_communities, self.ecocommunities)
+        #             # shrub swamp succession
+        #             if key == 625:
+        #                 self.ecocommunities = numpy.where((self.ecocommunities == key) &
+        #                                                   (
+        #                                                   canopy_unburned >= self.translation_table[key]['max_canopy']),
+        #                                                   self.climax_communities, self.ecocommunities)
+        #
+        #             # update grassland canopy and succession
+        #             if key == s.GRASSLAND_ID:
+        #                 canopy_unburned[self.ecocommunities == key] += 2
+        #
+        #                 self.ecocommunities[(self.ecocommunities == key) &
+        #                                     (canopy_unburned >= s.SHRUBLAND_CANOPY)] = s.SHRUBLAND_ID
+        #
+        #         # integrate burned and unburned canopy
+        #         self.canopy = numpy.where(canopy_unburned, canopy_unburned, canopy_burned)
+        #
+        #         succession_end = time.time()
+        #
+        #         s.logging.info('succession run time: %s minutes' % ((succession_end - succession_start) / 60))
+        #
+        # # No Fire
+        # else:
+        #     # s.logging.info('No escaped fires for %r' % self.year)
+        #
+        #     self.time_since_disturbance += 1
+        #
+        #     for key in self.translation_table.keys():
+        #
+        #         # update forest canopy and age
+        #         if self.translation_table[key]['forest_shrub'] == 1:
+        #             self.canopy[(self.ecocommunities == key) &
+        #                         (self.canopy < self.translation_table[key]['max_canopy'])] += 1
+        #
+        #             self.forest_age[self.ecocommunities == key] += 1
+        #
+        #         # succeed shrubland
+        #         if key == s.SHRUBLAND_ID:
+        #             self.ecocommunities = numpy.where((self.ecocommunities == key) &
+        #                                               (self.canopy >= self.translation_table[key]['max_canopy']),
+        #                                               self.climax_communities, self.ecocommunities)
+        #
+        #         if key == 625:
+        #             self.ecocommunities = numpy.where((self.ecocommunities == key) &
+        #                                               (self.canopy >= self.translation_table[key]['max_canopy']),
+        #                                               self.climax_communities, self.ecocommunities)
+        #
+        #         # update grassland canopy and succeed
+        #         if key == s.GRASSLAND_ID:
+        #             self.canopy[self.ecocommunities == key] += 2
+        #
+        #             self.ecocommunities[(self.ecocommunities == key) &
+        #                                 (self.canopy >= s.SHRUBLAND_CANOPY)] = s.SHRUBLAND_ID
 
             # print self.canopy[0]
 
@@ -1052,6 +1052,9 @@ class FireDisturbance(d.Disturbance):
             shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
             shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
             shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
+        shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
+        shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
+        shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
         shutil.copyfile(self.TIME_SINCE_DISTURBANCE_ascii, self.LOG_DIR % (self.year, 'time_since_disturbance'))
 
         end_time = time.time()
