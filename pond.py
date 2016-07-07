@@ -43,6 +43,8 @@ class PondDisturbance(d.Disturbance):
         self.temp_point = os.path.join(s.TEMP_DIR, 'temp_point.shp')
         self.pond_list = []
         self.new_pond_area = 0
+        self.upland_area = 0
+
 
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % year)
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (year - 1))
@@ -54,13 +56,30 @@ class PondDisturbance(d.Disturbance):
             self.ecocommunities = arcpy.Raster(last_year_ecocomms)
         else:
             # logging.info('initial run')
-            self.ecocommunities = arcpy.Raster(s.ecocommunities)
 
+            self.ecocommunities = arcpy.Raster(s.ecocommunities)
+            # print type(self.ecocommunities)
+        # self.set_ecocommunities()
+
+        self.set_upland_area()
+        self.carrying_capacity = int(s.DENSITY * self.upland_area)
         self.set_time_since_disturbance()
+
 
     def reset_temp(self, filename):
         if arcpy.Exists(filename):
             arcpy.Delete_management(filename)
+
+    def set_upland_area(self):
+        print'setteing upland area'
+        print type(self.ecocommunities)
+        a = arcpy.RasterToNumPyArray(self.ecocommunities)
+        print type(a)
+        unique = np.unique(a, return_counts=True)
+        d = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
+        for i in s.UPLAND_COMMUNITIES:
+            if i in d.keys():
+                self.upland_area += d[i]
 
     def assign_pond_locations(self):
         """
@@ -68,7 +87,11 @@ class PondDisturbance(d.Disturbance):
         suitable habitat.
         :return:
         """
-        num_points = s.CARRYING_CAPACITY - self.pond_count
+        # print self.carrying_capacity
+        print int(s.DENSITY * self.upland_area)
+        print 'upland area:', self.upland_area
+        num_points = self.carrying_capacity - self.pond_count
+        print num_points
 
         # constraint is the area of all suitable loacations for new_ponds
         # num_points is the maximum number of new_ponds that should be assigned
@@ -276,7 +299,7 @@ class PondDisturbance(d.Disturbance):
         # setting the age of new ponds to 1 instead of 0 seems to solve this problem for now
         self.time_since_disturbance = arcpy.sa.Con(self.new_ponds == 622, 1, self.time_since_disturbance)
 
-    def abandon_pond(self):
+    def abandon_ponds(self):
 
         # get raster attributes
         lowerLeft = arcpy.Point(self.ecocommunities.extent.XMin, self.ecocommunities.extent.YMin)
@@ -301,6 +324,7 @@ class PondDisturbance(d.Disturbance):
                 print '***********abandon pond'
                 com_array[group_array == i] = 624
         self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lowerLeft, cellSize)
+
     def succession(self):
         """
         succession: this method uses a nested conditional statement
@@ -339,13 +363,20 @@ class PondDisturbance(d.Disturbance):
                     self.new_pond_area = row[1] # * (s.CELL_SIZE ** 2)
 
     def run_year(self):
+
+        self.set_upland_area()
+
         if s.DEBUG_MODE:
             logging.info('incrementing time since disturbance')
         self.time_since_disturbance = arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
 
         if s.DEBUG_MODE:
             logging.info('calculating land_cover')
-        self.succession()
+
+        if s.DEBUG_MODE:
+            logging.info('abandoning ponds')
+
+        self.abandon_ponds()
 
         self.set_region_group(self.ecocommunities)
 
@@ -354,10 +385,10 @@ class PondDisturbance(d.Disturbance):
 
         self.count_ponds()
 
-        if self.pond_count < s.DENSITY * self.upland and self.initial_flag is False:
+        if self.pond_count < self.carrying_capacity:
             self._region_group = None
             s.logging.info('number of active ponds [%s] is below carrying capacity [%s], creating new ponds'
-                           % (self.pond_count, s.CARRYING_CAPACITY))
+                           % (self.pond_count, self.carrying_capacity))
 
             self.create_ponds()
 
