@@ -6,9 +6,10 @@ import random
 import time
 import numpy as np
 import logging
+import numpy
 
 
-class PondDisturbance(d.Disturbance):
+class PondDisturbance(s.Disturbance):
     # CLASS VARIABLES
     year = None
     ecocommunities = None
@@ -29,6 +30,9 @@ class PondDisturbance(d.Disturbance):
     SUITABLE_STREAMS = os.path.join(INPUT_DIR, s.REGION, 'stream_suitability.tif')
 
     def __init__(self, year):
+
+        # self.clear_temp()
+
         super(PondDisturbance, self).__init__(year)
 
         self.year = year
@@ -81,17 +85,17 @@ class PondDisturbance(d.Disturbance):
             if i in d.keys():
                 self.upland_area += d[i]
 
+    def reset_temp(self, filename):
+        if arcpy.Exists(filename):
+            arcpy.Delete_management(filename)
+
     def assign_pond_locations(self):
         """
         This method assigns random locations for each pond that fall within the bounds of
         suitable habitat.
         :return:
         """
-        # print self.carrying_capacity
-        print int(s.DENSITY * self.upland_area)
-        print 'upland area:', self.upland_area
-        num_points = self.carrying_capacity - self.pond_count
-        print num_points
+        num_points = int(s.DENSITY * self.upland_area) - self.pond_count
 
         # constraint is the area of all suitable loacations for new_ponds
         # num_points is the maximum number of new_ponds that should be assigned

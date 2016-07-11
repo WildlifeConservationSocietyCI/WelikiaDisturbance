@@ -2,17 +2,17 @@ import os
 import arcpy
 import shutil
 
-ROOT_DIR = os.path.join('E:\\', '_data', 'welikia', 'WelikiaDisturbance')
+ROOT_DIR = r'C:\_data\welikia\WelikiaDisturbance'
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 
-REGION_BOUNDARIES = os.path.join(ROOT_DIR, '_inputs_full_extent', 'nybbwi.shp')
+REGION_BOUNDARIES = os.path.join(ROOT_DIR, '_inputs_full_extent', 'geo_export_cb1b153c-1120-41b9-92b5-580cfa54c581.shp')
 
 regions = []
 
 cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
 for feature in cursor:
-    region_code = feature.BoroCode
+    region_code = int(feature.boro_code)
     regions.append(region_code)
 
 print regions
@@ -30,8 +30,6 @@ mkdir(INPUT_DIR)
 
 for i in disturbance_types:
     mkdir(os.path.join(INPUT_DIR, '%s' % i))
-
-
 
 mkdir(os.path.join(INPUT_DIR, 'fire', 'spatial'))
 mkdir(os.path.join(INPUT_DIR, 'fire', 'tabular'))
