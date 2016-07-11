@@ -10,6 +10,7 @@ from arcpy import env
 import pandas as pd
 import datetime
 import analysis
+import succession
 
 # set environment
 
@@ -84,6 +85,11 @@ for year in s.RUN_LENGTH:
         pond_dis = pond.PondDisturbance(year)
         pond_dis.run_year()
         disturbance_table.loc[year]['pond_area'] = pond_dis.new_pond_area
+
+    # run succession module
+    s.logging.info('_____starting succession')
+    succ = succession.Succession(year)
+    succ.run_succession()
 
     year_end = time.time()
     s.logging.info('end time time: %s' % x.now())
