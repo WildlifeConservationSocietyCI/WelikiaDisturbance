@@ -9,7 +9,7 @@ import logging
 import numpy
 
 
-class PondDisturbance(s.Disturbance):
+class PondDisturbance(d.Disturbance):
     # CLASS VARIABLES
     year = None
     ecocommunities = None
@@ -49,41 +49,10 @@ class PondDisturbance(s.Disturbance):
         self.new_pond_area = 0
         self.upland_area = 0
 
-
-        this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % year)
-        last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (year - 1))
-        if os.path.isfile(this_year_ecocomms):
-            # logging.info(this_year_ecocomms)
-            self.ecocommunities = arcpy.Raster(this_year_ecocomms)
-        elif os.path.isfile(last_year_ecocomms):
-            # logging.info(last_year_ecocomms)
-            self.ecocommunities = arcpy.Raster(last_year_ecocomms)
-        else:
-            # logging.info('initial run')
-
-            self.ecocommunities = arcpy.Raster(s.ecocommunities)
-            # print type(self.ecocommunities)
-        # self.set_ecocommunities()
-
+        # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, 'com_start_%s.tif' % self.year))
         self.set_upland_area()
         self.carrying_capacity = int(s.DENSITY * self.upland_area)
         self.set_time_since_disturbance()
-
-
-    def reset_temp(self, filename):
-        if arcpy.Exists(filename):
-            arcpy.Delete_management(filename)
-
-    def set_upland_area(self):
-        print'setteing upland area'
-        print type(self.ecocommunities)
-        a = arcpy.RasterToNumPyArray(self.ecocommunities)
-        print type(a)
-        unique = np.unique(a, return_counts=True)
-        d = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
-        for i in s.UPLAND_COMMUNITIES:
-            if i in d.keys():
-                self.upland_area += d[i]
 
     def reset_temp(self, filename):
         if arcpy.Exists(filename):
@@ -96,7 +65,7 @@ class PondDisturbance(s.Disturbance):
         :return:
         """
         num_points = int(s.DENSITY * self.upland_area) - self.pond_count
-
+        print 'num points: ', num_points
         # constraint is the area of all suitable loacations for new_ponds
         # num_points is the maximum number of new_ponds that should be assigned
         arcpy.CreateRandomPoints_management(out_path=s.TEMP_DIR,
@@ -119,6 +88,7 @@ class PondDisturbance(s.Disturbance):
             coordinate_list.append((point[0][0], point[0][1]))
 
         self.coordinate_list = coordinate_list
+        print 'coordinate list: ', self.coordinate_list
 
     def flood_pond(self, coordinates):
         """
@@ -177,9 +147,12 @@ class PondDisturbance(s.Disturbance):
             self.pond_list.append(pond)
 
         self.new_ponds = arcpy.sa.CellStatistics(self.pond_list, 'SUM')
-        # self.new_ponds = arcpy.sa.Con(arcpy.sa.CellStatistics(self.pond_list, 'SUM') > 0, 622, 0)
         self.new_ponds.save(os.path.join(self.OUTPUT_DIR, 'ponds_%s.tif' % self.year))
-        self.new_ponds = arcpy.sa.Con(self.new_ponds > 0, 622, 0)
+        self.new_ponds = arcpy.sa.Con(self.new_ponds != 0, 622, 0)
+
+        self.new_ponds_array = arcpy.RasterToNumPyArray(self.new_ponds)
+        self.canopy[self.new_ponds_array == 622] = 0
+        self.forest_age[self.new_ponds_array == 622] = 0
 
     def calculate_territory(self):
         """
@@ -190,7 +163,7 @@ class PondDisturbance(s.Disturbance):
         :return: exclude_territory
         """
 
-        land_cover_set_null = arcpy.sa.SetNull(self.ecocommunities, 1, 'VALUE <> 622')
+        land_cover_set_null = arcpy.sa.SetNull(self.ecocommunities != 622, 1)
 
         territory = arcpy.sa.EucDistance(in_source_data=land_cover_set_null,
                                          maximum_distance=s.MINIMUM_DISTANCE,
@@ -292,33 +265,30 @@ class PondDisturbance(s.Disturbance):
         # convert community raster to array
         com_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
-        # idenetify individual ponds using region group
+        # identify individual ponds using region group
         ponds = arcpy.sa.SetNull(self.ecocommunities != 622, 622)
 
         region_group = arcpy.sa.RegionGroup(in_raster=ponds,
                                             number_neighbors='EIGHT',
                                             zone_connectivity='CROSS',
                                             )
+
+        # region_group.save(os.path.join(s.OUTPUT_DIR, 'region_group_%s.tif' % self.year))
+
         # create region group array
         group_array = arcpy.RasterToNumPyArray(region_group)
         pond_list = np.unique(group_array)
         print pond_list
-        for i in pond_list:
+        for i in pond_list[1:]:
             if np.random.randint(0, 100) <= s.POND_ABANDONMENT_PROBABILITY:
                 print '***********abandon pond'
                 com_array[group_array == i] = 624
+
         self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lowerLeft, cellSize)
 
-    def succession(self):
-        """
-        succession: this method uses a nested conditional statement
-        to convert the time_since disturbance raster in to a simple community raster.
-        Transition threshold is based on Logofet et al. 2015
-        :return:
-        """
+        # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, 'com_after_abandon_%s.tif' % self.year))
 
-        self.ecocommunities = arcpy.sa.Con((self.ecocommunities == 622) & (self.time_since_disturbance >= 10),
-                                           625, self.ecocommunities)
+
 
     def set_time_since_disturbance(self):
         this_year_time_since_disturbance = os.path.join(self.OUTPUT_DIR,
@@ -329,9 +299,6 @@ class PondDisturbance(s.Disturbance):
 
         else:
             self.initial_time_since_disturbance()
-            self.time_since_disturbance = arcpy.Raster(
-                os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
-            self.initial_flag = True
 
     def set_pond_area(self):
         """
@@ -348,11 +315,10 @@ class PondDisturbance(s.Disturbance):
 
     def run_year(self):
 
-        self.set_upland_area()
-
         if s.DEBUG_MODE:
             logging.info('incrementing time since disturbance')
-        self.time_since_disturbance = arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
+
+        self.time_since_disturbance += 1 #arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
 
         if s.DEBUG_MODE:
             logging.info('calculating land_cover')
@@ -364,24 +330,28 @@ class PondDisturbance(s.Disturbance):
 
         self.set_region_group(self.ecocommunities)
 
+        self.count_ponds()
         if s.DEBUG_MODE:
             logging.info('counting number of active ponds')
-
-        self.count_ponds()
+            logging.info('count: %s' % self.pond_count)
+            logging.info('carrying capacity: %s' % self.carrying_capacity)
 
         if self.pond_count < self.carrying_capacity:
             self._region_group = None
             s.logging.info('number of active ponds [%s] is below carrying capacity [%s], creating new ponds'
                            % (self.pond_count, self.carrying_capacity))
 
+            s.logging.info('creating new [%s] ponds' % (self.carrying_capacity - self.pond_count))
             self.create_ponds()
 
+            s.logging.info('updating time since disturbance')
             self.update_time_since_disturbance()
 
-            self.ecocommunities = arcpy.sa.Con(self.new_ponds == 622, self.new_ponds, self.ecocommunities)
+            s.logging.info('add new ponds to ecocommunites')
+            self.ecocommunities = arcpy.sa.Con(self.new_ponds == 622, 622, self.ecocommunities)
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
-
         self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
-
+        self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
+        self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
         self.set_pond_area()
