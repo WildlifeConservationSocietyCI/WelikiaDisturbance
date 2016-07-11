@@ -264,28 +264,8 @@ class PondDisturbance(s.Disturbance):
         # logging.info('creating initial time since disturbance raster')
         self.create_ponds()
 
-        self.set_region_group(self.new_ponds)
-
-        arcpy.AddField_management(in_table=self._region_group,
-                                  field_name='age',
-                                  field_type='SHORT')
-
-        cursor = arcpy.UpdateCursor(self._region_group)
-
-        for row in cursor:
-            age = random.randint(1, 8)
-            row.setValue("age", age)
-            cursor.updateRow(row)
-
-        age = arcpy.sa.Lookup(in_raster=self._region_group,
-                              lookup_field="age")
-
-        # where new ponds exist return an random age else where there are no ponds within the original extent return 30
-        self.time_since_disturbance = arcpy.sa.Con((arcpy.sa.IsNull(self._region_group) == 1) & self.ecocommunities, 30,
-                                                   arcpy.sa.Con(self._region_group, age))
-
-        self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR,
-                                                      'time_since_disturbance_%s.tif' % self.year))
+        self.time_since_disturbance = arcpy.sa.Con((self.new_ponds == 622), 1,
+                                                   arcpy.sa.Con(self.ecocommunities, 30))
 
         self.ecocommunities = arcpy.sa.Con(self.new_ponds == 622, self.new_ponds, self.ecocommunities)
 
