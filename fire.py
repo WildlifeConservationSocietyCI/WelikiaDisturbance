@@ -918,7 +918,7 @@ class FireDisturbance(d.Disturbance):
                 percent_mortality = self.tree_mortality(flame_length_array, self.forest_age)
 
                 # Update canopy based on area burned
-                self.canopy = numpy.where((self.forest_age > 0),
+                self.canopy = numpy.where(self.ecocommunities,
                                           numpy.array(self.canopy * percent_mortality, dtype=numpy.int8),
                                           self.canopy)
 
@@ -934,14 +934,38 @@ class FireDisturbance(d.Disturbance):
                 for key in self.translation_table.keys():
                     # reclassify burned forest
                     if self.translation_table[key]['forest'] == 1:
-                        self.ecocommunities[(self.ecocommunities == key) &
-                                            (canopy_burned < self.translation_table[key][
-                                                'max_canopy'] / 2)] = s.SHRUBLAND_ID
 
-                    # reclassify burned shrubland to grassland
-                    elif key == s.SHRUBLAND_ID:
+                        # Retrogression forested wetlands
+                        if key == 629:
+                            self.ecocommunities[(self.ecocommunities == key) &
+                                                (canopy_burned < 90)] = 625
+
+                            self.ecocommunities[(self.ecocommunities == key) &
+                                                (canopy_burned < 50)] = 624
+
+                        # Retrogression all other forested communities
+                        else:
+                            self.ecocommunities[(self.ecocommunities == key) &
+                                            (canopy_burned < 90)] = s.SHRUBLAND_ID
+
+                            self.ecocommunities[(self.ecocommunities == key) &
+                                                (canopy_burned < 50)] = s.GRASSLAND_ID
+
+                    # Retrogression shrubland
+                    if key == s.SHRUBLAND_ID:
                         self.ecocommunities[(self.ecocommunities == key) &
-                                            (canopy_burned < s.SHRUBLAND_CANOPY)] = s.GRASSLAND_ID
+                                            (canopy_burned < 50)] = s.GRASSLAND_ID
+
+                    # Retrogression shrub-swamp
+                    if key == 625:
+                        self.ecocommunities[(self.ecocommunities == key) &
+                                            (canopy_burned < 50)] = 624
+
+
+                    # Reset forest age
+                    l = [624, 625, 648, 649]
+                    for i in l:
+                        self.forest_age[self.ecocommunities == i] = 0
 
         #         # unburned
         #         # isolate unburned area (mask out burned)
