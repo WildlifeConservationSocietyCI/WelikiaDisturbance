@@ -1,7 +1,8 @@
 from_ID,to_ID,type,max_canopy,canopy_growth,age_out
-648,649,grassland,10,2,
-649,733,shrubland,50,1,
-733,initial conditions, forest, 90,1,50
+648,649,grassland,50,2,
+635,649,grassland,50,2,
+649,736,shrubland,90,1,
+736,initial conditions, forest, 90,1,50
 622,624,open_water,0,0,
 624,625,wetland,50,2,
 625,629,shrubland,90,1,
