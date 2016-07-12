@@ -57,3 +57,4 @@ ec_id   fuel_c  fuel_m  fuel_n  max_canopy  start_age   forest  forest_shrub    
 654	99	99	99	10	0	0	0	0
 655	99	99	99	0	0	0	0	0
 656 99  99  99  0   0   0   0   0
+736	189	186	182	90	80	1	1	1
