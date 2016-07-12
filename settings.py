@@ -98,11 +98,6 @@ GARDEN_ID = 650  # ecosystem id for gardens (will look for this value when proce
 GRASSLAND_ID = 635  # 648  # ecosystem id for abandoned fields.
 SHRUBLAND_ID = 649
 
-
-# Disturbance Class Test
-
-
-
 # Environment Setting
 
 if arcpy.CheckExtension("Spatial") == "Available":
