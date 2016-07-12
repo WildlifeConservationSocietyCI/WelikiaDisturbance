@@ -150,6 +150,7 @@ class PondDisturbance(d.Disturbance):
         self.new_ponds.save(os.path.join(self.OUTPUT_DIR, 'ponds_%s.tif' % self.year))
         self.new_ponds = arcpy.sa.Con(self.new_ponds != 0, 622, 0)
 
+        # update canopy and forest age based on the position of new ponds
         self.new_ponds_array = arcpy.RasterToNumPyArray(self.new_ponds)
         self.canopy[self.new_ponds_array == 622] = 0
         self.forest_age[self.new_ponds_array == 622] = 0
