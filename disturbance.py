@@ -17,23 +17,22 @@ class Disturbance(object):
         self.DEM_ascii = os.path.join(s.INPUT_DIR, 'fire', 'spatial', s.REGION, 'dem.asc')
         self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
         self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
-        self._ecocommunities_filename = '%s_ecocommunities.tif'
+        self._ecocommunities_filename = 'ecocommunities_%s.tif'
 
         self.ecocommunities = None
 
         # arrays
         self.forest_age = None
         self.canopy = None
-        self.ecocommunities_array = None
 
         self.upland_area = 0
-        # self.set_upland_area()
-        # self.set_ecocommunities()
+
         self.translation_table = pd.read_csv(os.path.join(s.ROOT_DIR, 'ec_translator.txt'),
                                              delim_whitespace=True, index_col='ec_id')
 
         self.get_header()
         self.set_ecocommunities()
+        self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
         self.set_forest_age()
         self.set_canopy()
 
@@ -87,7 +86,6 @@ class Disturbance(object):
         if os.path.isfile(this_year_ecocomms):
             print this_year_ecocomms
             self.ecocommunities = arcpy.Raster(this_year_ecocomms)
-            self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
         elif os.path.isfile(last_year_ecocomms):
             print last_year_ecocomms
@@ -95,7 +93,6 @@ class Disturbance(object):
         else:
             print 'initial run'
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
-            self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
             # self.ecocommunities.save(os.path.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
     def set_canopy(self):
@@ -132,13 +129,13 @@ class Disturbance(object):
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
 
     # ensure that dir structure exists
-    def setup_dirs(self):
-        if not os.path.isdir(ROOT_DIR):
-            pass
-
-    def check_inputs(self):
-        for file in INPUT_FILES:
-            pass
+    # def setup_dirs(self):
+    #     if not os.path.isdir(ROOT_DIR):
+    #         pass
+    #
+    # def check_inputs(self):
+    #     for file in INPUT_FILES:
+    #         pass
 
 
     def set_upland_area(self):
@@ -148,8 +145,8 @@ class Disturbance(object):
             if i in d.keys():
                 self.upland_area += d[i]
 
-dis = Disturbance(1409)
-dis.get_header()
-dis.set_ecocommunities()
-dis.set_forest_age()
-dis.set_canopy()
+# dis = Disturbance(1409)
+# dis.get_header()
+# dis.set_ecocommunities()
+# dis.set_forest_age()
+# dis.set_canopy()
