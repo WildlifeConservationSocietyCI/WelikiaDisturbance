@@ -32,7 +32,7 @@ class Succession():
         self.DEM_ascii = os.path.join(s.INPUT_DIR, 'fire', 'spatial', s.REGION, 'dem.asc')
         self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
         self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
-        self._ecocommunities_filename = '%s_ecocommunities.tif'
+        self._ecocommunities_filename = 'ecocommunities_%s.tif'
 
         self.canopy = None
         self.forest_age = None
@@ -163,9 +163,10 @@ class Succession():
         for index, row in self.succession_table.iterrows():
             key = row['from_ID']
             canopy_growth = row['canopy_growth']
+
             # increment forest age and canopy
             if row['type'] == 'forest':
-                self.forest_age[self.ecocommunities == key] += canopy_growth
+                self.forest_age[self.ecocommunities == key] += 1
                 self.canopy[(self.ecocommunities == key) &
                             (self.canopy < 100)] += canopy_growth
 
@@ -223,15 +224,23 @@ class Succession():
         self.grow()
         self.transition()
 
-        self.array_to_ascii(array=self.ecocommunities, out_ascii_path=os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+        # self.array_to_ascii(array=self.ecocommunities, out_ascii_path=os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+
+
+        out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
+                                              lower_left_corner=arcpy.Point(self.header['xllcorner'],
+                                                                            self.header['yllcorner']),
+                                              x_cell_size=self.header['cellsize'],
+                                              value_to_nodata=-9999)
+
+        out_raster.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+
         self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
         self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
 
-
-
-s1 = Succession(1409)
-print s1.succession_table.head()
-s1.run_succession()
+# s1 = Succession(1508)
+# print s1.succession_table.head()
+# s1.run_succession()
 #
 # for index, row in s1.succession_table.iterrows():
 #     key = row['from_ID']
