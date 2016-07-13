@@ -25,7 +25,7 @@ class GardenDisturbance(d.Disturbance):
     CLIMAX_COMMUNITIES = s.ecocommunities
     SLOPE_SUITABILITY = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'slope_suitability.tif')
     PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'proximity_suitability.tif')
-    COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, TABULAR, 'lc_reclass2.csv')
+    COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, TABULAR, 'lc_reclass.txt')
     SITES = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'garden_sites.shp')
 
     def __init__(self, year):
@@ -41,21 +41,17 @@ class GardenDisturbance(d.Disturbance):
         self.population = None
         self.garden_area = 0
         self.garden_area_target = None
-        self.ecocommunities = None
         self.garden_list = []
         self.garden = None
         self.time_since_disturbance = None
         self.randrast = None
-
         self.site_center = None
         self.temp_point = os.path.join(s.TEMP_DIR, 'temp_point.shp')
         self.temp_buffer = os.path.join(s.TEMP_DIR, 'temp_buffer.shp')
         self.local_suitability = None
         self.local_ecocommunities = None
-
         self.new_garden_area = 0
 
-        self.set_ecocommunities()
         self.set_time_since_disturbance()
 
     def set_time_since_disturbance(self):
@@ -79,10 +75,9 @@ class GardenDisturbance(d.Disturbance):
         land cover, proximity and slope suitability rasters for overall suitability score.
         :return:
         """
-
         ecocommunity_suitability = arcpy.sa.ReclassByTable(self.ecocommunities, self.COMMUNITY_RECLASS_TABLE,
                                                            from_value_field='Field1',
-                                                           to_value_field='Field2',
+                                                           to_value_field='Field1',
                                                            output_value_field='Field3',
                                                            missing_values='NODATA')
 
