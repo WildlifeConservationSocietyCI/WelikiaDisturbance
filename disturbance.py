@@ -1,6 +1,6 @@
 import os
 import arcpy
-import numpy
+import numpy as np
 import settings as s
 from osgeo import gdal
 from osgeo.gdalconst import *
@@ -73,7 +73,7 @@ class Disturbance(object):
         for attribute in self.header_text:
             out_asc.write(attribute)
 
-        numpy.savetxt(out_asc, array, fmt="%4i")
+        np.savetxt(out_asc, array, fmt="%4i")
         out_asc.close()
 
     def set_ecocommunities(self):
@@ -103,11 +103,11 @@ class Disturbance(object):
 
         else:
             s.logging.info('Assigning initial values to canopy array')
-            self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
+            self.canopy = np.empty((self.header['nrows'], self.header['ncols']))
 
             # for key in self.translation_table.keys():
             for key in self.translation_table.index:
-                self.canopy = numpy.where((self.ecocommunities_array == key),
+                self.canopy = np.where((self.ecocommunities_array == key),
                                           self.translation_table.ix[key]['max_canopy'], self.canopy)
 
             self.array_to_ascii(self.CANOPY_ascii, self.canopy)
@@ -120,10 +120,10 @@ class Disturbance(object):
 
         else:
             s.logging.info('Assigning initial values to forest age array')
-            self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
+            self.forest_age = np.empty((self.header['nrows'], self.header['ncols']))
 
             for key in self.translation_table.index:
-                self.forest_age = numpy.where((self.ecocommunities_array == key),
+                self.forest_age = np.where((self.ecocommunities_array == key),
                                               self.translation_table.ix[key]['start_age'], self.forest_age)
 
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
@@ -137,9 +137,11 @@ class Disturbance(object):
     #     for file in INPUT_FILES:
     #         pass
 
-
     def set_upland_area(self):
-        unique = numpy.unique(arcpy.RasterToNumPyArray(self.ecocommunities), return_counts=True)
+        if type(self.ecocommunities) is np.ndarray:
+            unique = np.unique(self.ecocommunities, return_counts=True)
+        else:
+            unique = np.unique(arcpy.RasterToNumPyArray(self.ecocommunities), return_counts=True)
         d = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
         for i in s.UPLAND_COMMUNITIES:
             if i in d.keys():
