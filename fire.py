@@ -43,8 +43,6 @@ class FireDisturbance(d.Disturbance):
     ASPECT_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'aspect.asc')
 
     FUEL_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'fuel.asc')
-    CANOPY_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'canopy.asc')
-    FOREST_AGE_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'forest_age.asc')
     TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'time_since_disturbance.asc')
 
     TRAIL_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'fire_trails.asc')
@@ -57,7 +55,7 @@ class FireDisturbance(d.Disturbance):
     ADJ = os.path.join(INPUT_DIR, TABULAR, 'fuel_adjustment.adj')
     WND = os.path.join(INPUT_DIR, TABULAR, 'wind.wnd')
     WTR = os.path.join(INPUT_DIR, TABULAR, 'weather.wtr')
-    TRANSLATOR = os.path.join(INPUT_DIR, TABULAR, 'ec_translator.txt')
+    TRANSLATOR = os.path.join(s.ROOT_DIR, 'ec_translator.txt')
     PSDI_YEARS = os.path.join(INPUT_DIR, TABULAR, 'psdi-years.txt')
     DROUGHT_YEARS = os.path.join(INPUT_DIR, TABULAR, 'mannahatta-psdi.txt')
 
@@ -79,11 +77,8 @@ class FireDisturbance(d.Disturbance):
         self.climate_years = None
         self.equivalent_climate_year = None
         self.weather = []
-        self.translation_table = None
         self.header = None
         self.header_text = None
-        self.canopy = None
-        self.forest_age = None
         self.time_since_disturbance = None
         self.fuel = None
         self.camps = None
@@ -144,44 +139,6 @@ class FireDisturbance(d.Disturbance):
         w = WMI('.')
         result = w.query("SELECT WorkingSet FROM Win32_PerfRawData_PerfProc_Process WHERE IDProcess=%d" % os.getpid())
         self.memory = int(result[0].WorkingSet) / 1000000.0
-
-    def get_header(self):
-        header = [linecache.getline(self.DEM_ascii, i) for i in range(1, 7)]
-        h = {}
-
-        for line in header:
-            attribute, value = line.split()
-            h[attribute] = value
-
-        h['ncols'] = int(h['ncols'])
-        h['nrows'] = int(h['nrows'])
-        h['cellsize'] = int(h['cellsize'])
-        h['xllcorner'] = float(h['xllcorner'])
-        h['yllcorner'] = float(h['yllcorner'])
-
-        self.header = h
-        self.header_text = header
-
-    def set_translation_table(self):
-        translation = {}
-
-        with open(self.TRANSLATOR) as translation_file:
-            for line in translation_file:
-                ecid, fuel2, fuel1, fuel10, can_val, first_age, for_bin, forshrubin, obstruct_bin = line.split('\t')
-
-                ecid = int(ecid)
-                translation[ecid] = {}
-
-                translation[ecid]['climax_fuel'] = int(fuel2)
-                translation[ecid]['mid_fuel'] = int(fuel1)
-                translation[ecid]['new_fuel'] = int(fuel10)
-                translation[ecid]['max_canopy'] = int(can_val)
-                translation[ecid]['start_age'] = int(first_age)
-                translation[ecid]['forest'] = int(for_bin)
-                translation[ecid]['forest_shrub'] = int(forshrubin)
-                translation[ecid]['obstruct'] = int(obstruct_bin)
-
-        self.translation_table = translation
 
     def set_drought_years(self):
         drought = {}
@@ -322,24 +279,29 @@ class FireDisturbance(d.Disturbance):
         out_asc.close()
 
     def set_fuel(self):
-
-        # s.logging.info('converting ecosystem to fuel model')
+        '''
+        Set fuels array. Crosswalk communities and time since disturbance using translator table
+        '''
+        s.logging.info('converting ecosystem to fuel model')
 
         if self.fuel is None:
             self.fuel = numpy.empty((self.header['nrows'], self.header['ncols']))
             self.fuel.astype(numpy.int32)
 
-        for key in self.translation_table.keys():
-            fuel_c = self.translation_table[key]['climax_fuel']
-            fuel_m = self.translation_table[key]['mid_fuel']
-            fuel_n = self.translation_table[key]['new_fuel']
+        for key in self.translation_table.index:
+            fuel_c = self.translation_table.ix[key]['fuel_c']
+            fuel_m = self.translation_table.ix[key]['fuel_m']
+            fuel_n = self.translation_table.ix[key]['fuel_n']
 
+            # set new fuels
             self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance < s.TIME_TO_MID_FUEL)] = fuel_n
 
+            # set mid fuel
             self.fuel[(self.ecocommunities == key) &
                       (self.time_since_disturbance >= s.TIME_TO_MID_FUEL) &
                       (self.time_since_disturbance < s.TIME_TO_CLIMAX_FUEL)] = fuel_m
 
+            # set climax fuel
             self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance >= s.TIME_TO_CLIMAX_FUEL)] = fuel_c
 
     def write_ignition(self):
@@ -795,7 +757,6 @@ class FireDisturbance(d.Disturbance):
         # s.logging.info('Year: %r' % self.year)
 
         # set weather and simulation duration
-        self.set_translation_table()
         self.set_climate_years()
         self.set_drought_years()
         self.select_climate_records()
@@ -804,8 +765,6 @@ class FireDisturbance(d.Disturbance):
         self.get_header()
 
         # set tracking rasters
-        self.set_canopy()
-        self.set_forest_age()
         self.set_time_since_disturbance()
         self.set_fuel()
 
@@ -910,6 +869,7 @@ class FireDisturbance(d.Disturbance):
                 flame_length_array = ascii_to_array(self.FLAME_LENGTH_ascii % self.year)
                 flame_length_array[flame_length_array == -1] = 0
                 self.area_burned = numpy.count_nonzero(flame_length_array)
+
                 # Revise ecosystem raster based on fire
                 self.time_since_disturbance[flame_length_array > 0] = 0
                 self.time_since_disturbance[flame_length_array <= 0] += 1
