@@ -50,7 +50,6 @@ class FireDisturbance(d.Disturbance):
 
     BURN_RASTERS = os.path.join(OUTPUT_DIR, 'burn_rasters')
     FARSITE_OUTPUT = os.path.join(BURN_RASTERS, '%s_farsite_output')
-    FLAME_LENGTH_ascii = os.path.join(BURN_RASTERS, '%s_farsite_output.fml')
 
     _ecocommunities_filename = 'ecocommunities_%s.tif'
 
@@ -60,7 +59,7 @@ class FireDisturbance(d.Disturbance):
         self.year = year
         # self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, s.REGION, 'ecocommunities_%s.asc' %
         # year)
-        self.ecocommunities = None
+        self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
         self.climax_communities = None
         self.drought = None
         self.climate_years = None
@@ -85,42 +84,32 @@ class FireDisturbance(d.Disturbance):
         self.area_burned = 0
         self.upland_area = 0
         self.farsite_output = os.path.join(self.BURN_RASTERS, '%s_farsite_output' % year)
-        self.flame_length_ascii = os.path.join(self.BURN_RASTERS, '%s_farsite_output.fml' % year)
+        self.FLAME_LENGTH_ascii = os.path.join(self.BURN_RASTERS, '%s_farsite_output.fml' % year)
+        self.flame_length = None
         self.memory = None
 
         self.garden_disturbance = None
         self.pond_disturbance = None
 
-        self.get_header()
-        self.set_communities()
+        # self.get_header()
+        # self.set_communities()
         self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities)
-        self.set_disturbances()
         self.set_upland_area()
 
-    def set_communities(self):
-        this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
-        last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
-
-        if arcpy.Exists(this_year_ecocomms):
-            self.ecocommunities = arcpy.RasterToNumPyArray(this_year_ecocomms, nodata_to_value=-9999)
-
-
-        elif arcpy.Exists(last_year_ecocomms):
-            self.ecocommunities = arcpy.RasterToNumPyArray(last_year_ecocomms, nodata_to_value=-9999)
-
-
-        else:
-            self.ecocommunities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
-
-    def set_disturbances(self):
-        this_year_garden = os.path.join(s.OUTPUT_DIR, 'garden', 'time_since_disturbance_%s.tif' % self.year)
-        last_year_garden = os.path.join(s.OUTPUT_DIR, 'garden', 'time_since_disturbance_%s.tif' % (self.year - 1))
-
-        if os.path.isfile(this_year_garden):
-            self.garden_disturbance = arcpy.RasterToNumPyArray(this_year_garden)
-
-        elif os.path.isfile(last_year_garden):
-            self.garden_disturbance = arcpy.RasterToNumPyArray(last_year_garden)
+    # def set_communities(self):
+    #     this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
+    #     last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
+    #
+    #     if arcpy.Exists(this_year_ecocomms):
+    #         self.ecocommunities = arcpy.RasterToNumPyArray(this_year_ecocomms, nodata_to_value=-9999)
+    #
+    #
+    #     elif arcpy.Exists(last_year_ecocomms):
+    #         self.ecocommunities = arcpy.RasterToNumPyArray(last_year_ecocomms, nodata_to_value=-9999)
+    #
+    #
+    #     else:
+    #         self.ecocommunities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
 
     def get_memory(self):
         # Reports current memory usage
@@ -248,29 +237,29 @@ class FireDisturbance(d.Disturbance):
                             cloud_cover = 20
                             wind_file.write('%s %s %r %r %r %r\n' % (month, day, hour, speed, direction, cloud_cover))
 
-    def ascii_to_array(self, in_ascii):
-        """
-        convert ascii grid in to numpy array
-        :type in_ascii: object
-        """
-        # print in_ascii
-        ascii = gdal.Open(in_ascii, GA_ReadOnly)
-        array = gdal_array.DatasetReadAsArray(ascii)
+    # def ascii_to_array(self, in_ascii):
+    #     """
+    #     convert ascii grid in to numpy array
+    #     :type in_ascii: object
+    #     """
+    #     # print in_ascii
+    #     ascii = gdal.Open(in_ascii, GA_ReadOnly)
+    #     array = gdal_array.DatasetReadAsArray(ascii)
+    #
+    #     return array
 
-        return array
-
-    def array_to_ascii(self, out_ascii_path, array):
-        out_asc = open(out_ascii_path, 'w')
-        for attribute in self.header_text:
-            out_asc.write(attribute)
-
-        numpy.savetxt(out_asc, array, fmt="%4i")
-        out_asc.close()
+    # def array_to_ascii(self, out_ascii_path, array):
+    #     out_asc = open(out_ascii_path, 'w')
+    #     for attribute in self.header_text:
+    #         out_asc.write(attribute)
+    #
+    #     numpy.savetxt(out_asc, array, fmt="%4i")
+    #     # out_asc.close()
 
     def set_fuel(self):
-        '''
+        """
         Set fuels array. Crosswalk communities and time since disturbance using translator table
-        '''
+        """
         s.logging.info('converting ecosystem to fuel model')
 
         if self.fuel is None:
@@ -329,7 +318,7 @@ class FireDisturbance(d.Disturbance):
 
         if os.path.isfile(self.TIME_SINCE_DISTURBANCE_ascii):
             # s.logging.info('Setting time since disturbance')
-            self.time_since_disturbance = ascii_to_array(self.TIME_SINCE_DISTURBANCE_ascii)
+            self.time_since_disturbance = self.raster_to_array(self.TIME_SINCE_DISTURBANCE_ascii)
 
         else:
             # s.logging.info('Assigning initial values to time since disturbance array')
@@ -342,7 +331,7 @@ class FireDisturbance(d.Disturbance):
         # s.logging.info('memory usage: %r Mb' % self.memory)
 
     def get_ignition(self, in_ascii):
-        array = ascii_to_array(in_ascii)
+        array = self.raster_to_array(in_ascii)
         for index, cell_value in numpy.ndenumerate(array):
             if cell_value == 1:
                 if self.fuel[index[0]][index[1]] not in s.NONBURNABLE:
@@ -383,8 +372,8 @@ class FireDisturbance(d.Disturbance):
             load_project[u'File &name:Edit'].SetEditText(self.FPJ)
             load_project[u'&Open'].Click()
             # time.sleep(.5)
-            farsite[u'Custom Fuel Model File Converted to new Format'].Wait('ready').SetFocus()
-            farsite[u'Custom Fuel Model File Converted to new Format'][u'OK'].Click()
+            # farsite[u'Custom Fuel Model File Converted to new Format'].Wait('ready').SetFocus()
+            # farsite[u'Custom Fuel Model File Converted to new Format'][u'OK'].Click()
             # s.logging.info('Project file loaded')
 
         except pywinauto.findwindows.WindowNotFoundError:
@@ -594,15 +583,15 @@ class FireDisturbance(d.Disturbance):
             set_ignition[u'Files of &type:ComboBox'].Select(u', SHAPE FILES (*.SHP)')
             set_ignition[u'File &name:Edit'].SetEditText(self.IGNITION)
             set_ignition[u'&Open'].DoubleClick()
-            try:
-                contains_polygon = farsite.window_(title=self.IGNITION)
-                contains_polygon.SetFocus()
-                contains_polygon[u'&No'].Click()
-                contains_line = farsite.window_(title=self.IGNITION)
-                contains_line.SetFocus()
-                contains_line[u'&No'].Click()
-            except:
-                print 'no poly line dialog'
+            # try:
+            #     contains_polygon = farsite.window_(title=self.IGNITION)
+            #     contains_polygon.SetFocus()
+            #     contains_polygon[u'&No'].Click()
+            #     contains_line = farsite.window_(title=self.IGNITION)
+            #     contains_line.SetFocus()
+            #     contains_line[u'&No'].Click()
+            # except:
+            #     print 'no poly line dialog'
         except farsite.findwindows.WindowNotFoundError:
             s.logging.error('can not find SELECT VECTOR IGNITION FILE window')
 
@@ -616,21 +605,15 @@ class FireDisturbance(d.Disturbance):
         # Exit FARSITE
         farsite.Kill_()
 
-    def set_upland_area(self):
-        unique = numpy.unique(self.ecocommunities, return_counts=True)
-        d = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
-        for i in s.UPLAND_COMMUNITIES:
-            if i in d.keys():
-                self.upland_area += d[i]
-
     def tree_mortality(self, flame, age):
         """
-            Tree_mortality calculates the percentage of the canopy in a cell killed during a burning event
-            This estimate is based on the age of the forest and the length of the flame
-            Model logic and tree size/diameter regressions from Tim Bean
-            :param: flame
-            :param: age
-            """
+        Tree_mortality calculates the percentage of the canopy in a cell killed during a burning event
+        This estimate is based on the age of the forest and the length of the flame
+        Model logic and tree size/diameter regressions from Tim Bean
+        :param: flame
+        :param: age
+        """
+
         # Convert flame length to ft
         flame[flame == -1] = 0
         flame *= 3.2808399
@@ -669,9 +652,8 @@ class FireDisturbance(d.Disturbance):
         height_x_cr = numpy.ma.array(height_x_cr, mask=(height_x_cr == 0))
 
         crown_kill = numpy.where(scorch_crown_height_dif > 0,
-                              numpy.array(41.961 * numpy.ma.log(
-                                  100 * numpy.ma.divide(scorch_crown_height_dif, height_x_cr)) - 89.721),
-                              0)
+                                 numpy.array(41.961 * numpy.ma.log(
+                                     100 * numpy.ma.divide(scorch_crown_height_dif, height_x_cr)) - 89.721), 0)
 
         crown_kill[crown_kill < 0] = 0
         crown_kill[crown_kill > 100] = 100
@@ -683,6 +665,48 @@ class FireDisturbance(d.Disturbance):
                                         .000535 * (crown_kill ** 2))))), flame)
 
         return 1 - mortality
+
+    def retrogression(self):
+        for key in self.translation_table.index:
+            # reclassify burned forest
+            if self.translation_table.ix[key]['forest'] == 1:
+
+                # Retrogression forested wetlands
+                if key == 629:
+                    self.ecocommunities[(self.ecocommunities == key) &
+                                        (self.flame_length != 0) &
+                                        (self.canopy < 90)] = 625
+
+                    self.ecocommunities[(self.ecocommunities == key) &
+                                        (self.flame_length != 0) &
+                                        (self.canopy < 50)] = 624
+
+                # Retrogression all other forested communities
+                else:
+                    self.ecocommunities[(self.ecocommunities == key) &
+                                        (self.flame_length != 0) &
+                                        (self.canopy < 90)] = s.SHRUBLAND_ID
+
+                    self.ecocommunities[(self.ecocommunities == key) &
+                                        (self.flame_length != 0) &
+                                        (self.canopy < 50)] = s.GRASSLAND_ID
+
+            # Retrogression shrubland
+            if key == s.SHRUBLAND_ID:
+                self.ecocommunities[(self.ecocommunities == key) &
+                                    (self.flame_length != 0) &
+                                    (self.canopy < 50)] = s.GRASSLAND_ID
+
+            # Retrogression shrub-swamp
+            if key == 625:
+                self.ecocommunities[(self.ecocommunities == key) &
+                                    (self.flame_length != 0) &
+                                    (self.canopy < 50)] = 624
+
+            # Reset forest age
+            l = [624, 625, 648, 649]
+            for i in l:
+                self.forest_age[self.ecocommunities == i] = 0
 
     def run_year(self):
 
@@ -705,18 +729,18 @@ class FireDisturbance(d.Disturbance):
         self.array_to_ascii(self.FUEL_ascii, self.fuel)
 
         initialize_time = time.time()
-
-        # s.logging.info('initialize run time: %s' % (initialize_time - start_time))
+        s.logging.info('initialize run time: %s' % (initialize_time - start_time))
 
         # Check if trail fires escaped
         scaled_expected_trail_escape = s.EXPECTED_TRAIL_ESCAPE * self.upland_area
         s.logging.info('upland area: %s | scaled expected trail fire: %s'
                        % (self.upland_area, scaled_expected_trail_escape))
+
         number_of_trail_ignitions = numpy.random.poisson(lam=scaled_expected_trail_escape)
         if number_of_trail_ignitions > 0:
 
             # Get list of potential trail fire sites
-            trail_array = self.ascii_to_array(self.TRAIL_ascii)
+            trail_array = self.raster_to_array(self.TRAIL_ascii)
 
             rows, cols = numpy.where((trail_array == 1) &
                                      (self.time_since_disturbance >= s.TRAIL_OVERGROWN_YRS) &
@@ -765,7 +789,6 @@ class FireDisturbance(d.Disturbance):
             for row, col in zip(rows, cols):
                 self.potential_lightning_ignition_sites.append((row, col))
 
-
             # Select i sites from potential sites and appended to ignition_sites
             if len(self.potential_lightning_ignition_sites) > 0:
                 for i in range(number_of_lightning_ignitions):
@@ -775,11 +798,11 @@ class FireDisturbance(d.Disturbance):
         s.logging.info('escaped garden fires: %s' % number_of_garden_ignitions)
         s.logging.info('lightning fires: %s' % number_of_lightning_ignitions)
 
-        # s.logging.info('%s' % self.ignition_sites)
         s.logging.info('ignition sites: %s' % self.ignition_sites)
         if len(self.ignition_sites) > 0:
 
             # s.logging.info('Creating ignition point')
+
             # Write selected ignition sites to .shp file for FARSITE
             self.write_ignition()
 
@@ -796,70 +819,26 @@ class FireDisturbance(d.Disturbance):
             # Run Farsite
             self.run_farsite()
 
-            succession_start = time.time()
-
             # Create flame length array
-            if os.path.exists(self.FLAME_LENGTH_ascii % self.year):
-                flame_length_array = ascii_to_array(self.FLAME_LENGTH_ascii % self.year)
-                flame_length_array[flame_length_array == -1] = 0
-                self.area_burned = numpy.count_nonzero(flame_length_array)
+            if os.path.exists(self.FLAME_LENGTH_ascii):
+                self.flame_length = self.raster_to_array(self.FLAME_LENGTH_ascii)
+                self.flame_length[self.flame_length == -1] = 0
+                self.area_burned = numpy.count_nonzero(self.flame_length)
 
-                # Revise ecosystem raster based on fire
-                self.time_since_disturbance[flame_length_array > 0] = 0
-                self.time_since_disturbance[flame_length_array <= 0] += 1
+                # Update time since disturbance
+                self.time_since_disturbance[self.flame_length > 0] = 0
+                self.time_since_disturbance[self.flame_length <= 0] += 1
 
                 # Calculate tree mortality due to fire
-                percent_mortality = self.tree_mortality(flame_length_array, self.forest_age)
+                percent_mortality = self.tree_mortality(self.flame_length, self.forest_age)
 
-                # Update canopy based on area burned
-                self.canopy = numpy.where(flame_length_array != 0,
+                # Update canopy based on percent mortality
+                self.canopy = numpy.where(self.flame_length != 0,
                                           numpy.array(self.canopy * percent_mortality, dtype=numpy.int8),
                                           self.canopy)
 
-                # update community based on burned canopy
-
-                # convert burned forest to shrubland
-                for key in self.translation_table.index:
-                    # reclassify burned forest
-                    if self.translation_table.ix[key]['forest'] == 1:
-
-                        # Retrogression forested wetlands
-                        if key == 629:
-                            self.ecocommunities[(self.ecocommunities == key) &
-                                                (flame_length_array != 0) &
-                                                (self.canopy < 90)] = 625
-
-                            self.ecocommunities[(self.ecocommunities == key) &
-                                                (flame_length_array != 0) &
-                                                (self.canopy < 50)] = 624
-
-                        # Retrogression all other forested communities
-                        else:
-                            self.ecocommunities[(self.ecocommunities == key) &
-                                                (flame_length_array != 0) &
-                                                (self.canopy < 90)] = s.SHRUBLAND_ID
-
-                            self.ecocommunities[(self.ecocommunities == key) &
-                                                (flame_length_array != 0) &
-                                                (self.canopy < 50)] = s.GRASSLAND_ID
-
-                    # Retrogression shrubland
-                    if key == s.SHRUBLAND_ID:
-                        self.ecocommunities[(self.ecocommunities == key) &
-                                            (flame_length_array != 0) &
-                                            (self.canopy < 50)] = s.GRASSLAND_ID
-
-                    # Retrogression shrub-swamp
-                    if key == 625:
-                        self.ecocommunities[(self.ecocommunities == key) &
-                                            (flame_length_array != 0) &
-                                            (self.canopy < 50)] = 624
-
-
-                    # Reset forest age
-                    l = [624, 625, 648, 649]
-                    for i in l:
-                        self.forest_age[self.ecocommunities == i] = 0
+                # Update communities based on burned canopy
+                self.retrogression()
 
             self.get_memory()
             # s.logging.info('memory usage: %r Mb' % self.memory)
@@ -867,8 +846,8 @@ class FireDisturbance(d.Disturbance):
         # s.logging.info('Area burned %r: %r acres' % (self.year, (self.area_burned * 100 * 0.000247105)))
 
         # Revise fuel model
-
         self.set_fuel()
+
         # s.logging.info('saving arrays as ascii')
         self.array_to_ascii(self.FUEL_ascii, self.fuel)
         self.array_to_ascii(self.CANOPY_ascii, self.canopy)
@@ -876,7 +855,7 @@ class FireDisturbance(d.Disturbance):
         self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
         self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
 
-        # save the updated community raster to the shared disturbance directory
+        # save the updated community array as a TIF raster to the shared output directory
         out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
                                               lower_left_corner=arcpy.Point(self.header['xllcorner'],
                                                                             self.header['yllcorner']),
@@ -884,9 +863,6 @@ class FireDisturbance(d.Disturbance):
                                               value_to_nodata=-9999)
 
         out_raster.save(os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))
-
-        # arcpy.ASCIIToRaster_conversion(self.LOG_DIR % (self.year, 'ecocommunities'),
-        #                                os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         # log outputs when a fire occurs and on the file year
         if self.area_burned > 0 or self.year == max(s.RUN_LENGTH):
