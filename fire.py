@@ -1,25 +1,14 @@
 import settings as s
 import disturbance as d
-from osgeo import gdal
-from osgeo.gdalconst import *
-from osgeo import gdal_array
 import numpy
-import linecache
 import arcpy
 import pywinauto
 import time
 import datetime
 import random
 import os
-import math
 import shutil
 from wmi import WMI
-
-
-def ascii_to_array(in_ascii_path):
-    ascii = gdal.Open(in_ascii_path, GA_ReadOnly)
-    array = gdal_array.DatasetReadAsArray(ascii)
-    return array
 
 
 class FireDisturbance(d.Disturbance):

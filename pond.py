@@ -2,11 +2,8 @@ import settings as s
 import disturbance as d
 from settings import arcpy
 from settings import os
-import random
-import time
 import numpy as np
 import logging
-import numpy
 
 
 class PondDisturbance(d.Disturbance):
