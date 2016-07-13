@@ -125,7 +125,7 @@ class PondDisturbance(d.Disturbance):
         self.reset_temp(self.suitability_points)
         self.calculate_suitability()
 
-        # choose pond locations
+        # select pond locations
         # logging.info('selecting pond locations')
         self.reset_temp(self.pond_points)
         # logging.info(self.pond_points, type(self.pond_points))
@@ -148,9 +148,9 @@ class PondDisturbance(d.Disturbance):
         self.new_ponds = arcpy.sa.Con(self.new_ponds != 0, 622, 0)
 
         # update canopy and forest age based on the position of new ponds
-        self.new_ponds_array = arcpy.RasterToNumPyArray(self.new_ponds)
-        self.canopy[self.new_ponds_array == 622] = 0
-        self.forest_age[self.new_ponds_array == 622] = 0
+        new_ponds_array = arcpy.RasterToNumPyArray(self.new_ponds)
+        self.canopy[new_ponds_array == 622] = 0
+        self.forest_age[new_ponds_array == 622] = 0
 
     def calculate_territory(self):
         """
@@ -221,7 +221,6 @@ class PondDisturbance(d.Disturbance):
 
         suitability_surface_set_null = arcpy.sa.SetNull(suitability_surface, suitability_surface, "VALUE = 0")
 
-
         arcpy.RasterToPoint_conversion(in_raster=suitability_surface_set_null,
                                        out_point_features=self.suitability_points)
 
@@ -257,8 +256,8 @@ class PondDisturbance(d.Disturbance):
     def abandon_ponds(self):
 
         # get raster attributes
-        lowerLeft = arcpy.Point(self.ecocommunities.extent.XMin, self.ecocommunities.extent.YMin)
-        cellSize = self.ecocommunities.meanCellWidth
+        lower_left = arcpy.Point(self.ecocommunities.extent.XMin, self.ecocommunities.extent.YMin)
+        cell_size = self.ecocommunities.meanCellWidth
 
         # convert community raster to array
         com_array = arcpy.RasterToNumPyArray(self.ecocommunities)
@@ -282,11 +281,9 @@ class PondDisturbance(d.Disturbance):
                 print '***********abandon pond'
                 com_array[group_array == i] = 624
 
-        self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lowerLeft, cellSize)
+        self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lower_left, cell_size)
 
         # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, 'com_after_abandon_%s.tif' % self.year))
-
-
 
     def set_time_since_disturbance(self):
         this_year_time_since_disturbance = os.path.join(self.OUTPUT_DIR,
@@ -316,7 +313,7 @@ class PondDisturbance(d.Disturbance):
         if s.DEBUG_MODE:
             logging.info('incrementing time since disturbance')
 
-        self.time_since_disturbance += 1 #arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
+        self.time_since_disturbance += 1
 
         if s.DEBUG_MODE:
             logging.info('calculating land_cover')
