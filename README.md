@@ -14,12 +14,15 @@ ESRI python distribution which contains arcpy library ([license information](htt
 save this file in the folder that contains the version of python you are using
 
 *Install Directions*
+
 1. Using the command line navigate to the directory containg both the GDAL.whl and python.exe
 2. use the following command:
-'''
-python.exe -m pip intall GDAL-2.0.2-cp27-none-win_amd64.whl
-'''
-3. If pip installation is successful open IDE and test gdal import
+
+ ```
+ python.exe -m pip intall GDAL-2.0.2-cp27-none-win_amd64.whl
+ ```
+
+3. If pip installation is successful, open IDE or console and test gdal import
 
 #### pywinauto
 pywinauto is dependent on pywin32 pip install did not work for me but this did
