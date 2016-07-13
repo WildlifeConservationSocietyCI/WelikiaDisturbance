@@ -336,61 +336,6 @@ class FireDisturbance(d.Disturbance):
         #         ignition_file.write('%s %s %s\n' % ((i + 1), x, y))
         #     ignition_file.write('END')
 
-    # def set_canopy(self):
-    #
-    #     if os.path.isfile(self.CANOPY_ascii):
-    #         # s.logging.info('Setting canopy')
-    #         self.canopy = ascii_to_array(self.CANOPY_ascii)
-    #
-    #         # if self.garden_disturbance is not None:
-    #         self.canopy = numpy.where(self.ecocommunities == 650,
-    #                                   self.translation_table[650]['max_canopy'], self.canopy)
-    #
-    #         # self.canopy = numpy.where((self.ecocommunities == 635) & (self.garden_disturbance == s.TIME_TO_ABANDON),
-    #         #                           [0], self.canopy)
-    #
-    #         # if self.pond_disturbance is not None:
-    #         self.canopy = numpy.where((self.ecocommunities == 622),
-    #                                   self.translation_table[622]['max_canopy'], self.canopy)
-    #
-    #         # self.canopy = numpy.where((self.ecocommunities == 622) & (self.pond_disturbance == 10),
-    #         #                           self.translation_table[622]['max_canopy'], self.canopy)
-    #
-    #     else:
-    #         # s.logging.info('Assigning initial values to canopy array')
-    #         self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']))
-    #
-    #         for key in self.translation_table.keys():
-    #             self.canopy = numpy.where((self.ecocommunities == key),
-    #                                       self.translation_table[key]['max_canopy'], self.canopy)
-    #
-    #         self.array_to_ascii(self.CANOPY_ascii, self.canopy)
-    #
-    #     self.get_memory()
-    #     # s.logging.info('memory usage: %r Mb' % self.memory)
-
-    # def set_forest_age(self):
-    #
-    #     if os.path.isfile(self.FOREST_AGE_ascii):
-    #         # s.logging.info('Setting forest age')
-    #         self.forest_age = ascii_to_array(self.FOREST_AGE_ascii)
-    #
-    #         # self.forest_age[(self.ecocommunities == 650) & (self.forest_age != 0)] = 0
-    #         #
-    #         # self.forest_age[(self.ecocommunities == 622) & (self.forest_age != 0)] = 0
-    #
-    #     else:
-    #         # s.logging.info('Assigning initial values to forest age array')
-    #         self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']))
-    #         for key in self.translation_table.keys():
-    #             self.forest_age = numpy.where((self.ecocommunities == key),
-    #                                           self.translation_table[key]['start_age'], self.canopy)
-    #
-    #         self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
-    #
-    #     self.get_memory()
-    #     # s.logging.info('memory usage: %r Mb' % self.memory)
-
     def set_time_since_disturbance(self):
 
         if os.path.isfile(self.TIME_SINCE_DISTURBANCE_ascii):
