@@ -20,6 +20,7 @@ REGION = '2'
 
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities.tif' % REGION)
 UPLAND_COMMUNITIES = [616, 621, 622, 625, 629, 632, 635, 644, 647, 649, 650, 654]
+UPLAND_COMMUNITIES = [616, 621, 622, 625, 629, 632, 635, 644, 647, 648, 649, 650, 654, 733]
 INPUT_FILES = [
     ecocommunities
 ]
