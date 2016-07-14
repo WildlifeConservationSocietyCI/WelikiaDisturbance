@@ -96,21 +96,6 @@ class FireDisturbance(d.Disturbance):
         self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities)
         self.set_upland_area()
 
-    # def set_communities(self):
-    #     this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
-    #     last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
-    #
-    #     if arcpy.Exists(this_year_ecocomms):
-    #         self.ecocommunities = arcpy.RasterToNumPyArray(this_year_ecocomms, nodata_to_value=-9999)
-    #
-    #
-    #     elif arcpy.Exists(last_year_ecocomms):
-    #         self.ecocommunities = arcpy.RasterToNumPyArray(last_year_ecocomms, nodata_to_value=-9999)
-    #
-    #
-    #     else:
-    #         self.ecocommunities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
-
     def get_memory(self):
         # Reports current memory usage
 
@@ -236,25 +221,6 @@ class FireDisturbance(d.Disturbance):
                             direction = random.choice(range(0, 360))
                             cloud_cover = 20
                             wind_file.write('%s %s %r %r %r %r\n' % (month, day, hour, speed, direction, cloud_cover))
-
-    # def ascii_to_array(self, in_ascii):
-    #     """
-    #     convert ascii grid in to numpy array
-    #     :type in_ascii: object
-    #     """
-    #     # print in_ascii
-    #     ascii = gdal.Open(in_ascii, GA_ReadOnly)
-    #     array = gdal_array.DatasetReadAsArray(ascii)
-    #
-    #     return array
-
-    # def array_to_ascii(self, out_ascii_path, array):
-    #     out_asc = open(out_ascii_path, 'w')
-    #     for attribute in self.header_text:
-    #         out_asc.write(attribute)
-    #
-    #     numpy.savetxt(out_asc, array, fmt="%4i")
-    #     # out_asc.close()
 
     def set_fuel(self):
         """
