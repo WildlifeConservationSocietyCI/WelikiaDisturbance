@@ -198,7 +198,7 @@ class Succession():
                                  (self.canopy > row['max_canopy'])] = to_key
 
             # SUCCESSIONAL HARDWOOD FOREST
-            if key == 733:
+            if key == 736:
                 self.ecocommunities = numpy.where((self.ecocommunities == key) &
                                                (self.canopy > row['max_canopy']),
                                                self.climax_communities, self.ecocommunities)
