@@ -202,7 +202,7 @@ class FireDisturbance(d.Disturbance):
             if int(i[0]) == self.start_month and int(i[1]) == self.start_day:
                 start_index = self.weather.index(i)
                 for e in self.weather[start_index:]:
-                    if int(e[2]) > s.EXTINGUISH_THRESHOLD:
+                    if int(e[2]) > s.CRITICAL_RAINFALL:
                         self.end_month = int(e[0])
                         self.end_day = int(e[1])
                         break
