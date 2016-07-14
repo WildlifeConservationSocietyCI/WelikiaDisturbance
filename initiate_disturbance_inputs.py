@@ -19,8 +19,8 @@ TRAILS = os.path.join(INPUT_DIR, 'fire_trails.tif')
 REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi.shp')
 
 # Tabular Inputs
-PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.csv')
-SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass2.csv')
+PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.txt')
+SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass2.txt')
 
 GARDEN_SLOPE_SUITABILITY = os.path.join(INPUT_DIR, 'slope_suitability.tif')
 PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, 'proximity_suitability.tif')
@@ -53,9 +53,10 @@ if arcpy.Exists(os.path.join(INPUT_DIR, 'dem.asc')) is False:
     arcpy.RasterToASCII_conversion(DEM, os.path.join(INPUT_DIR, 'dem.asc'))
 
 # slope
-if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.asc')) is False:
+if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.tif')) is False:
     logging.info('creating ascii slope')
     slope = arcpy.sa.Slope(DEM, output_measurement='DEGREE')
+    slope.save(os.path.join(INPUT_DIR, 'slope.tif'))
     arcpy.RasterToASCII_conversion(slope, os.path.join(INPUT_DIR, 'slope.asc'))
 else:
     slope = arcpy.Raster(os.path.join(INPUT_DIR, 'slope.asc'))
@@ -83,7 +84,7 @@ if arcpy.Exists(os.path.join(INPUT_DIR, 'slope_suitability.tif')) is False:
                                                 in_remap_table=SLOPE_RECLASS,
                                                 from_value_field='Field1',
                                                 to_value_field='Field2',
-                                                output_value_field='Field3')
+                                                output_value_field='Field4')
 
     slope_suitability.save(os.path.join(INPUT_DIR, 'slope_suitability.tif'))
 else:
@@ -111,7 +112,7 @@ if arcpy.Exists(os.path.join(INPUT_DIR, 'proximity_suitability.tif')) is False:
                                                     in_remap_table=PROXIMITY_RECLASS,
                                                     from_value_field='Field1',
                                                     to_value_field='Field2',
-                                                    output_value_field='Field3')
+                                                    output_value_field='Field4')
 
     proximity_suitability.save(os.path.join(INPUT_DIR, 'proximity_suitability.tif'))
 else:
@@ -127,87 +128,87 @@ cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
 for feature in cursor:
 
     print feature.BoroName
-    boro_code = str(feature.BoroCode)
+    boro_code = str(int(feature.BoroCode))
     print boro_code
+    if int(boro_code) == 2:
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')) is False:
+            dem_clip = arcpy.Clip_management(in_raster=DEM,
+                                             in_template_dataset=feature.Shape,
+                                             clipping_geometry='ClippingGeometry')
 
-    if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')) is False:
-        dem_clip = arcpy.Clip_management(in_raster=DEM,
-                                         in_template_dataset=feature.Shape,
-                                         clipping_geometry='ClippingGeometry')
+            arcpy.RasterToASCII_conversion(dem_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc'))
 
-        arcpy.RasterToASCII_conversion(dem_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc'))
+        dem_ref = os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')
 
-    dem_ref = os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')
+        # set environment
+        set_arc_env(dem_ref)
 
-    # set environment
-    set_arc_env(dem_ref)
+        ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities.tif' % boro_code)
+        if arcpy.Exists(ecocommunities) is False:
 
-    ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities.tif' % boro_code)
-    if arcpy.Exists(ecocommunities) is False:
+            ecocommunities_clip = arcpy.sa.Con(dem_ref, ECOSYSTEMS)
 
-        ecocommunities_clip = arcpy.sa.Con(dem_ref, ECOSYSTEMS)
+            ecocommunities_clip.save(ecocommunities)
 
-        ecocommunities_clip.save(ecocommunities)
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc')) is False:
 
-    if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc')) is False:
+            trail_clip = arcpy.sa.Con(dem_ref, TRAILS)
 
-        trail_clip = arcpy.sa.Con(dem_ref, TRAILS)
+            arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc'))
 
-        arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc'))
+        dem = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif')
+        if arcpy.Exists(dem) is False:
 
-    dem = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif')
-    if arcpy.Exists(dem) is False:
+            dem_clip = arcpy.sa.Con(dem_ref, DEM)
 
-        dem_clip = arcpy.sa.Con(dem_ref, DEM)
+            dem_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif'))
 
-        dem_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif'))
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc')) is False:
 
-    if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc')) is False:
+            slope_clip = arcpy.sa.Con(dem_ref, slope)
 
-        slope_clip = arcpy.sa.Con(dem_ref, slope)
+            arcpy.RasterToASCII_conversion(slope_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc'))
 
-        arcpy.RasterToASCII_conversion(slope_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc'))
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc')) is False:
 
-    if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc')) is False:
+            aspect_clip = arcpy.sa.Con(dem_ref, aspect)
 
-        aspect_clip = arcpy.sa.Con(dem_ref, aspect)
+            arcpy.RasterToASCII_conversion(aspect_clip,
+                                           os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc'))
 
-        arcpy.RasterToASCII_conversion(aspect_clip,
-                                       os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc'))
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'flow_direction.tif')) is False:
 
-    if arcpy.Exists(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'flow_direction.tif')) is False:
+            flow_direction_clip = arcpy.sa.Con(dem_ref, flow_direction)
 
-        flow_direction_clip = arcpy.sa.Con(dem_ref, flow_direction)
+            flow_direction_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'flow_direction.tif'))
 
-        flow_direction_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'flow_direction.tif'))
+        # stream_suitability = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif')
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif')) is False:
 
-    # stream_suitability = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif')
-    if arcpy.Exists(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif')) is False:
+            stream_suitability_clip = arcpy.sa.Con(dem_ref, stream_suitability)
 
-        stream_suitability_clip = arcpy.sa.Con(dem_ref, stream_suitability)
+            stream_suitability_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif'))
 
-        stream_suitability_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif'))
+        # slope_suitability = os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')) is False:
 
-    # slope_suitability = os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')
-    if arcpy.Exists(os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')) is False:
+            slope_suitability_clip = arcpy.sa.Con(dem_ref, slope_suitability)
 
-        slope_suitability_clip = arcpy.sa.Con(dem_ref, slope_suitability)
+            slope_suitability_clip.save(os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'slope_suitability.tif'))
 
-        slope_suitability_clip.save(os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'slope_suitability.tif'))
+        # proximity_suitability = os.path.join(s.INPUT_DIR, 'garden', boro_code, 'proximity_suitability.tif')
+        prx_path = os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'proximity_suitability.tif')
+        if arcpy.Exists([prx_path]) is False:
 
-    # proximity_suitability = os.path.join(s.INPUT_DIR, 'garden', boro_code, 'proximity_suitability.tif')
-    prx_path = os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'proximity_suitability.tif')
-    if arcpy.Exists([prx_path]) is False:
+            proximity_suitability_clip = arcpy.sa.Con(dem_ref, proximity_suitability)
 
-        proximity_suitability_clip = arcpy.sa.Con(dem_ref, proximity_suitability)
+            proximity_suitability_clip.save(prx_path)
 
-        proximity_suitability_clip.save(prx_path)
+        garden_sites = os.path.join(s.INPUT_DIR, 'garden','spatial', boro_code, 'garden_sites.shp')
+        if arcpy.Exists(garden_sites) is False:
+            arcpy.Clip_analysis(in_features=SITES,
+                                clip_features=feature.Shape,
+                                out_feature_class=garden_sites)
 
-    garden_sites = os.path.join(s.INPUT_DIR, 'garden','spatial', boro_code, 'garden_sites.shp')
-    if arcpy.Exists(garden_sites) is False:
-        arcpy.Clip_analysis(in_features=SITES,
-                            clip_features=feature.Shape,
-                            out_feature_class=garden_sites)
-
-    # reset env for next region
-    reset_arc_env()
+        # reset env for next region
+        reset_arc_env()

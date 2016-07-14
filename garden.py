@@ -1,12 +1,13 @@
 import os
 import settings as s
+import disturbance as d
 import arcpy
 import numpy
 import random
 
 
 
-class GardenDisturbance(s.Disturbance):
+class GardenDisturbance(d.Disturbance):
     # CLASS VARIABLES
     year = None
     ecocommunities = None
@@ -24,10 +25,11 @@ class GardenDisturbance(s.Disturbance):
     CLIMAX_COMMUNITIES = s.ecocommunities
     SLOPE_SUITABILITY = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'slope_suitability.tif')
     PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'proximity_suitability.tif')
-    COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, TABULAR, 'lc_reclass2.csv')
+    COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, TABULAR, 'lc_reclass.txt')
     SITES = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'garden_sites.shp')
 
     def __init__(self, year):
+        super(GardenDisturbance, self).__init__(year)
 
         self.site_populations = []
         self.coordinate_list = []
@@ -39,44 +41,18 @@ class GardenDisturbance(s.Disturbance):
         self.population = None
         self.garden_area = 0
         self.garden_area_target = None
-        self.ecocommunities = None
-        self.forest_age = None
         self.garden_list = []
         self.garden = None
         self.time_since_disturbance = None
         self.randrast = None
-
         self.site_center = None
         self.temp_point = os.path.join(s.TEMP_DIR, 'temp_point.shp')
         self.temp_buffer = os.path.join(s.TEMP_DIR, 'temp_buffer.shp')
         self.local_suitability = None
         self.local_ecocommunities = None
-
         self.new_garden_area = 0
 
-        self.set_ecocommunities()
         self.set_time_since_disturbance()
-
-    def set_ecocommunities(self):
-        """
-
-        :return:
-        """
-
-        this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
-        last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
-
-        if os.path.isfile(this_year_ecocomms):
-            # print this_year_ecocomms
-            self.ecocommunities = arcpy.Raster(this_year_ecocomms)
-
-        elif os.path.isfile(last_year_ecocomms):
-            # print last_year_ecocomms
-            self.ecocommunities = arcpy.Raster(last_year_ecocomms)
-        else:
-            print 'initial run'
-            self.ecocommunities = arcpy.Raster(s.ecocommunities)
-            # self.ecocommunities.save(os.path.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
     def set_time_since_disturbance(self):
         """
@@ -99,10 +75,9 @@ class GardenDisturbance(s.Disturbance):
         land cover, proximity and slope suitability rasters for overall suitability score.
         :return:
         """
-
         ecocommunity_suitability = arcpy.sa.ReclassByTable(self.ecocommunities, self.COMMUNITY_RECLASS_TABLE,
                                                            from_value_field='Field1',
-                                                           to_value_field='Field2',
+                                                           to_value_field='Field1',
                                                            output_value_field='Field3',
                                                            missing_values='NODATA')
 
@@ -121,22 +96,25 @@ class GardenDisturbance(s.Disturbance):
         x = random.choice(s.REQUIREMENT_VARIANCE)
         self.garden_area_target = int(self.population * s.PER_CAPITA_GARDEN_AREA / (s.CELL_SIZE ** 2)) + x
 
-    def succession(self):
+    def abandon_garden(self):
         """
         update communities based on age and current type
         :return:
         """
 
-        if random.randint(0,100) <= s.ABANDONMENT_PROBABILITY:
+        # abandon garden if random value is below the abandoment probability
+        if random.randint(0, 100) <= s.ABANDONMENT_PROBABILITY:
             print '**************abandoning garden'
-            local_communities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID), s.GRASSLAND_ID,
-                                               self.ecocommunities)
+            local_communities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID), 648, self.ecocommunities)
+
+            # set environment extent and add the old field back to the community raster
             arcpy.env.extent = s.ecocommunities
 
             self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(local_communities) == 0, local_communities,
                                                self.ecocommunities)
 
-        # update age
+            # set local exent for garden creation
+            arcpy.env.extent = self.temp_buffer
 
     def update_time_since_disturbance(self):
         """
@@ -184,9 +162,9 @@ class GardenDisturbance(s.Disturbance):
 
         arcpy.env.extent = self.temp_buffer
 
-        self.succession()
-
-        arcpy.env.extent = self.temp_buffer
+        # don't abandon gardens on first year of trial
+        if self.year > min(s.RUN_LENGTH):
+            self.abandon_garden()
 
         local_ecocommunities = arcpy.sa.ExtractByMask(self.ecocommunities, self.temp_buffer)
 
@@ -281,8 +259,8 @@ class GardenDisturbance(s.Disturbance):
             clip = arcpy.sa.ExtractByMask(zone, zapped)
             array = arcpy.RasterToNumPyArray(clip)
             unique_values = numpy.unique(array, return_counts=True)
-            d = dict(zip(unique_values[0], unique_values[1]))
-            if s.GARDEN_ID not in d.keys():
+            value_dict = dict(zip(unique_values[0], unique_values[1]))
+            if s.GARDEN_ID not in value_dict.keys():
                 print 'no new cells can be added'
                 break
 
@@ -397,6 +375,10 @@ class GardenDisturbance(s.Disturbance):
                     self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, self.garden,
                                                        self.ecocommunities)
 
+                    e = arcpy.RasterToNumPyArray(self.ecocommunities)
+                    self.canopy[e == 650] = 0
+                    self.forest_age[e == 650] = 0
+
                     if self.year == s.RUN_LENGTH[0]:
                         random_age = numpy.random.random_integers(1, 19)
                         self.time_since_disturbance = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, random_age,
@@ -404,11 +386,6 @@ class GardenDisturbance(s.Disturbance):
                     else:
                         self.time_since_disturbance = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, 1,
                                                                    self.time_since_disturbance)
-
-                    # print 'garden created'
-
-            # else:
-                # print 'no new gardens created'
 
             arcpy.env.extent = s.ecocommunities
 
@@ -419,6 +396,7 @@ class GardenDisturbance(s.Disturbance):
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
-
+        self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
+        self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
         self.calculate_garden_area()
         print 'garden area: %s' % self.new_garden_area
