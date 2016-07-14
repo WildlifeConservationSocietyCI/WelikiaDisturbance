@@ -48,8 +48,8 @@ TRAIL_OVERGROWN_YRS = 15
 FIRE_SEASON_START = (1, 3)
 FIRE_SEASON_END = (31, 5)
 
-# Rain in mm needed to extinguish a fire
-EXTINGUISH_THRESHOLD = 10
+# Minimum amount of rain in 1/100" needed to extinguish a fire
+CRITICAL_RAINFALL = 10
 
 # Number of days used to condition fuel before the start of fire
 CONDITIONING_LENGTH = 15
