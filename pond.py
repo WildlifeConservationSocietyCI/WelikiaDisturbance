@@ -8,6 +8,7 @@ import logging
 
 class PondDisturbance(d.Disturbance):
     # CLASS VARIABLES
+    DEBUG_MODE = True
     year = None
     ecocommunities = None
 
@@ -310,15 +311,15 @@ class PondDisturbance(d.Disturbance):
 
     def run_year(self):
 
-        if s.DEBUG_MODE:
+        if self.DEBUG_MODE:
             logging.info('incrementing time since disturbance')
 
         self.time_since_disturbance += 1
 
-        if s.DEBUG_MODE:
+        if self.DEBUG_MODE:
             logging.info('calculating land_cover')
 
-        if s.DEBUG_MODE:
+        if self.DEBUG_MODE:
             logging.info('abandoning ponds')
 
         self.abandon_ponds()
@@ -326,7 +327,7 @@ class PondDisturbance(d.Disturbance):
         self.set_region_group(self.ecocommunities)
 
         self.count_ponds()
-        if s.DEBUG_MODE:
+        if self.DEBUG_MODE:
             logging.info('counting number of active ponds')
             logging.info('count: %s' % self.pond_count)
             logging.info('carrying capacity: %s' % self.carrying_capacity)
