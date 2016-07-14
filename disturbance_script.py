@@ -92,7 +92,7 @@ for year in s.RUN_LENGTH:
     succ.run_succession()
 
     year_end = time.time()
-    s.logging.info('end time time: %s' % x.now())
+    s.logging.info('end time: %s' % x.now())
     s.logging.info('year run time: %s minutes' % ((year_end - year_start) / 60))
 
     # track disturbances
