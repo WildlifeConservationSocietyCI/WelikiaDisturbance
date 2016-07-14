@@ -571,7 +571,7 @@ class FireDisturbance(d.Disturbance):
         # Exit FARSITE
         farsite.Kill_()
 
-    def tree_mortality(self, flame, age):
+    def tree_mortality(self):
         """
         Tree_mortality calculates the percentage of the canopy in a cell killed during a burning event
         This estimate is based on the age of the forest and the length of the flame
@@ -579,6 +579,8 @@ class FireDisturbance(d.Disturbance):
         :param: flame
         :param: age
         """
+        flame = self.flame_length
+        age = self.forest_age
 
         # Convert flame length to ft
         flame[flame == -1] = 0
@@ -796,7 +798,7 @@ class FireDisturbance(d.Disturbance):
                 self.time_since_disturbance[self.flame_length <= 0] += 1
 
                 # Calculate tree mortality due to fire
-                percent_mortality = self.tree_mortality(self.flame_length, self.forest_age)
+                percent_mortality = self.tree_mortality()
 
                 # Update canopy based on percent mortality
                 self.canopy = numpy.where(self.flame_length != 0,
