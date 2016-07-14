@@ -16,11 +16,11 @@ DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'dem.tif')
 ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'ecocommunities.tif')
 SITES = os.path.join(INPUT_DIR, 'GARDEN_SITES.shp')
 TRAILS = os.path.join(INPUT_DIR, 'fire_trails.tif')
-REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'geo_export_cb1b153c-1120-41b9-92b5-580cfa54c581.shp')
+REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi.shp')
 
 # Tabular Inputs
 PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.txt')
-SLOPE_RECLASS = r'C:\_data\welikia\WelikiaDisturbance\inputs\garden\tabular\slope_reclass2.txt '#os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass2.csv')
+SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass2.txt')
 
 GARDEN_SLOPE_SUITABILITY = os.path.join(INPUT_DIR, 'slope_suitability.tif')
 PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, 'proximity_suitability.tif')
@@ -127,8 +127,8 @@ cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
 
 for feature in cursor:
 
-    print feature.boro_name
-    boro_code = str(int(feature.boro_code))
+    print feature.BoroName
+    boro_code = str(int(feature.BoroCode))
     print boro_code
     if int(boro_code) == 2:
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')) is False:
@@ -150,11 +150,11 @@ for feature in cursor:
 
             ecocommunities_clip.save(ecocommunities)
 
-        # if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc')) is False:
-        #
-        #     trail_clip = arcpy.sa.Con(dem_ref, TRAILS)
-        #
-        #     arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc'))
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc')) is False:
+
+            trail_clip = arcpy.sa.Con(dem_ref, TRAILS)
+
+            arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc'))
 
         dem = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif')
         if arcpy.Exists(dem) is False:

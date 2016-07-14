@@ -9,17 +9,16 @@ import numpy
 # DIRECTORIES
 TRIAL_NAME = 'test'
 
-ROOT_DIR = os.path.join('C:\\', '_data', 'welikia', 'WelikiaDisturbance')
+ROOT_DIR = os.path.join('F:\\', '_data', 'Welikia', 'WelikiaDisturbance')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
-# OUTPUT_DIR = os.path.join(r"E:\_data\welikia\disturbance_log\%s" % TRIAL_NAME)
+# OUTPUT_DIR = os.path.join(r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r'C:\Users\Jesse Moy\Dropbox\disturbance_logs\%s' % TRIAL_NAME
+LOG_DIR = r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME
 
 REGION = '2'
 
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities.tif' % REGION)
-UPLAND_COMMUNITIES = [616, 621, 622, 625, 629, 632, 635, 644, 647, 649, 650, 654]
 UPLAND_COMMUNITIES = [616, 621, 622, 625, 629, 632, 635, 644, 647, 648, 649, 650, 654, 733]
 INPUT_FILES = [
     ecocommunities
@@ -29,8 +28,8 @@ INPUT_FILES = [
 DEBUG_MODE = False
 
 # DISTURBANCE FLAG TOGGLE
-GARDEN = False
-FIRE = False
+GARDEN = True
+FIRE = True
 POND = True
 
 # LOGGING
@@ -39,7 +38,7 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1411)
+RUN_LENGTH = range(1409, 1424)
 
 # FIRE
 # initial parameters
@@ -58,8 +57,8 @@ CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities number of fires / km^2
 EXPECTED_LIGHTNING_FIRE = 0.0005425
-EXPECTED_TRAIL_ESCAPE = 0.002222222222
-EXPECTED_GARDEN_ESCAPE = 0.0002777777778
+EXPECTED_TRAIL_ESCAPE = 0.01777777778
+EXPECTED_GARDEN_ESCAPE = 0.002222222222
 # PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types

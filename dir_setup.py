@@ -2,17 +2,17 @@ import os
 import arcpy
 import shutil
 
-ROOT_DIR = r'C:\_data\welikia\WelikiaDisturbance'
+ROOT_DIR = r'F:\_data\Welikia\WelikiaDisturbance'
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 
-REGION_BOUNDARIES = os.path.join(ROOT_DIR, '_inputs_full_extent', 'geo_export_cb1b153c-1120-41b9-92b5-580cfa54c581.shp')
+REGION_BOUNDARIES = os.path.join(ROOT_DIR, '_inputs_full_extent', 'nybbwi.shp')
 
 regions = []
 
 cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
 for feature in cursor:
-    region_code = int(feature.boro_code)
+    region_code = int(feature.BoroCode)
     regions.append(region_code)
 
 print regions
