@@ -9,12 +9,11 @@ import numpy
 # DIRECTORIES
 TRIAL_NAME = 'test'
 
-ROOT_DIR = os.path.join('F:\\', '_data', 'Welikia', 'WelikiaDisturbance')
+ROOT_DIR = os.path.join('')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
-# OUTPUT_DIR = os.path.join(r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME
+LOG_DIR = r"%s" % TRIAL_NAME
 
 REGION = '2'
 
@@ -38,7 +37,7 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1424)
+RUN_LENGTH = range(, )
 
 # FIRE
 # initial parameters
@@ -57,8 +56,8 @@ CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities number of fires / km^2
 EXPECTED_LIGHTNING_FIRE = 0.0005425
-EXPECTED_TRAIL_ESCAPE = 0.01777777778
-EXPECTED_GARDEN_ESCAPE = 0.002222222222
+EXPECTED_TRAIL_ESCAPE = 
+EXPECTED_GARDEN_ESCAPE = 
 # PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types
