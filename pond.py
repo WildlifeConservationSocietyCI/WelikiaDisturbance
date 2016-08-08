@@ -161,7 +161,6 @@ class PondDisturbance(d.Disturbance):
         :rtype: object
         :return: exclude_territory
         """
-
         land_cover_set_null = arcpy.sa.SetNull(self.ecocommunities != 622, 1)
 
         territory = arcpy.sa.EucDistance(in_source_data=land_cover_set_null,
@@ -212,23 +211,28 @@ class PondDisturbance(d.Disturbance):
             3) above the highest tidal influence
         :return:
         """
+        # TODO what other conditions need to be met, make sure the correct stream types are used
+        # TODO recalculate suitable streams with new land-cover
 
         if type(self.SUITABLE_STREAMS) == str:
             self.SUITABLE_STREAMS = arcpy.Raster(self.SUITABLE_STREAMS)
 
+        # calculate current territories
         exclude_territory = self.calculate_territory()
 
+        # intersect un-colonized parts of the landscape with suitable streams
         suitability_surface = exclude_territory * self.SUITABLE_STREAMS
 
         suitability_surface_set_null = arcpy.sa.SetNull(suitability_surface, suitability_surface, "VALUE = 0")
 
+        # convert suitable cells to points for random selection and watershed pour point
         arcpy.RasterToPoint_conversion(in_raster=suitability_surface_set_null,
                                        out_point_features=self.suitability_points)
 
     def initial_time_since_disturbance(self):
         """
-        This method returns an initial time_since_disturbance raster. time_since_disturbance
-        cells that are coincident with new new_ponds are assigned random values between 0 and 9,
+        return initial time_since_disturbance raster. time_since_disturbance
+        cells that are coincident with new new_ponds are assigned a value of 1,
         all other cells are initiated with a value of 30.
         :return:
         """
