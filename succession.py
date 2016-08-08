@@ -42,7 +42,7 @@ class Succession():
         self.soil = None
         self.pond_time_since_disturbance = None
         self.garden_time_since_disturbance = None
-        self.succession_table = pd.read_csv(os.path.join(s.ROOT_DIR, 'succession_table.csv'))
+        self.succession_table = pd.read_csv(os.path.join(s.ROOT_DIR, 'community_table.csv'))
 
         self.header = None
         self.header_text = None
@@ -159,13 +159,18 @@ class Succession():
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
 
     def grow(self):
-
+        """
+        for each community increment canopy for all cells,
+        if the community is a forest type increment forest age
+        :return:
+        """
+        # TODO: create single table that contains the fuel, succession, and canopy info for all communities
         for index, row in self.succession_table.iterrows():
-            key = row['from_ID']
+            key = row['ec_ID']
             canopy_growth = row['canopy_growth']
 
             # increment forest age and canopy
-            if row['type'] == 'forest':
+            if row['forest'] == 1:
                 self.forest_age[self.ecocommunities == key] += 1
                 self.canopy[(self.ecocommunities == key) &
                             (self.canopy < 100)] += canopy_growth
@@ -175,9 +180,12 @@ class Succession():
                 self.canopy[self.ecocommunities == key] += canopy_growth
 
     def transition(self):
-
+        """
+        for each community type, transition the community to new state if conditions are met
+        :return:
+        """
         for index, row in self.succession_table.iterrows():
-            key = int(row['from_ID'])
+            key = int(row['ec_ID'])
             try:
                 to_key = int(row['to_ID'])
             except:
@@ -220,12 +228,15 @@ class Succession():
                                                 self.climax_communities, self.ecocommunities)
 
     def run_succession(self):
+        """
+
+        :return:
+        """
 
         self.grow()
         self.transition()
 
         # self.array_to_ascii(array=self.ecocommunities, out_ascii_path=os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
-
 
         out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
                                               lower_left_corner=arcpy.Point(self.header['xllcorner'],
