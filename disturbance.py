@@ -13,13 +13,12 @@ class Disturbance(object):
     def __init__(self, year):
 
         self.year = year
-        # self.check_inputs()
         self.DEM_ascii = os.path.join(s.INPUT_DIR, 'fire', 'spatial', s.REGION, 'dem.asc')
         self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
         self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
         self._ecocommunities_filename = 'ecocommunities_%s.tif'
-
         self.ecocommunities = None
+        self.ecocommunities_array = None
 
         # arrays
         self.forest_age = None
@@ -32,11 +31,14 @@ class Disturbance(object):
 
         self.get_header()
         self.set_ecocommunities()
-        self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
         self.set_forest_age()
         self.set_canopy()
 
     def get_header(self):
+        """
+        store raster header info, used to save np arrays out as ascii rasters
+        :return:
+        """
         header = [linecache.getline(self.DEM_ascii, i) for i in range(1, 7)]
         h = {}
 
@@ -78,6 +80,8 @@ class Disturbance(object):
 
     def set_ecocommunities(self):
         """
+        set community raster for given year, if no raster exists use previous year,
+        else: use initial conditions community raster
         """
 
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
@@ -93,9 +97,13 @@ class Disturbance(object):
         else:
             print 'initial run'
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
-            # self.ecocommunities.save(os.path.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
     def set_canopy(self):
+        """
+        set canopy for given year if no canopy raster exists, use previous year,
+        else: initialize canopy raster
+        :return:
+        """
 
         if os.path.isfile(self.CANOPY_ascii):
             s.logging.info('Setting canopy')
@@ -103,6 +111,8 @@ class Disturbance(object):
 
         else:
             s.logging.info('Assigning initial values to canopy array')
+            if self.ecocommunities_array is None:
+                self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
             self.canopy = np.empty((self.header['nrows'], self.header['ncols']))
 
             # for key in self.translation_table.keys():
@@ -113,13 +123,20 @@ class Disturbance(object):
             self.array_to_ascii(self.CANOPY_ascii, self.canopy)
 
     def set_forest_age(self):
-
+        """
+        set forest age for given year, if no forest age raster exists, use previous year,
+        else: initialize froest age raster
+        :return:
+        """
         if os.path.isfile(self.FOREST_AGE_ascii):
             s.logging.info('Setting forest age')
             self.forest_age = self.raster_to_array(self.FOREST_AGE_ascii)
 
         else:
             s.logging.info('Assigning initial values to forest age array')
+            if self.ecocommunities_array is None:
+                self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
+
             self.forest_age = np.empty((self.header['nrows'], self.header['ncols']))
 
             for key in self.translation_table.index:
