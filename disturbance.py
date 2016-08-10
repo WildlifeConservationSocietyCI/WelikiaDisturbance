@@ -26,8 +26,7 @@ class Disturbance(object):
 
         self.upland_area = 0
 
-        self.translation_table = pd.read_csv(os.path.join(s.ROOT_DIR, 'ec_translator.txt'),
-                                             delim_whitespace=True, index_col='ec_id')
+        self.community_table = pd.read_csv(s.community_table, index_col=0)
 
         self.get_header()
         self.set_ecocommunities()
@@ -116,9 +115,9 @@ class Disturbance(object):
             self.canopy = np.empty((self.header['nrows'], self.header['ncols']))
 
             # for key in self.translation_table.keys():
-            for key in self.translation_table.index:
+            for key in self.community_table.index:
                 self.canopy = np.where((self.ecocommunities_array == key),
-                                          self.translation_table.ix[key]['max_canopy'], self.canopy)
+                                       self.community_table.ix[key]['max_canopy'], self.canopy)
 
             self.array_to_ascii(self.CANOPY_ascii, self.canopy)
 
@@ -139,9 +138,9 @@ class Disturbance(object):
 
             self.forest_age = np.empty((self.header['nrows'], self.header['ncols']))
 
-            for key in self.translation_table.index:
+            for key in self.community_table.index:
                 self.forest_age = np.where((self.ecocommunities_array == key),
-                                              self.translation_table.ix[key]['start_age'], self.forest_age)
+                                           self.community_table.ix[key]['start_age'], self.forest_age)
 
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
 

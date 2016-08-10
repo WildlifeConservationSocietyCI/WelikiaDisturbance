@@ -232,10 +232,10 @@ class FireDisturbance(d.Disturbance):
             self.fuel = numpy.empty((self.header['nrows'], self.header['ncols']))
             self.fuel.astype(numpy.int32)
 
-        for key in self.translation_table.index:
-            fuel_c = self.translation_table.ix[key]['fuel_c']
-            fuel_m = self.translation_table.ix[key]['fuel_m']
-            fuel_n = self.translation_table.ix[key]['fuel_n']
+        for key in self.community_table.index:
+            fuel_c = self.community_table.ix[key]['fuel_c']
+            fuel_m = self.community_table.ix[key]['fuel_m']
+            fuel_n = self.community_table.ix[key]['fuel_n']
 
             # set new fuels
             self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance < s.TIME_TO_MID_FUEL)] = fuel_n
@@ -635,9 +635,9 @@ class FireDisturbance(d.Disturbance):
         return 1 - mortality
 
     def retrogression(self):
-        for key in self.translation_table.index:
+        for key in self.community_table.index:
             # reclassify burned forest
-            if self.translation_table.ix[key]['forest'] == 1:
+            if self.community_table.ix[key]['forest'] == 1:
 
                 # Retrogression forested wetlands
                 if key == 629:

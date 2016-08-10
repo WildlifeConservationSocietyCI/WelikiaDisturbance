@@ -376,8 +376,8 @@ class GardenDisturbance(d.Disturbance):
                                                        self.ecocommunities)
 
                     e = arcpy.RasterToNumPyArray(self.ecocommunities)
-                    self.canopy[e == 650] = 0
-                    self.forest_age[e == 650] = 0
+                    self.canopy[e == s.GARDEN_ID] = 0
+                    self.forest_age[e == s.GARDEN_ID] = 0
 
                     if self.year == s.RUN_LENGTH[0]:
                         random_age = numpy.random.random_integers(1, 19)

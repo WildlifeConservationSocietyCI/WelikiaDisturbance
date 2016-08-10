@@ -18,6 +18,7 @@ LOG_DIR = r"%s" % TRIAL_NAME
 REGION = '2'
 
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities.tif' % REGION)
+community_table = os.path.join(ROOT_DIR, 'welikia_community_table.csv')
 UPLAND_COMMUNITIES = [616, 621, 622, 625, 629, 632, 635, 644, 647, 648, 649, 650, 654, 733]
 INPUT_FILES = [
     ecocommunities
