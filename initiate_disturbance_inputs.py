@@ -20,7 +20,7 @@ REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi.shp')
 
 # Tabular Inputs
 PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.txt')
-SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass2.txt')
+SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass.txt')
 
 GARDEN_SLOPE_SUITABILITY = os.path.join(INPUT_DIR, 'slope_suitability.tif')
 PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, 'proximity_suitability.tif')
@@ -94,7 +94,13 @@ else:
 if arcpy.Exists(os.path.join(INPUT_DIR, 'stream_suitability.tif')) is False:
 
     logging.info('creating stream suitability')
-    stream_suitability = arcpy.sa.Con((ECOSYSTEMS == 616) &
+    stream_suitability = arcpy.sa.Con((ECOSYSTEMS == 618.1) |
+                                      (ECOSYSTEMS == 618.2) |
+                                      (ECOSYSTEMS == 618.3) |
+                                      (ECOSYSTEMS == 618.4) |
+                                      (ECOSYSTEMS == 620) |
+                                      (ECOSYSTEMS == 617.1) |
+                                      (ECOSYSTEMS == 617.2) &
                                       (slope <= 8), 1, 0)
 
     stream_suitability.save(os.path.join(INPUT_DIR, 'stream_suitability.tif'))
