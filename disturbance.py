@@ -97,6 +97,8 @@ class Disturbance(object):
             print 'initial run'
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
 
+        self.ecocommunities.save(os.path.join(s.TEMP_DIR, 'temp.tif'))
+
     def set_canopy(self):
         """
         set canopy for given year if no canopy raster exists, use previous year,
@@ -112,12 +114,12 @@ class Disturbance(object):
             s.logging.info('Assigning initial values to canopy array')
             if self.ecocommunities_array is None:
                 self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
+
             self.canopy = np.empty((self.header['nrows'], self.header['ncols']))
 
             # for key in self.translation_table.keys():
             for key in self.community_table.index:
-                self.canopy = np.where((self.ecocommunities_array == key),
-                                       self.community_table.ix[key]['max_canopy'], self.canopy)
+                self.canopy[self.ecocommunities_array == key] = self.community_table.ix[key]['max_canopy']
 
             self.array_to_ascii(self.CANOPY_ascii, self.canopy)
 
@@ -139,8 +141,7 @@ class Disturbance(object):
             self.forest_age = np.empty((self.header['nrows'], self.header['ncols']))
 
             for key in self.community_table.index:
-                self.forest_age = np.where((self.ecocommunities_array == key),
-                                           self.community_table.ix[key]['start_age'], self.forest_age)
+                self.forest_age[self.ecocommunities_array == key] = self.community_table.ix[key]['start_age']
 
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
 
@@ -158,13 +159,15 @@ class Disturbance(object):
             unique = np.unique(self.ecocommunities, return_counts=True)
         else:
             unique = np.unique(arcpy.RasterToNumPyArray(self.ecocommunities), return_counts=True)
-        d = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
-        for i in s.UPLAND_COMMUNITIES:
-            if i in d.keys():
-                self.upland_area += d[i]
+        hist = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
+        for index, row in self.community_table.iterrows():
+            if row.upland == 1 and index in hist:
+                self.upland_area += hist[index]
 
-# dis = Disturbance(1409)
-# dis.get_header()
-# dis.set_ecocommunities()
-# dis.set_forest_age()
-# dis.set_canopy()
+
+def hist(a):
+    if type(a) is np.ndarray:
+        values, counts = np.unique(a, return_counts=True)
+    else:
+        values, counts = np.unique(arcpy.RasterToNumPyArray(a, nodata_to_value=-9999), return_counts=True)
+    return dict(zip(values, counts))
