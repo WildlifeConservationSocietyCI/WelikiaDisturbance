@@ -5,21 +5,21 @@ import sys
 import logging
 import numpy
 
-# TODO
+
 # DIRECTORIES
 TRIAL_NAME = 'test'
 
-ROOT_DIR = os.path.join('')
+ROOT_DIR = os.path.join(r'F:\_data\Welikia\WelikiaDisturbance')
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r"%s" % TRIAL_NAME
+LOG_DIR = r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME
 
 REGION = '2'
 
-ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities.tif' % REGION)
-community_table = os.path.join(ROOT_DIR, 'welikia_community_table.csv')
-UPLAND_COMMUNITIES = [616, 621, 622, 625, 629, 632, 635, 644, 647, 648, 649, 650, 654, 733]
+ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities_int.tif' % REGION)
+community_table = os.path.join(ROOT_DIR, 'welikia_community_table_int.csv')
+UPLAND_AREA = 87.7
 INPUT_FILES = [
     ecocommunities
 ]
@@ -38,7 +38,7 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(, )
+RUN_LENGTH = range(1409, 1410)
 
 # FIRE
 # initial parameters
@@ -57,11 +57,12 @@ CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities number of fires / km^2
 EXPECTED_LIGHTNING_FIRE = 0.0005425
-EXPECTED_TRAIL_ESCAPE = 
-EXPECTED_GARDEN_ESCAPE = 
+EXPECTED_TRAIL_ESCAPE = 0.001222222222
+EXPECTED_GARDEN_ESCAPE = 0.0001777777778
 # PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types
+#TODO check these types
 NONBURNABLE = [14, 16, 98, 99]
 
 # fuel accumulation time
@@ -76,8 +77,9 @@ INITIATE_RENDER_WAIT_TIME = 10
 SIMULATION_TIMEOUT = 100000
 
 # PONDS
-# carrying capacity is
-DENSITY = 0.4
+# density: number of ponds/km^2
+DENSITY = 0.1
+# minimum distance: used to buffer out from existing ponds to create territories
 MINIMUM_DISTANCE = 1000
 POND_ABANDONMENT_PROBABILITY = 10
 CELL_SIZE = 5
@@ -89,14 +91,18 @@ PER_CAPITA_GARDEN_AREA = 15
 REQUIREMENT_VARIANCE = range(-5, 6)
 ABANDONMENT_PROBABILITY = 5
 
-# TIME_TO_ABANDON = 20
-# SHRUB_SUCCESSION = 36
-# FOREST_SUCCESSION = 80
 
 # COMMUNITY CODES
-GARDEN_ID = 650  # ecosystem id for gardens (will look for this value when processing raster.
-GRASSLAND_ID = 635  # 648  # ecosystem id for abandoned fields.
-SHRUBLAND_ID = 649
+GARDEN_ID = 65000
+SUCCESSIONAL_OLD_FIELD_ID = 64800
+SUCCESSIONAL_GRASSLAND_ID = 63500
+SUCCESSIONAL_SHRUBLAND_ID = 64900
+SUCCESSIONAL_HARDWOOD_FOREST_ID = 73600
+
+ACTIVE_BEAVER_POND_ID = 73700
+SHALLOW_EMERGENT_MARSH_ID = 62400
+SHRUB_SWAMP_ID = 62500
+RED_MAPLE_HARDWOOD_SWAMP = 62900
 
 # Environment Setting
 
