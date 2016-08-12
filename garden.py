@@ -9,11 +9,6 @@ import random
 
 class GardenDisturbance(d.Disturbance):
     # CLASS VARIABLES
-    year = None
-    ecocommunities = None
-
-    # PRIVATE VARIABLES
-    _ecocommunities_filename = 'ecocommunities_%s.tif'
 
     # Garden Directories
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'garden')
@@ -105,7 +100,9 @@ class GardenDisturbance(d.Disturbance):
         # abandon garden if random value is below the abandoment probability
         if random.randint(0, 100) <= s.ABANDONMENT_PROBABILITY:
             print '**************abandoning garden'
-            local_communities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID), 648, self.ecocommunities)
+            local_communities = arcpy.sa.Con((self.ecocommunities == s.GARDEN_ID),
+                                             s.SUCCESSIONAL_OLD_FIELD_ID,
+                                             self.ecocommunities)
 
             # set environment extent and add the old field back to the community raster
             arcpy.env.extent = s.ecocommunities
@@ -129,16 +126,9 @@ class GardenDisturbance(d.Disturbance):
         :return:
         """
         count = 0
-        a = arcpy.RasterToNumPyArray(in_raster)
-        unique_values = numpy.unique(a, return_counts=True)
-        d = dict(zip(unique_values[0], unique_values[1]))
-        if s.GARDEN_ID in d.keys():
-            count = d[s.GARDEN_ID]
-
-        # # print"Checking if a garden exists..."
-        # for row in cursor:
-        #     if row.getValue('VALUE') == s.GARDEN_ID:
-        #         count = row.getValue('Count')
+        hist = d.hist(in_raster)
+        if s.GARDEN_ID in hist:
+            count = hist[s.GARDEN_ID]
 
         return count
 
