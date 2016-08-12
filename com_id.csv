@@ -1,0 +1,91 @@
+EcoID,Ecosystem
+600.01,Deep Coastal Bay Channels
+600.02,Deep Coastal Bay Rock Outcrops
+600.04,Deep Coastal Bay Flats - Mud Bottom
+600.04,Deep Coastal Bay Flats - Sand Bottom
+600.07,Deep Coastal Bay Flats - Rock Bottom
+600.08,Shallow Coastal Bay Channels
+600.09,Shallow Coastal Bay Rock Outcrops
+600.11,Shallow Coastal Bay Flats Sand Bottom
+600.12,Shallow Coastal Bay Flats Mud Bottom
+600.14,Shallow Coastal Bay Flats Rock Bottom
+600.18,Deep River Dominated Flats Gravel Bottom
+600.19,Deep River Dominated Flats Sand Bottom
+600.20,Deep River Dominated Flats Mud Bottom
+600.21,Deep River Dominated Flats Shell Bottom
+600.22,Deep River Dominated Flats Rock Bottom
+600.23,Deep River Dominated Estuary Channels
+600.25,Shallow River Dominated Estuary Gravel Bottom
+600.26,Shallow River Dominated Estuary Shell Bottom
+600.27,Shallow River Dominated Estuary Rock Bottom
+600.30,Lagoonal Shallow Estuary Gravel Bottom
+600.31,Lagoonal Shallow Estuary Shell Bottom
+600.33,Shallow Lagoons Sand Bottom
+600.34,Shallow Lagoon Mud Bottom
+602,Marine Intertidal Mudflat
+603,Marine Intertidal Gravel/Sand Beach
+604,Marine Rocky Intertidal Shore
+605.01,Deep Tidal River Gravel Bottom
+605.02,Deep Tidal River Sand Bottom
+605.03,Deep Tidal River Mud Bottom
+605.04,Deep Tidal River Shell Bottom
+605.05,Deep Tidal River Rock Bottom
+605.06,Shallow Tidal River Gravel Bottom
+605.07,Shallow Tidal River Shelll Bottom
+605.08,Shallow Tidal River Rock Bottom
+605.09,Shallow Tidal River Sand Bottom
+605.10,Shallow Tidal River Mud Bottom
+606.01,Deep Saltwater Tidal Creek
+607,Brackish Subtidal Aquatic Bed
+608,Low Salt Marsh
+609,High Salt Marsh
+612,Brackish Tidal Marsh
+615,Salt Shrub
+621,Coastal Plain Pond
+622,Eutrophic Pond
+624,Shallow Emergent Marsh
+626,Coastal Plain Pond Shore
+627,Highbush Blueberry Bog Thicket
+628,Floodplain Forest
+629,Red Maple-Hardwood Swamp
+631,Coastal Plain Atlantic Cedar Swamp
+632,Maritime Beach
+633,Maritime Dunes
+634,Maritime Shrubland
+635,Hempstead Plains Grassland
+638,Cliff Community
+639,Calcareous Cliff Community
+640,Serpentine Barrens
+642, 
+643, 
+644, 
+645, 
+647, 
+658.1,Confined River Moderate to High Gradient Low to Moderately Buffered
+658.2,Confined River Moderate to High Gradient Well Buffered
+658.3,Confined River Low Gradient Low to Moderately Buffered
+658.4,Confined River Low Gradient Well Buffered
+700,Brackish Meadow
+701,Sea Level Fen
+704,Bog Pond
+705,Oligotrophic Pond
+706,Pine Barrens Shrub Swamp
+709,Inland Atlantic Cedar Swamp
+710,Red Maple-Black Gum Swamp
+710.01,Red Maple Sweetgum Swamp
+712,Dwarf Shrub Bog
+716,Maritime Holly Forest
+718, 
+718,Maritime Oak Forest TO BURN!!!!
+719,Maritime Freshwater Interdunal Swale
+720, 
+721, 
+721.01,Bluffs
+724,Post Oak-Black Jack Oak Barrens
+725,Pitch Pine-Oak Forest
+726, 
+727, 
+727,Coastal Oal-Heath Forest
+728, 
+729, 
+735,Successional Maritime Hardwoods

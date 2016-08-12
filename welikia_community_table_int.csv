@@ -1,0 +1,125 @@
+,fuel_c,fuel_m,fuel_n,max_canopy,start_age,forest,forest_shrub,obstruct,canopy_growth,to_ID,age_out,name,upland
+-9999,-9999,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,,,,0
+60000,98,98,98,0,0,0,0,0,0,,,,
+60001,98,98,98,0,0,0,0,0,0,,,Deep Coastal Bay Channels,0
+60002,98,98,98,0,0,0,0,0,0,,,Deep Coastal Bay Rock Outcrops,0
+60004,98,98,98,0,0,0,0,0,0,,,Deep Coastal Bay Flats - Sand Bottom,0
+60007,98,98,98,0,0,0,0,0,0,,,Deep Coastal Bay Flats - Rock Bottom,0
+60008,98,98,98,0,0,0,0,0,0,,,Shallow Coastal Bay Channels,0
+60009,98,98,98,0,0,0,0,0,0,,,Shallow Coastal Bay Rock Outcrops,0
+60011,98,98,98,0,0,0,0,0,0,,,Shallow Coastal Bay Flats Sand Bottom,0
+60012,98,98,98,0,0,0,0,0,0,,,Shallow Coastal Bay Flats Mud Bottom,0
+60014,98,98,98,0,0,0,0,0,0,,,Shallow Coastal Bay Flats Rock Bottom,0
+60018,98,98,98,0,0,0,0,0,0,,,Deep River Dominated Flats Gravel Bottom,0
+60019,98,98,98,0,0,0,0,0,0,,,Deep River Dominated Flats Sand Bottom,0
+60020,98,98,98,0,0,0,0,0,0,,,Deep River Dominated Flats Mud Bottom,0
+60021,98,98,98,0,0,0,0,0,0,,,Deep River Dominated Flats Shell Bottom,0
+60022,98,98,98,0,0,0,0,0,0,,,Deep River Dominated Flats Rock Bottom,0
+60023,98,98,98,0,0,0,0,0,0,,,Deep River Dominated Estuary Channels,0
+60025,98,98,98,0,0,0,0,0,0,,,Shallow River Dominated Estuary Gravel Bottom,0
+60026,98,98,98,0,0,0,0,0,0,,,Shallow River Dominated Estuary Shell Bottom,0
+60027,98,98,98,0,0,0,0,0,0,,,Shallow River Dominated Estuary Rock Bottom,0
+60030,98,98,98,0,0,0,0,0,0,,,Lagoonal Shallow Estuary Gravel Bottom,0
+60031,98,98,98,0,0,0,0,0,0,,,Lagoonal Shallow Estuary Shell Bottom,0
+60033,98,98,98,0,0,0,0,0,0,,,Shallow Lagoons Sand Bottom,0
+60034,98,98,98,0,0,0,0,0,0,,,Shallow Lagoon Mud Bottom,0
+60100,98,98,98,0,0,0,0,0,0,,,,
+60200,98,98,98,0,0,0,0,0,0,,,Marine Intertidal Mudflat,0
+60300,99,99,99,0,0,0,0,0,0,,,Marine Intertidal Gravel/Sand Beach,0
+60400,98,98,98,0,0,0,0,0,0,,,Marine Rocky Intertidal Shore,0
+60500,98,98,98,0,0,0,0,0,0,,,,
+60501,98,98,98,0,0,0,0,0,0,,,Deep Tidal River Gravel Bottom,0
+60502,98,98,98,0,0,0,0,0,0,,,Deep Tidal River Sand Bottom,0
+60503,98,98,98,0,0,0,0,0,0,,,Deep Tidal River Mud Bottom,0
+60504,98,98,98,0,0,0,0,0,0,,,Deep Tidal River Shell Bottom,0
+60505,98,98,98,0,0,0,0,0,0,,,Deep Tidal River Rock Bottom,0
+60506,98,98,98,0,0,0,0,0,0,,,Shallow Tidal River Gravel Bottom,0
+60507,98,98,98,0,0,0,0,0,0,,,Shallow Tidal River Shell Bottom,0
+60508,98,98,98,0,0,0,0,0,0,,,Shallow Tidal River Rock Bottom,0
+60509,98,98,98,0,0,0,0,0,0,,,Shallow Tidal River Sand Bottom,0
+60510,98,98,98,0,0,0,0,0,0,,,Shallow Tidal River Mud Bottom,0
+60600,98,98,98,0,0,0,0,0,0,,,,
+60601,98,98,98,0,0,0,0,0,0,,,Deep Saltwater Tidal Creek,0
+60700,98,98,98,0,0,0,0,0,0,,,Brackish Subtidal Aquatic Bed,0
+60800,99,99,99,0,0,0,0,0,0,,,Low Salt Marsh,0
+60900,14,14,14,0,0,0,0,0,0,,,High Salt Marsh,0
+61000,99,99,99,0,0,0,0,0,0,,,Salt panne community,0
+61100,98,98,98,0,0,0,0,0,0,,,Coastal salt pond community,0
+61200,14,14,14,0,0,0,0,0,0,,,Brackish Tidal Marsh,0
+61300,98,98,98,0,0,0,0,0,0,,,Brackish intertidal mudflat community,0
+61400,98,98,98,0,0,0,0,0,0,,,Brackish intertidal shore community,0
+61500,15,15,15,0,0,0,0,0,0,,,Salt Shrub,1
+61600,98,98,98,0,0,0,0,0,0,,,,
+61700,98,98,98,0,0,0,0,0,0,,,,
+61710,98,98,98,0,0,0,0,0,0,,,"Marsh headwater stream - warm, low gradient, low to moderately buffered",1
+61720,98,98,98,0,0,0,0,0,0,,,"Marsh headwater stream - warm, low gradient, low to highly buffered",1
+61800,98,98,98,0,0,0,0,0,0,,,,
+61801,98,98,98,0,0,0,0,0,0,,,"Rocky headwater stream - warm, high gradient, low to moderately buffered",1
+61803,98,98,98,0,0,0,0,0,0,,,"Rocky headwater stream - warm, moderate gradient, low to moderately buffered",1
+61804,98,98,98,0,0,0,0,0,0,,,"Rocky headwater stream - warm, moderate gradient, highly buffered",1
+61900,98,98,98,0,0,0,0,0,0,,,Intermittent streams,1
+62000,98,98,98,0,0,0,0,0,0,,,Coastal plain stream,1
+62100,98,98,98,0,0,0,0,0,0,,,Coastal Plain Pond,1
+62200,98,98,98,0,0,0,0,0,0,,,Eutrophic Pond,1
+62300,98,98,98,0,0,0,0,0,0,,,Deep emergent marsh,1
+62400,14,14,14,0,0,0,0,0,2,62500,,Shallow Emergent Marsh,1
+62500,15,15,15,25,35,0,0,0,1,62900,50,Shrub swamp,1
+62600,15,15,15,50,35,0,1,0,1,,,Coastal Plain Pond Shore,1
+62700,15,15,15,10,35,0,1,0,1,,,Highbush Blueberry Bog Thicket,1
+62800,16,16,16,90,50,1,1,0,1,,,Floodplain Forest,1
+62900,16,16,16,90,50,1,1,0,1,,,Red Maple-Hardwood Swamp,1
+63000,182,182,182,80,50,0,1,0,1,,,Calcareous shoreline outcrop community,1
+63100,16,16,16,80,80,1,1,0,1,,,Coastal Plain Atlantic Cedar Swamp,1
+63200,99,99,99,0,0,0,0,0,0,,,Maritime Beach,1
+63300,141,141,141,0,0,0,0,0,0,,,Maritime Dunes,1
+63400,146,146,143,10,20,0,1,1,1,,,Maritime Shrubland,1
+63500,123,106,103,10,0,0,1,0,2,64900,,Hempstead Plains Grassland,1
+63600,99,99,99,0,0,0,0,0,0,,,Shoreline outcrop community,1
+63700,99,99,99,0,0,0,0,0,0,,,Calcareous shoreline outcrop community,1
+63800,99,99,99,0,0,0,0,0,0,,,Cliff Community,1
+63900,99,99,99,0,0,0,0,0,0,,,Calcareous Cliff Community,1
+64000,124,123,103,25,20,0,1,1,1,,,Serpentine Barrens,1
+64100,146,162,144,40,20,1,1,1,1,,,Pitch pine - scrub oak barrens,1
+64200,186,186,182,75,50,1,1,1,1,,,Chestnut oak forest,1
+64300,189,186,182,100,80,1,1,1,1,,,Coastal oak-beech forest,1
+64400,189,186,182,90,80,1,1,1,1,,,Coastal oak-hickory forest,1
+64500,189,186,182,100,80,1,1,1,1,,,Oak-tulip forest,1
+64600,162,162,162,75,50,1,1,1,1,,,Appalachian oak-pine forest (coastal),1
+64700,189,186,182,100,80,1,1,1,1,,,Hemlock-northern hardwood forest,1
+64800,123,106,103,10,0,0,0,0,2,64900,,Successional old field community,1
+64900,148,143,146,25,0,0,1,1,1,73600,,Successional shrubland,1
+65000,103,103,103,0,0,0,0,0,0,,,Lenape horticultural fields (cropland/row crops) community,1
+65100,189,186,182,10,0,0,0,0,0,,,Lenape trail (unpaved road/path) community,1
+65200,99,99,99,10,0,0,0,0,0,,,Lenape shell middens (Landfill/dump) community,1
+65300,163,163,163,10,0,0,0,0,0,,,Lenape wigwams and long houses (human shelter) community,1
+65400,99,99,99,10,0,0,0,0,0,,,Lenape village site community,1
+65500,99,99,99,0,0,0,0,0,0,,,Terrestrial cave community,1
+65600,99,99,99,0,0,0,0,0,0,,,Talus cave community,1
+65810,98,98,98,0,0,0,0,0,0,,,Confined River Moderate to High Gradient Low to Moderately Buffered,1
+65820,98,98,98,0,0,0,0,0,0,,,Confined River Moderate to High Gradient Well Buffered,1
+65830,98,98,98,0,0,0,0,0,0,,,Confined River Low Gradient Low to Moderately Buffered,1
+65840,98,98,98,0,0,0,0,0,0,,,Confined River Low Gradient Well Buffered,1
+70000,14,14,14,0,0,0,0,0,0,,,Brackish Meadow,1
+70100,15,15,15,25,35,0,0,0,1,,,Sea Level Fen,1
+70400,98,98,98,0,0,0,0,0,0,,,Bog Pond,1
+70500,98,98,98,0,0,0,0,0,0,,,Oligotrophic Pond,1
+70600,15,15,15,25,35,0,0,0,1,,,Pine Barrens Shrub Swamp,1
+70900,16,16,16,90,50,1,1,0,1,,,Inland Atlantic Cedar Swamp,1
+71000,16,16,16,90,50,1,1,0,1,,,Red Maple-Black Gum Swamp,1
+71001,16,16,16,90,50,1,1,0,1,,,Red Maple Sweetgum Swamp,1
+71200,15,15,15,25,35,0,0,0,1,,,Dwarf Shrub Bog,1
+71600,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,,Maritime Holly Forest,1
+71800,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,,Maritime Oak Forest TO BURN!!!!,1
+71900,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,,Maritime Freshwater Interdunal Swale,1
+72000,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,, ,
+72100,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,, ,
+72101,99,99,99,0,0,0,0,0,0,,,Bluffs,1
+72400,146,162,144,40,20,1,1,1,1,,,Post Oak-Black Jack Oak Barrens,1
+72500,146,162,144,40,20,1,1,1,1,,,Pitch Pine-Oak Forest,1
+72600,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,, ,
+72700,146,162,144,40,20,1,1,1,1,,,Coastal Oal-Heath Forest,1
+72800,189,186,182,90,80,1,1,1,1,,,Appalachian oak-hickory forest,1
+72900,189,186,182,100,80,1,1,1,1,,,Beech-maple mesic forest,1
+73500,146,146,143,10,20,0,1,1,1,,,Successional Maritime Hardwoods,1
+73600,189,186,182,90,80,1,1,1,1,,50,,1
+73700,98,98,98,0,0,0,0,0,0,62400,,Active Beaver Pond,1
