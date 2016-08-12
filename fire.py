@@ -21,8 +21,6 @@ class FireDisturbance(d.Disturbance):
     # INPUT_DIR = s.INPUT_DIR
     # OUTPUT_DIR = s.OUTPUT_DIR
     LOG_DIR = os.path.join(OUTPUT_DIR, '%s_%s.asc')
-    # FARSITE = 'farsite'
-    # SCRIPT = 'script'
     SPATIAL = 'spatial'
     TABULAR = 'tabular'
 
@@ -51,8 +49,6 @@ class FireDisturbance(d.Disturbance):
     BURN_RASTERS = os.path.join(OUTPUT_DIR, 'burn_rasters')
     FARSITE_OUTPUT = os.path.join(BURN_RASTERS, '%s_farsite_output')
 
-    _ecocommunities_filename = 'ecocommunities_%s.tif'
-
     def __init__(self, year):
         super(FireDisturbance, self).__init__(year)
 
@@ -60,7 +56,6 @@ class FireDisturbance(d.Disturbance):
         # self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, s.REGION, 'ecocommunities_%s.asc' %
         # year)
         self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
-        self.climax_communities = None
         self.drought = None
         self.climate_years = None
         self.equivalent_climate_year = None
@@ -93,7 +88,6 @@ class FireDisturbance(d.Disturbance):
 
         # self.get_header()
         # self.set_communities()
-        self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities)
         self.set_upland_area()
 
     def get_memory(self):
@@ -618,10 +612,11 @@ class FireDisturbance(d.Disturbance):
 
         height_x_cr = tree_height * crown_ratio
         height_x_cr = numpy.ma.array(height_x_cr, mask=(height_x_cr == 0))
-
+        zero_crown_kill = numpy.full(shape=flame.shape, fill_value=0, dtype=numpy.float32)
         crown_kill = numpy.where(scorch_crown_height_dif > 0,
                                  numpy.array(41.961 * numpy.ma.log(
-                                     100 * numpy.ma.divide(scorch_crown_height_dif, height_x_cr)) - 89.721), 0)
+                                     100 * numpy.ma.divide(scorch_crown_height_dif, height_x_cr)) - 89.721),
+                                 zero_crown_kill)
 
         crown_kill[crown_kill < 0] = 0
         crown_kill[crown_kill > 100] = 100
@@ -640,36 +635,37 @@ class FireDisturbance(d.Disturbance):
             if self.community_table.ix[key]['forest'] == 1:
 
                 # Retrogression forested wetlands
-                if key == 629:
+                # TODO add other forested wetlands
+                if key == s.RED_MAPLE_HARDWOOD_SWAMP:
                     self.ecocommunities[(self.ecocommunities == key) &
                                         (self.flame_length != 0) &
-                                        (self.canopy < 90)] = 625
+                                        (self.canopy < 90)] = s.SHRUB_SWAMP_ID
 
                     self.ecocommunities[(self.ecocommunities == key) &
                                         (self.flame_length != 0) &
-                                        (self.canopy < 50)] = 624
+                                        (self.canopy < 50)] = s.SHALLOW_EMERGENT_MARSH_ID
 
                 # Retrogression all other forested communities
                 else:
                     self.ecocommunities[(self.ecocommunities == key) &
                                         (self.flame_length != 0) &
-                                        (self.canopy < 90)] = s.SHRUBLAND_ID
+                                        (self.canopy < 90)] = s.SUCCESSIONAL_SHRUBLAND_ID
 
                     self.ecocommunities[(self.ecocommunities == key) &
                                         (self.flame_length != 0) &
-                                        (self.canopy < 50)] = s.GRASSLAND_ID
+                                        (self.canopy < 50)] = s.SUCCESSIONAL_GRASSLAND_ID
 
-            # Retrogression shrubland
-            if key == s.SHRUBLAND_ID:
+            # Retrogression shrub-land
+            if key == s.SUCCESSIONAL_SHRUBLAND_ID:
                 self.ecocommunities[(self.ecocommunities == key) &
                                     (self.flame_length != 0) &
-                                    (self.canopy < 50)] = s.GRASSLAND_ID
+                                    (self.canopy < 50)] = s.SUCCESSIONAL_GRASSLAND_ID
 
             # Retrogression shrub-swamp
-            if key == 625:
+            if key == s.SHRUB_SWAMP_ID:
                 self.ecocommunities[(self.ecocommunities == key) &
                                     (self.flame_length != 0) &
-                                    (self.canopy < 50)] = 624
+                                    (self.canopy < 50)] = s.SHALLOW_EMERGENT_MARSH_ID
 
             # Reset forest age
             l = [624, 625, 648, 649]
@@ -830,7 +826,7 @@ class FireDisturbance(d.Disturbance):
                                               x_cell_size=self.header['cellsize'],
                                               value_to_nodata=-9999)
 
-        out_raster.save(os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))
+        out_raster.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         # log outputs when a fire occurs and on the file year
         if self.area_burned > 0 or self.year == max(s.RUN_LENGTH):
