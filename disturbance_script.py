@@ -54,15 +54,15 @@ else:
 s.logging.info('starting %s year simulation' % len(s.RUN_LENGTH))
 full_run_start = time.time()
 
-x = datetime.datetime
+t = datetime.datetime
 
-s.logging.info('start time: %s' % x.now())
+s.logging.info('start time: %s' % t.now())
 for year in s.RUN_LENGTH:
 
     s.logging.info('____YEAR: %s____' % year)
 
     year_start = time.time()
-    s.logging.info('start time: %s' % x.now())
+    s.logging.info('start time: %s' % t.now())
 
     # garden
     if s.GARDEN:
@@ -70,6 +70,7 @@ for year in s.RUN_LENGTH:
         garden_dis = garden.GardenDisturbance(year)
         garden_dis.run_year()
         disturbance_table.loc[year]['garden_area'] = garden_dis.new_garden_area
+        del garden_dis
 
     # fire
     if s.FIRE:
@@ -78,6 +79,7 @@ for year in s.RUN_LENGTH:
         fire_dis.run_year()
         disturbance_table.loc[year]['fire_occurrence'] = len(fire_dis.ignition_sites)
         disturbance_table.loc[year]['fire_area'] = fire_dis.area_burned
+        del fire_dis
 
     # beaver pond
     if s.POND:
@@ -85,14 +87,16 @@ for year in s.RUN_LENGTH:
         pond_dis = pond.PondDisturbance(year)
         pond_dis.run_year()
         disturbance_table.loc[year]['pond_area'] = pond_dis.new_pond_area
+        del pond_dis
 
     # run succession module
     s.logging.info('_____starting succession')
     succ = succession.Succession(year)
     succ.run_succession()
+    del succ
 
     year_end = time.time()
-    s.logging.info('end time: %s' % x.now())
+    s.logging.info('end time: %s' % t.now())
     s.logging.info('year run time: %s minutes' % ((year_end - year_start) / 60))
 
     # track disturbances
@@ -102,7 +106,7 @@ for year in s.RUN_LENGTH:
 s.logging.info('______simulation completed')
 
 full_run_end = time.time()
-s.logging.info('end time: %s' % x.now)
+s.logging.info('end time: %s' % t.now)
 s.logging.info('full run time: %s minutes' % ((full_run_end - full_run_start) / 60))
 
 s.logging.info('creating ecosystem areas table')
