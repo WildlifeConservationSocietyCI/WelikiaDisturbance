@@ -9,13 +9,11 @@ import logging
 class PondDisturbance(d.Disturbance):
     # CLASS VARIABLES
     DEBUG_MODE = True
-    year = None
-    ecocommunities = None
 
     # PRIVATE VARIABLES
     _region_group = None
     _suitpoints = 'suitability_points.shp'
-    _ecocommunities_filename = 'ecocommunities_%s.tif'
+
     # CONSTANTS
 
     # Pond Directories
@@ -28,8 +26,6 @@ class PondDisturbance(d.Disturbance):
     SUITABLE_STREAMS = os.path.join(INPUT_DIR, s.REGION, 'stream_suitability.tif')
 
     def __init__(self, year):
-
-        # self.clear_temp()
 
         super(PondDisturbance, self).__init__(year)
 
@@ -52,7 +48,8 @@ class PondDisturbance(d.Disturbance):
         self.carrying_capacity = int(s.DENSITY * self.upland_area)
         self.set_time_since_disturbance()
 
-    def reset_temp(self, filename):
+    @staticmethod
+    def reset_temp(filename):
         if arcpy.Exists(filename):
             arcpy.Delete_management(filename)
 
@@ -64,7 +61,7 @@ class PondDisturbance(d.Disturbance):
         """
         num_points = int(s.DENSITY * self.upland_area) - self.pond_count
         print 'num points: ', num_points
-        # constraint is the area of all suitable loacations for new_ponds
+        # constraint is the area of all suitable locations for new_ponds
         # num_points is the maximum number of new_ponds that should be assigned
         arcpy.CreateRandomPoints_management(out_path=s.TEMP_DIR,
                                             out_name="pond_points.shp",
@@ -136,22 +133,22 @@ class PondDisturbance(d.Disturbance):
         # logging.info('converting pond points to coordinate list')
         self.dam_points_coordinates()
         # logging.info(self.coordinate_list)
+        if len(self.coordinate_list) > 0:
+            # create new_ponds
+            for p, i in zip(self.coordinate_list, range(len(self.coordinate_list))):
+                # logging.info('calculating pond %s' % i)
+                self.reset_temp(self.temp_point)
+                pond = self.flood_pond(coordinates=p)
+                self.pond_list.append(pond)
 
-        # create new_ponds
-        for p, i in zip(self.coordinate_list, range(len(self.coordinate_list))):
-            # logging.info('calculating pond %s' % i)
-            self.reset_temp(self.temp_point)
-            pond = self.flood_pond(coordinates=p)
-            self.pond_list.append(pond)
+            self.new_ponds = arcpy.sa.CellStatistics(self.pond_list, 'SUM')
+            self.new_ponds.save(os.path.join(self.OUTPUT_DIR, 'ponds_%s.tif' % self.year))
+            self.new_ponds = arcpy.sa.Con(self.new_ponds != 0, s.ACTIVE_BEAVER_POND_ID, 0)
 
-        self.new_ponds = arcpy.sa.CellStatistics(self.pond_list, 'SUM')
-        self.new_ponds.save(os.path.join(self.OUTPUT_DIR, 'ponds_%s.tif' % self.year))
-        self.new_ponds = arcpy.sa.Con(self.new_ponds != 0, 622, 0)
-
-        # update canopy and forest age based on the position of new ponds
-        new_ponds_array = arcpy.RasterToNumPyArray(self.new_ponds)
-        self.canopy[new_ponds_array == 622] = 0
-        self.forest_age[new_ponds_array == 622] = 0
+            # update canopy and forest age based on the position of new ponds
+            new_ponds_array = arcpy.RasterToNumPyArray(self.new_ponds)
+            self.canopy[new_ponds_array == s.ACTIVE_BEAVER_POND_ID] = 0
+            self.forest_age[new_ponds_array == s.ACTIVE_BEAVER_POND_ID] = 0
 
     def calculate_territory(self):
         """
@@ -161,7 +158,7 @@ class PondDisturbance(d.Disturbance):
         :rtype: object
         :return: exclude_territory
         """
-        land_cover_set_null = arcpy.sa.SetNull(self.ecocommunities != 622, 1)
+        land_cover_set_null = arcpy.sa.SetNull(self.ecocommunities != s.ACTIVE_BEAVER_POND_ID, 1)
 
         territory = arcpy.sa.EucDistance(in_source_data=land_cover_set_null,
                                          maximum_distance=s.MINIMUM_DISTANCE,
@@ -176,15 +173,21 @@ class PondDisturbance(d.Disturbance):
         :param in_raster:
         :rtype: object
         """
-        sum_ponds_set_null = arcpy.sa.SetNull(in_raster != 622, 1)
 
-        # sum_ponds_set_null.save(os.path.join(s.TEMP_DIR, 'ponds_set_null_%s.tif' % self.year))
+        hist = d.hist(self.ecocommunities)
 
-        self._region_group = arcpy.sa.RegionGroup(in_raster=sum_ponds_set_null,
-                                                  number_neighbors='EIGHT',
-                                                  zone_connectivity='CROSS')
+        if s.ACTIVE_BEAVER_POND_ID in hist:
+            sum_ponds_set_null = arcpy.sa.SetNull(in_raster != s.ACTIVE_BEAVER_POND_ID, 1)
 
-        # self._region_group.save(os.path.join(s.TEMP_DIR, 'region_group_%s.tif' % self.year))
+            # sum_ponds_set_null.save(os.path.join(s.TEMP_DIR, 'ponds_set_null_%s.tif' % self.year))
+
+            self._region_group = arcpy.sa.RegionGroup(in_raster=sum_ponds_set_null,
+                                                      number_neighbors='EIGHT',
+                                                      zone_connectivity='CROSS')
+
+            # self._region_group.save(os.path.join(s.TEMP_DIR, 'region_group_%s.tif' % self.year))
+        else:
+            print 'no active ponds in landscape'
 
     def count_ponds(self):
         """
@@ -194,13 +197,16 @@ class PondDisturbance(d.Disturbance):
         :return:
         """
 
-        pond_count = arcpy.GetRasterProperties_management(in_raster=self._region_group,
-                                                          property_type='UNIQUEVALUECOUNT')
+        if self._region_group is None:
+            self.pond_count = 0
+        else:
+            pond_count = arcpy.GetRasterProperties_management(in_raster=self._region_group,
+                                                              property_type='UNIQUEVALUECOUNT')
 
-        pond_count = int(pond_count.getOutput(0))
+            pond_count = int(pond_count.getOutput(0))
 
-        # logging.info('pond count: %s' % pond_count)
-        self.pond_count = pond_count
+            # logging.info('pond count: %s' % pond_count)
+            self.pond_count = pond_count
 
     def calculate_suitability(self):
         """
@@ -223,28 +229,11 @@ class PondDisturbance(d.Disturbance):
         # intersect un-colonized parts of the landscape with suitable streams
         suitability_surface = exclude_territory * self.SUITABLE_STREAMS
 
-        suitability_surface_set_null = arcpy.sa.SetNull(suitability_surface, suitability_surface, "VALUE = 0")
+        suitability_surface_set_null = arcpy.sa.SetNull(suitability_surface == 0, suitability_surface)
 
         # convert suitable cells to points for random selection and watershed pour point
         arcpy.RasterToPoint_conversion(in_raster=suitability_surface_set_null,
                                        out_point_features=self.suitability_points)
-
-    def initial_time_since_disturbance(self):
-        """
-        return initial time_since_disturbance raster. time_since_disturbance
-        cells that are coincident with new new_ponds are assigned a value of 1,
-        all other cells are initiated with a value of 30.
-        :return:
-        """
-        # logging.info('creating initial time since disturbance raster')
-        self.create_ponds()
-
-        self.time_since_disturbance = arcpy.sa.Con((self.new_ponds == 622), 1,
-                                                   arcpy.sa.Con(self.ecocommunities, 30))
-
-        self.ecocommunities = arcpy.sa.Con(self.new_ponds == 622, self.new_ponds, self.ecocommunities)
-
-        self.new_ponds = None
 
     def update_time_since_disturbance(self):
         """
@@ -256,7 +245,8 @@ class PondDisturbance(d.Disturbance):
 
         # for some reason the conditional statement in the succesional method is not converting 0 to ecid 622
         # setting the age of new ponds to 1 instead of 0 seems to solve this problem for now
-        self.time_since_disturbance = arcpy.sa.Con(self.new_ponds == 622, 1, self.time_since_disturbance)
+        self.time_since_disturbance = arcpy.sa.Con(self.new_ponds == s.ACTIVE_BEAVER_POND_ID, 1,
+                                                   self.time_since_disturbance)
 
     def abandon_ponds(self):
 
@@ -265,30 +255,33 @@ class PondDisturbance(d.Disturbance):
         cell_size = self.ecocommunities.meanCellWidth
 
         # convert community raster to array
-        com_array = arcpy.RasterToNumPyArray(self.ecocommunities)
+        com_array = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
 
-        # identify individual ponds using region group
-        ponds = arcpy.sa.SetNull(self.ecocommunities != 622, 622)
+        hist = d.hist(com_array)
 
-        region_group = arcpy.sa.RegionGroup(in_raster=ponds,
-                                            number_neighbors='EIGHT',
-                                            zone_connectivity='CROSS',
-                                            )
+        if s.ACTIVE_BEAVER_POND_ID in hist:
+            # identify individual ponds using region group
+            ponds = arcpy.sa.SetNull(self.ecocommunities != s.ACTIVE_BEAVER_POND_ID, s.ACTIVE_BEAVER_POND_ID)
 
-        # region_group.save(os.path.join(s.OUTPUT_DIR, 'region_group_%s.tif' % self.year))
+            region_group = arcpy.sa.RegionGroup(in_raster=ponds,
+                                                number_neighbors='EIGHT',
+                                                zone_connectivity='CROSS',
+                                                )
 
-        # create region group array
-        group_array = arcpy.RasterToNumPyArray(region_group)
-        pond_list = np.unique(group_array)
-        print pond_list
-        for i in pond_list[1:]:
-            if np.random.randint(0, 100) <= s.POND_ABANDONMENT_PROBABILITY:
-                print '***********abandon pond'
-                com_array[group_array == i] = 624
+            # region_group.save(os.path.join(s.OUTPUT_DIR, 'region_group_%s.tif' % self.year))
 
-        self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lower_left, cell_size)
+            # create region group array
+            group_array = arcpy.RasterToNumPyArray(region_group, nodata_to_value=-9999)
+            pond_list = np.unique(group_array)
+            print pond_list
+            for i in pond_list[1:]:
+                if np.random.randint(0, 100) <= s.POND_ABANDONMENT_PROBABILITY:
+                    print '***********abandon pond'
+                    com_array[group_array == i] = s.SHALLOW_EMERGENT_MARSH_ID
 
-        # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, 'com_after_abandon_%s.tif' % self.year))
+            self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lower_left, cell_size, value_to_nodata=-9999)
+
+            # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, 'com_after_abandon_%s.tif' % self.year))
 
     def set_time_since_disturbance(self):
         this_year_time_since_disturbance = os.path.join(self.OUTPUT_DIR,
@@ -298,30 +291,27 @@ class PondDisturbance(d.Disturbance):
             self.time_since_disturbance = arcpy.Raster(this_year_time_since_disturbance)
 
         else:
-            self.initial_time_since_disturbance()
+            self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities == s.ACTIVE_BEAVER_POND_ID, 1, 30)
 
     def set_pond_area(self):
         """
 
         :return:
         """
-        time_since_disturbance = os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year)
-        field_names = ['VALUE', 'COUNT']
+        hist = d.hist(self.time_since_disturbance)
 
-        with arcpy.da.SearchCursor(time_since_disturbance, field_names=field_names) as sc:
-            for row in sc:
-                if row[0] == 1:
-                    self.new_pond_area = row[1] # * (s.CELL_SIZE ** 2)
+        if 1 in hist:
+            self.new_pond_area = hist[1]
+        else:
+            self.new_pond_area = 0
 
     def run_year(self):
 
         if self.DEBUG_MODE:
             logging.info('incrementing time since disturbance')
 
-        self.time_since_disturbance += 1
-
-        if self.DEBUG_MODE:
-            logging.info('calculating land_cover')
+        if self.year > min(s.RUN_LENGTH):
+            self.time_since_disturbance += 1
 
         if self.DEBUG_MODE:
             logging.info('abandoning ponds')
@@ -348,7 +338,8 @@ class PondDisturbance(d.Disturbance):
             self.update_time_since_disturbance()
 
             s.logging.info('add new ponds to ecocommunites')
-            self.ecocommunities = arcpy.sa.Con(self.new_ponds == 622, 622, self.ecocommunities)
+            self.ecocommunities = arcpy.sa.Con(self.new_ponds == s.ACTIVE_BEAVER_POND_ID,
+                                               s.ACTIVE_BEAVER_POND_ID, self.ecocommunities)
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
         self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
