@@ -30,3 +30,4 @@ pond.py.rej
 *.sbn
 *.asc
 _inputs_full_extent/
+tests/
