@@ -38,8 +38,8 @@ class FireDisturbance(d.Disturbance):
     IGNITION = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'ignition.shp')
 
     FMD = os.path.join(INPUT_DIR, TABULAR, 'custom_fuel.fmd')
-    FMS = os.path.join(INPUT_DIR, TABULAR, 'fuel_moisture.fms')
-    ADJ = os.path.join(INPUT_DIR, TABULAR, 'fuel_adjustment.adj')
+    FMS = os.path.join(INPUT_DIR, TABULAR, 'fuel_moisture_test.fms')
+    ADJ = os.path.join(INPUT_DIR, TABULAR, 'fuel_adjustment_test.adj')
     WND = os.path.join(INPUT_DIR, TABULAR, 'wind.wnd')
     WTR = os.path.join(INPUT_DIR, TABULAR, 'weather.wtr')
     TRANSLATOR = os.path.join(s.ROOT_DIR, 'ec_translator.txt')
@@ -323,7 +323,7 @@ class FireDisturbance(d.Disturbance):
 
         farsite_main_win = farsite.window_(title_re='.*FARSITE: Fire Area Simulator$')
 
-        farsite_main_win.Wait('ready')
+        farsite_main_win.Wait('ready', timeout=100)
         farsite_main_win.SetFocus().MenuItem('File->Load Project').Click()
 
         try:
@@ -431,7 +431,20 @@ class FireDisturbance(d.Disturbance):
             set_parameters.TypeKeys('{TAB 2}')
             set_parameters.TypeKeys('{LEFT 30}')
             set_parameters.TypeKeys('{TAB}')
-            set_parameters.TypeKeys('{LEFT 20}')
+            set_parameters[u'ScrollBar3'].Click()
+            # set perimeter resolution
+            while int(set_parameters[u'Static3'].WindowText().split()[0]) != s.PERIMETER_RESOLUTION:
+                if int(set_parameters[u'Static3'].WindowText().split()[0]) > s.PERIMETER_RESOLUTION:
+                    set_parameters.TypeKeys('{LEFT}')
+                else:
+                    set_parameters.TypeKeys('{RIGHT}')
+            # set distance resolution
+            set_parameters[u'Distance ResolutionScrollBar'].Click()
+            while int(set_parameters[u'Static4'].WindowText().split()[0]) != s.DISTANCE_RESOLUTION:
+                if int(set_parameters[u'Static4'].WindowText().split()[0]) > s.DISTANCE_RESOLUTION:
+                    set_parameters.TypeKeys('{LEFT}')
+                else:
+                    set_parameters.TypeKeys('{RIGHT}')
             set_parameters[u'&OK'].Click()
             time.sleep(3)
             # s.logging.info('Parameters set')
@@ -556,6 +569,7 @@ class FireDisturbance(d.Disturbance):
             s.logging.error('can not find SELECT VECTOR IGNITION FILE window')
 
         s.logging.info('Starting simulation')
+        farsite_main_win.Wait('ready', timeout=20)
         farsite_main_win.SetFocus().MenuItem(u'&Simulate->&Start/Restart').Click()
         simulation_complete = farsite.window_(title_re='.*Simulation Complete')
         simulation_complete.Wait(wait_for='ready', timeout=s.SIMULATION_TIMEOUT, retry_interval=0.5)
@@ -590,7 +604,7 @@ class FireDisturbance(d.Disturbance):
         tree_height[tree_height < 0] = 1
 
         # Calculate tree diameter at breast height
-        dbh = numpy.array(25.706 * log_age - 85.383)
+        dbh = numpy.array((age - 36.329) / .919 * 0.393700787) # numpy.array(25.706 * log_age - 85.383)
 
         dbh[age <= 35] = 5
         dbh[age <= 25] = 3
@@ -598,7 +612,20 @@ class FireDisturbance(d.Disturbance):
         dbh[age <= 15] = 1
 
         # Calculate bark thickness
-        bark_thickness = 0.045 * dbh
+        vsp_multiplier = numpy.empty(shape=(self.header['nrows'], self.header['ncols']))
+
+        for index, row in self.community_table.iterrows():
+            vsp_multiplier[self.ecocommunities == index] = row.bark_thickness
+
+        bark_thickness = vsp_multiplier * dbh
+
+        out_raster = arcpy.NumPyArrayToRaster(in_array=bark_thickness,
+                                              lower_left_corner=arcpy.Point(self.header['xllcorner'],
+                                                                            self.header['yllcorner']),
+                                              x_cell_size=self.header['cellsize']
+                                              )
+
+        out_raster.save(os.path.join(self.OUTPUT_DIR, 'bark_thickness.tif'))
 
         # Define crown ratio
         crown_ratio = 0.4
@@ -607,15 +634,18 @@ class FireDisturbance(d.Disturbance):
         crown_height = tree_height * (1 - crown_ratio)
 
         # Calculate crown kill
-        scorch_crown_height_dif = scorch - crown_height
-        scorch_crown_height_dif[scorch_crown_height_dif < 0] = 0
+        # identify cells where the height of scorch is greater than the height of the crown
+        crown_scorch = scorch - crown_height
+        crown_scorch[crown_scorch < 0] = 0
 
-        height_x_cr = tree_height * crown_ratio
-        height_x_cr = numpy.ma.array(height_x_cr, mask=(height_x_cr == 0))
+        crown_length = tree_height * crown_ratio
+        crown_length = numpy.ma.array(crown_length, mask=(crown_length == 0))
+
+        # zero place-holder array
         zero_crown_kill = numpy.full(shape=flame.shape, fill_value=0, dtype=numpy.float32)
-        crown_kill = numpy.where(scorch_crown_height_dif > 0,
-                                 numpy.array(41.961 * numpy.ma.log(
-                                     100 * numpy.ma.divide(scorch_crown_height_dif, height_x_cr)) - 89.721),
+
+        crown_kill = numpy.where(crown_scorch > 0,
+                                 numpy.array(41.961 * (100 * numpy.ma.log(numpy.ma.divide(crown_scorch, crown_length))) - 89.721),
                                  zero_crown_kill)
 
         crown_kill[crown_kill < 0] = 0
@@ -630,45 +660,52 @@ class FireDisturbance(d.Disturbance):
         return 1 - mortality
 
     def retrogression(self):
-        for key in self.community_table.index:
+        for index, row in self.community_table.iterrows():
             # reclassify burned forest
-            if self.community_table.ix[key]['forest'] == 1:
+            if row.forest == 1:
 
                 # Retrogression forested wetlands
-                # TODO add other forested wetlands
-                if key == s.RED_MAPLE_HARDWOOD_SWAMP:
-                    self.ecocommunities[(self.ecocommunities == key) &
-                                        (self.flame_length != 0) &
-                                        (self.canopy < 90)] = s.SHRUB_SWAMP_ID
+                if index == s.RED_MAPLE_HARDWOOD_SWAMP or index == s.RED_MAPLE_BLACK_GUM_SWAMP \
+                        or index == s.RED_MAPLE_SWEETGUM_SWAMP or index == s.ATLANTIC_CEDAR_SWAMP:
 
-                    self.ecocommunities[(self.ecocommunities == key) &
+                    self.ecocommunities[(self.ecocommunities == index) &
                                         (self.flame_length != 0) &
-                                        (self.canopy < 50)] = s.SHALLOW_EMERGENT_MARSH_ID
+                                        (self.canopy < self.community_table.ix[
+                                            s.SHRUB_SWAMP_ID].max_canopy)] = s.SHRUB_SWAMP_ID
+
+                    self.ecocommunities[(self.ecocommunities == index) &
+                                        (self.flame_length != 0) &
+                                        (self.canopy < self.community_table.ix[
+                                            s.SHALLOW_EMERGENT_MARSH_ID].max_canopy)] = s.SHALLOW_EMERGENT_MARSH_ID
 
                 # Retrogression all other forested communities
                 else:
-                    self.ecocommunities[(self.ecocommunities == key) &
+                    self.ecocommunities[(self.ecocommunities == index) &
                                         (self.flame_length != 0) &
-                                        (self.canopy < 90)] = s.SUCCESSIONAL_SHRUBLAND_ID
+                                        (self.canopy < self.community_table.ix[
+                                            s.SUCCESSIONAL_SHRUBLAND_ID].max_canopy)] = s.SUCCESSIONAL_SHRUBLAND_ID
 
-                    self.ecocommunities[(self.ecocommunities == key) &
+                    self.ecocommunities[(self.ecocommunities == index) &
                                         (self.flame_length != 0) &
-                                        (self.canopy < 50)] = s.SUCCESSIONAL_GRASSLAND_ID
+                                        (self.canopy < self.community_table.ix[
+                                            s.SUCCESSIONAL_GRASSLAND_ID].max_canopy)] = s.SUCCESSIONAL_GRASSLAND_ID
 
             # Retrogression shrub-land
-            if key == s.SUCCESSIONAL_SHRUBLAND_ID:
-                self.ecocommunities[(self.ecocommunities == key) &
+            if index == s.SUCCESSIONAL_SHRUBLAND_ID:
+                self.ecocommunities[(self.ecocommunities == index) &
                                     (self.flame_length != 0) &
-                                    (self.canopy < 50)] = s.SUCCESSIONAL_GRASSLAND_ID
+                                    (self.canopy < self.community_table.ix[
+                                        s.SUCCESSIONAL_GRASSLAND_ID].max_canopy)] = s.SUCCESSIONAL_GRASSLAND_ID
 
             # Retrogression shrub-swamp
-            if key == s.SHRUB_SWAMP_ID:
-                self.ecocommunities[(self.ecocommunities == key) &
+            if index == s.SHRUB_SWAMP_ID:
+                self.ecocommunities[(self.ecocommunities == index) &
                                     (self.flame_length != 0) &
-                                    (self.canopy < 50)] = s.SHALLOW_EMERGENT_MARSH_ID
+                                    (self.canopy < self.community_table.ix[
+                                        s.SHALLOW_EMERGENT_MARSH_ID].max_canopy)] = s.SHALLOW_EMERGENT_MARSH_ID
 
             # Reset forest age
-            l = [624, 625, 648, 649]
+            l = [62400, 62500, 63500, 64900]
             for i in l:
                 self.forest_age[self.ecocommunities == i] = 0
 
