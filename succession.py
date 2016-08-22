@@ -2,7 +2,7 @@ import settings as s
 from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo import gdal_array
-import numpy
+import numpy as np
 import linecache
 import arcpy
 import os
@@ -26,6 +26,7 @@ class Succession(object):
         self.ecocommunities = None
         self.ecocommunities_array = None
         self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
+        self.climax_canopy = None
         self.soil = None
         self.pond_time_since_disturbance = None
         self.garden_time_since_disturbance = None
@@ -84,7 +85,7 @@ class Succession(object):
         for attribute in self.header_text:
             out_asc.write(attribute)
 
-        numpy.savetxt(out_asc, array, fmt="%4i")
+        np.savetxt(out_asc, array, fmt="%4i")
         out_asc.close()
 
     def set_ecocommunities(self):
@@ -111,6 +112,11 @@ class Succession(object):
             # self.ecocommunities.save(os.path.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
     def set_canopy(self):
+        """
+        set canopy for given year if no canopy raster exists, use previous year,
+        else: initialize canopy raster
+        :return:
+        """
 
         if os.path.isfile(self.CANOPY_ascii):
             s.logging.info('Setting canopy')
@@ -118,13 +124,25 @@ class Succession(object):
 
         else:
             s.logging.info('Assigning initial values to canopy array')
-            self.canopy = numpy.empty((self.header['nrows'], self.header['ncols']), dtype=numpy.int16)
 
-            # for key in self.translation_table.keys():
-            for key in self.community_table.index:
-                self.canopy[self.ecocommunities == key] = int(self.community_table.ix[key]['max_canopy'])
-                # self.canopy = numpy.where((self.ecocommunities_array == key),
-                #                           max_canopy, self.canopy)
+            self.canopy = np.empty((self.header['nrows'], self.header['ncols']), dtype=np.int16)
+
+            # random canopy values for forests, shrublands and grasslands
+            f = np.random.randint(low=76, high=90, size=(self.header['nrows'], self.header['ncols']))
+            sh = np.random.randint(low=51, high=75, size=(self.header['nrows'], self.header['ncols']))
+            g = np.random.randint(low=1, high=50, size=(self.header['nrows'], self.header['ncols']))
+            for index, row in self.community_table.iterrows():
+                print row.max_canopy, type(row.max_canopy)
+                if row.max_canopy > 60:
+                    self.canopy = np.where(self.ecocommunities_array == index, f, self.canopy)
+                elif 20 < row.max_canopy <= 60:
+                    self.canopy = np.where(self.ecocommunities_array == index, sh, self.canopy)
+                elif 0 < int(row.max_canopy) <= 20:
+                    self.canopy = np.where(self.ecocommunities_array == index, g, self.canopy)
+                elif row.max_canopy == 0:
+                    self.canopy[self.ecocommunities_array == index] = row.max_canopy
+            # for key in self.community_table.index:
+            #     self.canopy[self.ecocommunities == key] = int(self.community_table.ix[key]['max_canopy'])
 
             self.array_to_ascii(self.CANOPY_ascii, self.canopy)
 
@@ -135,14 +153,23 @@ class Succession(object):
             self.forest_age = self.raster_to_array(self.FOREST_AGE_ascii)
 
         else:
-
             s.logging.info('Assigning initial values to forest age array')
-            self.forest_age = numpy.empty((self.header['nrows'], self.header['ncols']), dtype=numpy.int16)
 
-            for key in self.community_table.index:
-                self.forest_age[self.ecocommunities == key] = self.community_table.ix[key]['start_age']
-                # self.forest_age = numpy.where((self.ecocommunities_array == key),
-                #                               self.community_table.ix[key]['start_age'], self.forest_age)
+            self.forest_age = np.empty((self.header['nrows'], self.header['ncols']), dtype=np.int16)
+
+            n = 15 * np.random.randn(self.header['nrows'], self.header['ncols']) + 65
+            n[n <= 0] = 1
+            for index, row in self.community_table.iterrows():
+                if row.forest == 1:
+                    self.forest_age = np.where(self.ecocommunities_array == index, n, self.forest_age)
+                else:
+                    self.forest_age[self.ecocommunities_array == index] = 0
+
+
+            # for key in self.community_table.index:
+            #     self.forest_age[self.ecocommunities == key] = self.community_table.ix[key]['start_age']
+            #     # self.forest_age = np.where((self.ecocommunities_array == key),
+            #     #                               self.community_table.ix[key]['start_age'], self.forest_age)
 
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
 
@@ -173,45 +200,14 @@ class Succession(object):
         """
         for index, row in self.community_table.iterrows():
 
-            try:
-                to_key = row['to_ID']
-            except:
-                print 'to initial'
-
-            # SUCCESSIONAL GRASSLAND
-            if index == s.SUCCESSIONAL_GRASSLAND_ID:
+            # CANOPY BASED SUCCESSION
+            if row.succession_code == 1:
                 self.ecocommunities[(self.ecocommunities == index) &
-                                    (self.canopy > row['max_canopy'])] = to_key
+                                    (self.canopy > row['max_canopy'])] = row.to_ID
 
-            # SUCCESSIONAL OLD FIELD
-            if index == s.SUCCESSIONAL_OLD_FIELD_ID:
-                self.ecocommunities[(self.ecocommunities == index) &
-                                    (self.canopy > row['max_canopy'])] = to_key
-
-            # SUCCESSIONAL SHRUBLAND
-            if index == s.SUCCESSIONAL_SHRUBLAND_ID:
-                self.ecocommunities[(self.ecocommunities == index) &
-                                    (self.canopy > row['max_canopy'])] = to_key
-
-            # SUCCESSIONAL HARDWOOD FOREST
-            if index == s.SUCCESSIONAL_HARDWOOD_FOREST_ID:
-                self.ecocommunities = numpy.where((self.ecocommunities == index) &
-                                                  (self.forest_age > row['age_out']),
-                                                  self.climax_communities, self.ecocommunities)
-
-            # SHALLOW EMERGENT MARSH
-            if index == s.SHALLOW_EMERGENT_MARSH_ID:
-                self.ecocommunities[(self.ecocommunities == index) &
-                                    (self.canopy > row['max_canopy'])] = to_key
-
-            # SHRUB SWAMP
-            if index == s.SHRUB_SWAMP_ID:
-                self.ecocommunities[(self.ecocommunities == index) &
-                                    (self.canopy > row['max_canopy'])] = to_key
-
-            # RED MAPLE HARDWOOD SWAMP
-            if index == s.RED_MAPLE_HARDWOOD_SWAMP:
-                self.ecocommunities = numpy.where((self.ecocommunities == index) &
+            # FOREST AGE BASED SUCCESSION
+            elif row.succession_code == 2:
+                self.ecocommunities = np.where((self.ecocommunities == index) &
                                                   (self.forest_age > row['age_out']),
                                                   self.climax_communities, self.ecocommunities)
 
