@@ -42,12 +42,17 @@ RUN_LENGTH = range(1409, 1410)
 
 # FIRE
 # initial parameters
+# initial conditions
 INITIAL_TIME_SINCE_DISTURBANCE = 20
 TRAIL_OVERGROWN_YRS = 15
 
 # duration settings
 FIRE_SEASON_START = (1, 3)
 FIRE_SEASON_END = (31, 5)
+
+# model parameters (m)
+PERIMETER_RESOLUTION = 20
+DISTANCE_RESOLUTION = 10
 
 # Minimum amount of rain in 1/100" needed to extinguish a fire
 CRITICAL_RAINFALL = 10
@@ -63,7 +68,7 @@ EXPECTED_GARDEN_ESCAPE = 0.0001777777778
 
 # nonburnable fuel types
 #TODO check these types
-NONBURNABLE = [14, 16, 98, 99]
+NONBURNABLE = [14, 15, 16, 98, 99]
 
 # fuel accumulation time
 TIME_TO_MID_FUEL = 20
@@ -74,6 +79,7 @@ SHRUBLAND_CANOPY = 10
 
 # GUI controls
 INITIATE_RENDER_WAIT_TIME = 10
+INITIATE_RENDER_WAIT_TIME = 20
 SIMULATION_TIMEOUT = 100000
 
 # PONDS
