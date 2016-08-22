@@ -12,8 +12,8 @@ env.overwriteOutput = True
 
 INPUT_DIR = os.path.join(s.ROOT_DIR, '_inputs_full_extent')
 
-DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'dem.tif')
-ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'ecocommunities.tif')
+DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft_CLIP.tif')
+ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'Welikia_Communities', 'Welikia_Ecocommunities_int.tif')
 SITES = os.path.join(INPUT_DIR, 'GARDEN_SITES.shp')
 TRAILS = os.path.join(INPUT_DIR, 'fire_trails.tif')
 REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi.shp')
@@ -94,13 +94,13 @@ else:
 if arcpy.Exists(os.path.join(INPUT_DIR, 'stream_suitability.tif')) is False:
 
     logging.info('creating stream suitability')
-    stream_suitability = arcpy.sa.Con((ECOSYSTEMS == 618.1) |
-                                      (ECOSYSTEMS == 618.2) |
-                                      (ECOSYSTEMS == 618.3) |
-                                      (ECOSYSTEMS == 618.4) |
-                                      (ECOSYSTEMS == 620) |
-                                      (ECOSYSTEMS == 617.1) |
-                                      (ECOSYSTEMS == 617.2) &
+    stream_suitability = arcpy.sa.Con(((ECOSYSTEMS == 61801) |
+                                      (ECOSYSTEMS == 61802) |
+                                      (ECOSYSTEMS == 61803) |
+                                      (ECOSYSTEMS == 61804) |
+                                      (ECOSYSTEMS == 62000) |
+                                      (ECOSYSTEMS == 61701) |
+                                      (ECOSYSTEMS == 61702)) &
                                       (slope <= 8), 1, 0)
 
     stream_suitability.save(os.path.join(INPUT_DIR, 'stream_suitability.tif'))
@@ -149,7 +149,7 @@ for feature in cursor:
         # set environment
         set_arc_env(dem_ref)
 
-        ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities.tif' % boro_code)
+        ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities_int.tif' % boro_code)
         if arcpy.Exists(ecocommunities) is False:
 
             ecocommunities_clip = arcpy.sa.Con(dem_ref, ECOSYSTEMS)
