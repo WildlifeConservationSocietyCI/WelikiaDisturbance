@@ -44,7 +44,7 @@ For community types that can have a canopy, start values were randomized (using 
 
 Community types that do not have canopies were initialized with a value of 0.
 
-### fire size and frequency literature
+## fire size and frequency literature
 effects of fires on temperate forests [@kozlowski_fire_2012]
 power law[@reed_power-law_2002; @cui_what_2008; @stephens_forest_2005]
 
@@ -71,17 +71,14 @@ The expected frequency ($lambda$) of lighting caused fires are based on areal fr
 
 The extent and effect of human caused fires on the landscape prior to European settlement is debated[@day_indian_1953;@russell_indian-set_1983; @patterson_indian_1988]. We have proposed two frequency scenarios, and through simulation have attempted to measure their relative effects.   
 
-|        | no human fire | Russell (1983) | Day (1953) |
-| source |               |                |            |
+| source | no human fire | Russell (1983) | Day (1953) |
 |--------|---------------|----------------|------------|
 | trail  |             0 |        0.00222 |    0.01778 |
 | garden |             0 |        0.00028 |    0.00222 |
 
 ## Critical Rainfall
 
-```
 In the model, fire spread was stopped when it encountered one of the following conditions: (1) a non-flammable type of land cover; (2) boundaries of the region; and (3) when rainfall exceeded a certain critical amount. By assuming that a daily precipitation of 30 mm or more would stop a fire, the R Crit in Eq. (2) was estimated as 0.026 (the proportion of total number of days that has daily precipitation of 30 mm or more) from the historical precipitation data of the Edison weather station. [@li_reconstruction_2000]
-```
 
 ## Tree Allometry
 
@@ -188,7 +185,7 @@ $$\mbox{active beaver pond} \rightarrow \mbox{emergent marsh} \rightarrow \mbox{
 | colony density               | 0.4       | colonies/km^2^ | [@naiman_alteration_1988]                     |
 | territory (minimum distance) | 1000      | m              | @naiman_alteration_1988; @allen_habitat_1983] |
 
-## Analysis
+# Analysis
 time since fire [@johnson_forest_2001]
 fire size frequency hist [@reed_power-law_2002; @cui_what_2008;@malamud_forest_1998]
 
