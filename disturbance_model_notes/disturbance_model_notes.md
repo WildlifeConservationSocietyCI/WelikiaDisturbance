@@ -15,10 +15,12 @@ importance of lightning caused forest fires [@loope_human_1998]
 
 ## Custom Fuel Models
 
-Hardwood forest types are based on model F9 [@scott_standard_2005; @anderson_aids_1982]. Where average loads for 1 hr 10 hr and 100 hr fuels were available for northeastern forest types the values were substituted [@reinhardt_fire_2015]. The remaining fuel attributes remained the same as the base model. The USFS community types were cross-walked to the NY State Heritage community classification so fuels could be assigned for our landscape. 
+Hardwood forest types are based on model F9 [@scott_standard_2005; @anderson_aids_1982]. Where average loads for 1 hr, 10 hr, and 100 hr fuels were available for northeastern forest types the values were substituted into the custom fuel model [@reinhardt_fire_2015]. The remaining fuel attributes were carried over from the base model. The USFS community types were cross-walked to the NY State Heritage community classification so fuels could be assigned for our landscape. 
+
+[cross walk table]
 
 ## Fuel Moisture
-Region specific initial fuel moistures [@reinhardt_fire_2015]. All freshwater wetland communities (marshes, shrub-swamps and forested wetlands) were initialized with a wet fuel profile, all other communities with burnable fuel types were initialized with a moist fuel profile.
+Region specific fuel moistures were used as start conditions in FARSITE [@reinhardt_fire_2015]. All freshwater wetland communities (marshes, shrub-swamps and forested wetlands) were initialized with a wet fuel profile, all other communities with burnable fuel types were initialized with a moist fuel profile.
 
 | Size Class       | Very Dry | Dry | Moist | Wet |
 |------------------|---------:|----:|------:|----:|
@@ -31,12 +33,12 @@ Region specific initial fuel moistures [@reinhardt_fire_2015]. All freshwater we
 
 ## Initial Conditions - Forest Age
 
-Forest communities were initialized with ages drawn from the following normal distribution [@pan_age_2011; @loewenstein_age_2000]. All no forest types were initialized with a forest age of 0
+Forest communities were initialized with ages drawn from the following normal distribution [@pan_age_2011; @loewenstein_age_2000]. All other community types were initialized with a forest age of 0
 
 ![age class distribution](figures/northeast_forest_age_hist.jpg)
 
 ## Initial Conditions - Canopy
-For community types that can have a canopy, start values were randomized (using uniform distribution) within the following canopy classes:
+For community types that can have a canopy, start values were randomized (using uniform distributions) within the following canopy classes:
 
     * grassland 0 < canopy < 20
     * shrubland 20 < canopy < 60
@@ -49,10 +51,10 @@ effects of fires on temperate forests [@kozlowski_fire_2012]
 power law[@reed_power-law_2002; @cui_what_2008; @stephens_forest_2005]
 
 ## Modeling Expected Frequencies
-A Poisson distribution is used to model expected forest fire frequency [@johnson_forest_2001; @yang_spatial_2008]. We created distributions for trail fires, garden fires and lightning fires. 
+A Poisson distribution is used to model annual forest fire events [@johnson_forest_2001; @yang_spatial_2008]. We created distributions for trail fires, garden fires and lightning fires. 
 
 ### Lightning Frequencies 
-The expected frequency ($lambda$) of lighting caused fires are based on areal frequencies from USFS wildfire records in region 9 (U.S. Northeast) between 1940  and 2000 [@stephens_forest_2005]. These values were converted from the given units (frequency/400000 ha)/yr to (frequency/km^2^)/yr. 
+The expected frequency ($lambda$) of lighting caused fires are based on areal frequencies from region 9 (U.S. Northeast) USFS wildfire records between 1940  and 2000 [@stephens_forest_2005]. These values were converted from the given units (frequency/400000 ha)/yr to (frequency/km^2^)/yr. 
 
 
 |  Region  |  Lightning  |            |   Human    |            |
@@ -69,7 +71,7 @@ The expected frequency ($lambda$) of lighting caused fires are based on areal fr
 
 ### Human Fire Frequency Scenarios
 
-The extent and effect of human caused fires on the landscape prior to European settlement is debated[@day_indian_1953;@russell_indian-set_1983; @patterson_indian_1988]. We have proposed two frequency scenarios, and through simulation have attempted to measure their relative effects.   
+The extent and effect of human caused fires on the landscape prior to European settlement is debated[@day_indian_1953;@russell_indian-set_1983; @patterson_indian_1988]. We have proposed two frequency scenarios:   
 
 | source | no human fire | Russell (1983) | Day (1953) |
 |--------|---------------|----------------|------------|
@@ -90,8 +92,9 @@ In the model, fire spread was stopped when it encountered one of the following c
 | Bark Thickness | $BT = vsp * DBH$         | [@reinhardt_fire_2015]  |
 
 
-* Communities to Bark Thickness * 
-bark thickness multipliers for each community, for communities with co-dominate species the average bark thickness was calculated [@reinhardt_fire_2015].
+*Communities to Bark Thickness* 
+
+Bark thickness multipliers for each community are based on the dominant tree type, for communities with co-dominate species we calculated average bark thickness [@reinhardt_fire_2015].
 
 | community                            | dominant tree species                     | vsp scaler  |
 | ------------------------------------ | ----------------------------------------- | ----------: |
@@ -138,6 +141,14 @@ bark thickness multipliers for each community, for communities with co-dominate 
 
 # Horticulture
 
+## Site Selection
+Gardens were modeled at historical sites meeting the following two criteria.
+
+    1.  historical and archealogical records provide evidence for semi-permanent habitation.   
+    2. site point is located within 250 m of freshwater source
+
+Garden loacations are then selected using a suitability model which takes into account proximity to the site center, slope and community type. 
+
 ## Archaeological Evidence for Gardening
 [@kraft_lenape-delaware_2001, @cantwell_unearthing_2001, @benison_horticulture_1997]
 
@@ -171,19 +182,19 @@ caloric requirements [@speth_energy_1983]
 
 ## Succession
 
-We used a 4 sere sequence for the freshwater wetland pathway [@allen_habitat_1983; @hay_succession_2010; @johnston_use_1990; @logofet_succession_2016; @naiman_alteration_1988; @_ecology_1993]. Conversion from non-wetland community to active pond can occur along any perennial streams where the stream gradient is less than 15 degrees. Due to the temporal scale of our study, forested wetlands are treated as a terminal community in this series [@_ecology_1993]. This rule defines beaver caused disturbance as a unidirectional change in successional trajectory. A non-wetland communities can be converted into a wetland type but this conversion cannot be reversed.   
-    
+The freshwater wetland succession sequence has four stages[@allen_habitat_1983; @hay_succession_2010; @johnston_use_1990; @logofet_succession_2016; @naiman_alteration_1988; @_ecology_1993]. 
+
 $$\mbox{active beaver pond} \rightarrow \mbox{emergent marsh} \rightarrow \mbox{shrub swamp} \rightarrow \mbox{forested wetland}$$
 
-
+Conversion from non-wetland community to active pond can occur along any perennial streams where the gradient of the stream is less than 15 degrees. Due to the temporal scale of our study (200 yrs), forested wetlands are treated as a terminal community in this series [@_ecology_1993]. This rule defines beaver caused disturbance as a unidirectional change in successional trajectory. A non-wetland communities can be converted into a wetland type but this conversion cannot be reversed.   
 
 ## Model Parameters
 
-| Parameter                    | Value     |                | Source                                        |
-| ---------------------------  | --------: | :------------- | --------------------------------------------- |
-| probability of abandonment   | 0.10      |                | [@logofet_succession_2016]                    |
-| colony density               | 0.4       | colonies/km^2^ | [@naiman_alteration_1988]                     |
-| territory (minimum distance) | 1000      | m              | @naiman_alteration_1988; @allen_habitat_1983] |
+| Parameter      | Value     |                | Source                                        |
+| -------------- | --------: | :------------- | --------------------------------------------- |
+| abandonment P  | 0.10      |                | [@logofet_succession_2016]                    |
+| colony density | 0.4       | colonies/km^2^ | [@naiman_alteration_1988]                     |
+| territory      | 1000      | m              | @naiman_alteration_1988; @allen_habitat_1983] |
 
 # Analysis
 time since fire [@johnson_forest_2001]
