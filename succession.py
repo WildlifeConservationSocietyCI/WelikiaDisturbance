@@ -16,39 +16,29 @@ class Succession(object):
 
         self.year = year
 
+        # raster paths
         self.DEM_ascii = os.path.join(s.INPUT_DIR, 'fire', 'spatial', s.REGION, 'dem.asc')
         self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
         self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
         self._ecocommunities_filename = 'ecocommunities_%s.tif'
 
+        # arrays
         self.canopy = None
         self.forest_age = None
         self.ecocommunities = None
         self.ecocommunities_array = None
         self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
         self.climax_canopy = None
-        self.soil = None
         self.pond_time_since_disturbance = None
         self.garden_time_since_disturbance = None
-        # self.succession_table = pd.read_csv(os.path.join(s.ROOT_DIR, 'community_table.csv'))
 
+        # header
         self.header = None
         self.header_text = None
-        # self.com_list = [624] #self.succession_table['from_ID']
 
+        # community info table
         self.community_table = pd.read_csv(s.community_table, index_col=0)
 
-        # TEST ARRAYS
-        # self.shape = (10, 10)
-        # self.communities = np.empty(shape=self.shape)
-        #
-        # # create random land cover grid
-        # for index, val in np.ndenumerate(self.communities):
-        #     self.communities[index[0]][index[1]] = np.random.choice(self.com_list)
-        # self.communities = np.full(shape=self.shape, fill_value=648, dtype=np.int32)
-        # self.canopy = np.random.randint(30, size=self.shape)
-        # self.forest_age = np.random.randint(30, size=self.shape)
-        # self.climax_communities = np.full(shape=self.shape, fill_value=644)
         self.get_header()
         self.set_ecocommunities()
         self.set_canopy()
@@ -124,25 +114,26 @@ class Succession(object):
 
         else:
             s.logging.info('Assigning initial values to canopy array')
+            if self.ecocommunities_array is None:
+                self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
-            self.canopy = np.empty((self.header['nrows'], self.header['ncols']), dtype=np.int16)
+            self.canopy = np.empty((self.header['nrows'], self.header['ncols']))
 
             # random canopy values for forests, shrublands and grasslands
-            f = np.random.randint(low=76, high=90, size=(self.header['nrows'], self.header['ncols']))
-            sh = np.random.randint(low=51, high=75, size=(self.header['nrows'], self.header['ncols']))
-            g = np.random.randint(low=1, high=50, size=(self.header['nrows'], self.header['ncols']))
+            # f = np.random.randint(low=51, high=100, size=(self.header['nrows'], self.header['ncols']))
+            # sh = np.random.randint(low=17, high=50, size=(self.header['nrows'], self.header['ncols']))
+            # g = np.random.randint(low=1, high=16, size=(self.header['nrows'], self.header['ncols']))
             for index, row in self.community_table.iterrows():
-                print row.max_canopy, type(row.max_canopy)
-                if row.max_canopy > 60:
-                    self.canopy = np.where(self.ecocommunities_array == index, f, self.canopy)
-                elif 20 < row.max_canopy <= 60:
-                    self.canopy = np.where(self.ecocommunities_array == index, sh, self.canopy)
-                elif 0 < int(row.max_canopy) <= 20:
-                    self.canopy = np.where(self.ecocommunities_array == index, g, self.canopy)
-                elif row.max_canopy == 0:
-                    self.canopy[self.ecocommunities_array == index] = row.max_canopy
-            # for key in self.community_table.index:
-            #     self.canopy[self.ecocommunities == key] = int(self.community_table.ix[key]['max_canopy'])
+                self.canopy[self.ecocommunities_array == index] = row.max_canopy
+                # print row.max_canopy, type(row.max_canopy)
+                # if row.max_canopy > 50:
+                #     self.canopy = np.where(self.ecocommunities_array == index, f, self.canopy)
+                # elif 16 < row.max_canopy <= 50:
+                #     self.canopy = np.where(self.ecocommunities_array == index, sh, self.canopy)
+                # elif 0 < int(row.max_canopy) <= 16:
+                #     self.canopy = np.where(self.ecocommunities_array == index, g, self.canopy)
+                # elif row.max_canopy == 0:
+                #     self.canopy[self.ecocommunities_array == index] = row.max_canopy
 
             self.array_to_ascii(self.CANOPY_ascii, self.canopy)
 
@@ -154,22 +145,13 @@ class Succession(object):
 
         else:
             s.logging.info('Assigning initial values to forest age array')
+            if self.ecocommunities_array is None:
+                self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
-            self.forest_age = np.empty((self.header['nrows'], self.header['ncols']), dtype=np.int16)
-
-            n = 15 * np.random.randn(self.header['nrows'], self.header['ncols']) + 65
-            n[n <= 0] = 1
+            self.forest_age = np.full((self.header['nrows'], self.header['ncols']), fill_value=65, dtype=np.int16)
             for index, row in self.community_table.iterrows():
-                if row.forest == 1:
-                    self.forest_age = np.where(self.ecocommunities_array == index, n, self.forest_age)
-                else:
+                if row.forest != 1:
                     self.forest_age[self.ecocommunities_array == index] = 0
-
-
-            # for key in self.community_table.index:
-            #     self.forest_age[self.ecocommunities == key] = self.community_table.ix[key]['start_age']
-            #     # self.forest_age = np.where((self.ecocommunities_array == key),
-            #     #                               self.community_table.ix[key]['start_age'], self.forest_age)
 
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
 
@@ -183,15 +165,17 @@ class Succession(object):
 
         for index, row in self.community_table.iterrows():
 
-            canopy_growth = row['canopy_growth']
+            canopy_growth = int(row['canopy_growth'])
+            max_canopy = int(row['max_canopy'])
 
             # increment forest age and canopy
             if row['forest'] == 1:
                 self.forest_age[self.ecocommunities == index] += 1
+                self.canopy[(self.ecocommunities == index) & (self.canopy < max_canopy)] += canopy_growth
 
-            # increment canopy
-            self.canopy[(self.ecocommunities == index) &
-                        (self.canopy < 100)] += int(canopy_growth)
+            # increment non forest canopy
+            else:
+                self.canopy[(self.ecocommunities == index)] += canopy_growth
 
     def transition(self):
         """
@@ -219,8 +203,6 @@ class Succession(object):
 
         self.grow()
         self.transition()
-
-        # self.array_to_ascii(array=self.ecocommunities, out_ascii_path=os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
                                               lower_left_corner=arcpy.Point(self.header['xllcorner'],
