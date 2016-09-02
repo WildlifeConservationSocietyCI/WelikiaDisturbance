@@ -9,11 +9,9 @@ import numpy as np
 
 TOTAL_POPULATION = 2000
 
-candidate_sites = ('E:/_data/welikia/WelikiaDisturbance/population/SUITABILITY_GARDENING/GARDENING_SITES.shp')
+candidate_sites = (r'F:\_data\Welikia\WelikiaDisturbance\_inputs_full_extent\garden_sites\GARDEN_SITES.shp')
 
 fields = ["RASTERVALU", "population"]
-
-print
 cursor = arcpy.UpdateCursor(candidate_sites)
 
 # population distribution
@@ -43,7 +41,7 @@ def assign_population(total, distribution):
 
 for site in cursor:
     suitability = site.getValue(fields[0])
-    if suitability == 1 or suitability == 2:
+    if suitability == 1:
         site_pop = assign_population(TOTAL_POPULATION, population_size_distribution)
         # row[fields[1]] = site_pop
         site.setValue(fields[1], site_pop)
