@@ -12,11 +12,11 @@ env.overwriteOutput = True
 
 INPUT_DIR = os.path.join(s.ROOT_DIR, '_inputs_full_extent')
 
-DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft_CLIP.tif')
-ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'Welikia_Communities', 'Welikia_Ecocommunities_int.tif')
-SITES = os.path.join(INPUT_DIR, 'GARDEN_SITES.shp')
-TRAILS = os.path.join(INPUT_DIR, 'fire_trails.tif')
-REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi.shp')
+DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft.tif', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft_CLIP.tif')
+ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'Welikia_Ecocommunities', 'Welikia_Ecocommunities_int.tif')
+SITES = os.path.join(INPUT_DIR, 'garden_sites', 'GARDEN_SITES.shp')
+TRAILS = os.path.join(INPUT_DIR, 'trails', 'fire_trails.asc')
+REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi_14b_av', 'nybbwi.shp')
 
 # Tabular Inputs
 PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.txt')
@@ -92,15 +92,16 @@ else:
 
 # stream suitability
 if arcpy.Exists(os.path.join(INPUT_DIR, 'stream_suitability.tif')) is False:
+    ECOSYSTEMS = arcpy.Raster(ECOSYSTEMS)
 
     logging.info('creating stream suitability')
-    stream_suitability = arcpy.sa.Con(((ECOSYSTEMS == 61801) |
+    stream_suitability = arcpy.sa.Con((ECOSYSTEMS == 61801) |
                                       (ECOSYSTEMS == 61802) |
                                       (ECOSYSTEMS == 61803) |
                                       (ECOSYSTEMS == 61804) |
                                       (ECOSYSTEMS == 62000) |
                                       (ECOSYSTEMS == 61701) |
-                                      (ECOSYSTEMS == 61702)) &
+                                      (ECOSYSTEMS == 61702) &
                                       (slope <= 8), 1, 0)
 
     stream_suitability.save(os.path.join(INPUT_DIR, 'stream_suitability.tif'))
@@ -210,7 +211,7 @@ for feature in cursor:
 
             proximity_suitability_clip.save(prx_path)
 
-        garden_sites = os.path.join(s.INPUT_DIR, 'garden','spatial', boro_code, 'garden_sites.shp')
+        garden_sites = os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'garden_sites.shp')
         if arcpy.Exists(garden_sites) is False:
             arcpy.Clip_analysis(in_features=SITES,
                                 clip_features=feature.Shape,
