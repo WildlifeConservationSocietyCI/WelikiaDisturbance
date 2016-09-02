@@ -45,6 +45,7 @@ RUN_LENGTH = range(1409, 1410)
 # initial conditions
 INITIAL_TIME_SINCE_DISTURBANCE = 20
 TRAIL_OVERGROWN_YRS = 15
+TRAIL_OVERGROWN_YRS = 20
 
 # duration settings
 FIRE_SEASON_START = (1, 3)
@@ -73,6 +74,8 @@ NONBURNABLE = [14, 15, 16, 98, 99]
 # fuel accumulation time
 TIME_TO_MID_FUEL = 20
 TIME_TO_CLIMAX_FUEL = 80
+TIME_TO_MID_FUEL = 10
+TIME_TO_CLIMAX_FUEL = 20
 
 # canopy based succession
 SHRUBLAND_CANOPY = 10
@@ -85,6 +88,7 @@ SIMULATION_TIMEOUT = 100000
 # PONDS
 # density: number of ponds/km^2
 DENSITY = 0.1
+DENSITY = 0.4
 # minimum distance: used to buffer out from existing ponds to create territories
 MINIMUM_DISTANCE = 1000
 POND_ABANDONMENT_PROBABILITY = 10
