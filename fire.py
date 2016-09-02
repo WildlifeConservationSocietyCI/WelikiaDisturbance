@@ -1,5 +1,6 @@
 import settings as s
 import disturbance as d
+import tree_allometry as ta
 import numpy
 import arcpy
 import pywinauto
@@ -37,7 +38,7 @@ class FireDisturbance(d.Disturbance):
     LCP = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'LANDSCAPE.LCP')
     IGNITION = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'ignition.shp')
 
-    FMD = os.path.join(INPUT_DIR, TABULAR, 'custom_fuel.fmd')
+    FMD = os.path.join(INPUT_DIR, TABULAR, 'custom_fuel_test.fmd')
     FMS = os.path.join(INPUT_DIR, TABULAR, 'fuel_moisture_test.fms')
     ADJ = os.path.join(INPUT_DIR, TABULAR, 'fuel_adjustment_test.adj')
     WND = os.path.join(INPUT_DIR, TABULAR, 'wind.wnd')
@@ -252,7 +253,7 @@ class FireDisturbance(d.Disturbance):
         point_geomtery_list = []
         point = arcpy.Point()
 
-        # print self.ignition_sites
+        print self.ignition_sites
         for ignition, i in zip(self.ignition_sites, range(len(self.ignition_sites))):
             x = (self.header['xllcorner'] + (self.header['cellsize'] * ignition[1]))
             y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - ignition[0])))
@@ -582,8 +583,8 @@ class FireDisturbance(d.Disturbance):
     def tree_mortality(self):
         """
         Tree_mortality calculates the percentage of the canopy in a cell killed during a burning event
-        This estimate is based on the age of the forest and the length of the flame
-        Model logic and tree size/diameter regressions from Tim Bean
+        This estimate is based on the age of the forest and the length of the flame.
+        Model logic and tree size/diameter relationships from Bean 2007
         :param: flame
         :param: age
         """
@@ -600,12 +601,12 @@ class FireDisturbance(d.Disturbance):
         # Calculate tree height
         log_age = numpy.ma.log(age)
 
-        tree_height = numpy.where(age > 0, numpy.array(log_age * 44 - 93), age)
+        #TODO remove np where, add tree_height.fill_value = 0
+        tree_height = numpy.where(age > 0, ta.tree_height_bean(age), age)
         tree_height[tree_height < 0] = 1
 
-        # Calculate tree diameter at breast height
+        # Calculate tree diameter at breast height TODO use method from tree_allomety lib
         dbh = numpy.array((age - 36.329) / .919 * 0.393700787) # numpy.array(25.706 * log_age - 85.383)
-
         dbh[age <= 35] = 5
         dbh[age <= 25] = 3
         dbh[age <= 20] = 2
@@ -642,11 +643,11 @@ class FireDisturbance(d.Disturbance):
         crown_length = numpy.ma.array(crown_length, mask=(crown_length == 0))
 
         # zero place-holder array
-        zero_crown_kill = numpy.full(shape=flame.shape, fill_value=0, dtype=numpy.float32)
+        zero = numpy.full(shape=flame.shape, fill_value=0, dtype=numpy.float32)
 
         crown_kill = numpy.where(crown_scorch > 0,
                                  numpy.array(41.961 * (100 * numpy.ma.log(numpy.ma.divide(crown_scorch, crown_length))) - 89.721),
-                                 zero_crown_kill)
+                                 zero)
 
         crown_kill[crown_kill < 0] = 0
         crown_kill[crown_kill > 100] = 100
@@ -655,7 +656,7 @@ class FireDisturbance(d.Disturbance):
         mortality = numpy.where(flame > 0,
                                 numpy.array(
                                     1 / (1 + numpy.exp((-1.941 + (6.3136 * (1 - (numpy.exp(-1 * bark_thickness))))) - (
-                                        .000535 * (crown_kill ** 2))))), flame)
+                                        .000535 * (crown_kill ** 2))))), zero)
 
         return 1 - mortality
 
