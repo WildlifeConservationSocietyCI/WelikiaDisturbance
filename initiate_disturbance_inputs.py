@@ -15,6 +15,7 @@ INPUT_DIR = os.path.join(s.ROOT_DIR, '_inputs_full_extent')
 DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft.tif', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft_CLIP.tif')
 ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'Welikia_Ecocommunities', 'Welikia_Ecocommunities_int.tif')
 SITES = os.path.join(INPUT_DIR, 'garden_sites', 'GARDEN_SITES.shp')
+BUFFER = os.path.join(INPUT_DIR, 'garden_sites', 'SITE_BUFFER.shp')
 TRAILS = os.path.join(INPUT_DIR, 'trails', 'fire_trails.asc')
 REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi_14b_av', 'nybbwi.shp')
 
@@ -25,7 +26,6 @@ SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass.tx
 GARDEN_SLOPE_SUITABILITY = os.path.join(INPUT_DIR, 'slope_suitability.tif')
 PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, 'proximity_suitability.tif')
 STREAM_SUITABILITY = os.path.join(INPUT_DIR, 'stream_suitability.tif')
-
 
 
 def set_arc_env(in_raster):
@@ -51,6 +51,19 @@ def reset_arc_env():
 if arcpy.Exists(os.path.join(INPUT_DIR, 'dem.asc')) is False:
     logging.info('creating ascii dem')
     arcpy.RasterToASCII_conversion(DEM, os.path.join(INPUT_DIR, 'dem.asc'))
+
+if arcpy.Exists(os.path.join(INPUT_DIR, 'ecocommunities.tif')) is False:
+    logging.info('creating communities')
+    ecocommunities_fe = arcpy.Raster(ECOSYSTEMS)
+    lenape_sites = arcpy.PolygonToRaster_conversion(in_features=BUFFER,
+                                                    value_field='RASTERVALU',
+                                                    cellsize=s.CELL_SIZE)
+    ecocommunities_fe = arcpy.sa.Con(arcpy.sa.IsNull(lenape_sites) == 0, 65400, ecocommunities_fe)
+
+    ecocommunities_fe.save(os.path.join(INPUT_DIR, 'ecocommunities.tif'))
+
+else:
+    ecocommunities_fe = os.path.join(INPUT_DIR, 'ecocommunities.tif')
 
 # slope
 if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.tif')) is False:
@@ -153,7 +166,7 @@ for feature in cursor:
         ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities_int.tif' % boro_code)
         if arcpy.Exists(ecocommunities) is False:
 
-            ecocommunities_clip = arcpy.sa.Con(dem_ref, ECOSYSTEMS)
+            ecocommunities_clip = arcpy.sa.Con(dem_ref, ecocommunities_fe)
 
             ecocommunities_clip.save(ecocommunities)
 
