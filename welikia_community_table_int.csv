@@ -72,7 +72,7 @@
 63100,16,16,16,80,80,1,1,0,1,,,0.25,Coastal Plain Atlantic Cedar Swamp,1,
 63200,99,99,99,0,0,0,0,0,0,,,,Maritime Beach,1,
 63300,141,141,141,0,0,0,0,0,0,,,,Maritime Dunes,1,
-63400,146,146,143,50,20,0,1,1,1,73500,,,Maritime Shrubland,1,1
+63400,146,146,143,50,20,0,1,1,1,73600,,,Maritime Shrubland,1,1
 63500,123,106,103,16,0,0,1,0,2,64900,,,Hempstead Plains Grassland,1,1
 63600,99,99,99,0,0,0,0,0,0,,,,Shoreline outcrop community,1,
 63700,99,99,99,0,0,0,0,0,0,,,,Calcareous shoreline outcrop community,1,
@@ -100,24 +100,24 @@
 65830,98,98,98,0,0,0,0,0,0,,,,Confined River Low Gradient Low to Moderately Buffered,1,
 65840,98,98,98,0,0,0,0,0,0,,,,Confined River Low Gradient Well Buffered,1,
 70000,14,14,14,0,0,0,0,0,0,,,,Brackish Meadow,1,
-70100,15,15,15,16,35,0,0,0,1,63400,,,Sea Level Fen,1,1
+70100,15,15,15,16,35,0,0,0,1,64900,,,Sea Level Fen,1,1
 70400,98,98,98,0,0,0,0,0,0,,,,Bog Pond,1,
 70500,98,98,98,0,0,0,0,0,0,,,,Oligotrophic Pond,1,
 70600,15,15,15,50,35,0,0,0,1,62900,,,Pine Barrens Shrub Swamp,1,1
 70900,16,16,16,90,50,1,1,0,1,,,0.025,Inland Atlantic Cedar Swamp,1,
 71000,16,16,16,90,50,1,1,0,1,,,0.034,Red Maple-Black Gum Swamp,1,
 71001,16,16,16,90,50,1,1,0,1,,,0.032,Red Maple Sweetgum Swamp,1,
-71200,15,15,15,50,35,0,0,0,1,,,,Dwarf Shrub Bog,1,
-71600,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,,0.042,Maritime Holly Forest,1,
-71800,24,25,25,-9999,-9999,-9999,-9999,0,0,,,0.044,Maritime Oak Forest TO BURN!!!!,1,
-71900,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,,,Maritime Freshwater Interdunal Swale,1,
-72000,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,,, ,,
-72100,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,,, ,,
+71200,15,15,15,50,35,0,0,0,1,62900,,,Dwarf Shrub Bog,1,1
+71600,146,162,144,65,20,1,1,1,1,,,0.042,Maritime Holly Forest,1,
+71800,24,25,25,65,20,1,1,1,1,,,0.044,Maritime Oak Forest TO BURN!!!!,1,
+71900,14,14,14,0,0,0,0,0,0,,,,Maritime Freshwater Interdunal Swale,1,
+72000,20,21,22,100,80,1,1,1,1,,,0.035,Maritime_Beech_Forest,,
+72100,99,99,99,0,0,0,0,0,0,,,,Maritime_Bluffs,,
 72101,99,99,99,0,0,0,0,0,0,,,,Bluffs,1,
 72400,146,162,144,60,20,1,1,1,1,,,0.044,Post Oak-Black Jack Oak Barrens,1,
 72500,24,25,25,65,20,1,1,1,1,,,0.045,Pitch Pine-Oak Forest,1,
-72600,-9999,-9999,-9999,-9999,-9999,-9999,-9999,0,0,,,, ,,
-72700,146,162,144,65,20,1,1,1,1,,,0.045,Coastal Oak-Heath Forest,1,
+72600,17,18,19,90,80,1,1,1,1,,,0.045,Coastal_Oak_Laurel_Forest,,
+72700,17,18,19,90,80,1,1,1,1,,,0.045,Coastal Oak-Heath Forest,1,
 72800,17,18,19,90,80,1,1,1,1,,,0.045,Appalachian oak-hickory forest,1,
 72900,20,21,22,100,80,1,1,1,1,,,0.029,Beech-maple mesic forest,1,
 73500,146,146,143,90,20,1,1,1,1,,,0.04,Successional Maritime Hardwoods,,

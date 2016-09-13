@@ -46,6 +46,7 @@ def reset_arc_env():
     arcpy.env.cartographicCoordinateSystem = None
 
 # create full extent products
+set_arc_env(DEM)
 
 # dem
 if arcpy.Exists(os.path.join(INPUT_DIR, 'dem.asc')) is False:
@@ -58,7 +59,7 @@ if arcpy.Exists(os.path.join(INPUT_DIR, 'ecocommunities.tif')) is False:
     lenape_sites = arcpy.PolygonToRaster_conversion(in_features=BUFFER,
                                                     value_field='RASTERVALU',
                                                     cellsize=s.CELL_SIZE)
-    ecocommunities_fe = arcpy.sa.Con(arcpy.sa.IsNull(lenape_sites) == 0, 65400, ecocommunities_fe)
+    ecocommunities_fe = arcpy.sa.Con((ecocommunities_fe), arcpy.sa.Con((arcpy.sa.IsNull(lenape_sites) == 0), 65400, ecocommunities_fe))
 
     ecocommunities_fe.save(os.path.join(INPUT_DIR, 'ecocommunities.tif'))
 
@@ -146,11 +147,11 @@ print rasters
 cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
 
 for feature in cursor:
-
-    print feature.BoroName
-    boro_code = str(int(feature.BoroCode))
-    print boro_code
-    if int(boro_code) == 2:
+        reset_arc_env()
+        print feature.BoroName
+        boro_code = str(int(feature.BoroCode))
+    # print boro_code
+    # if int(boro_code) == 2:
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')) is False:
             dem_clip = arcpy.Clip_management(in_raster=DEM,
                                              in_template_dataset=feature.Shape,

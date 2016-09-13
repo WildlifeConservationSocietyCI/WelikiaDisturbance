@@ -9,7 +9,6 @@ import time
 from arcpy import env
 import pandas as pd
 import datetime
-import analysis
 import succession
 
 # set environment
@@ -37,8 +36,6 @@ def clear_dir(directory):
 # log trial settings
 shutil.copyfile(os.path.join(s.ROOT_DIR, 'settings.py'),
                 os.path.join(s.LOG_DIR, 'settings.py'))
-
-clear_dir(os.path.join(s.OUTPUT_DIR, 'fire', 'burn_rasters'))
 
 clear_dir(s.TEMP_DIR)
 
@@ -110,4 +107,3 @@ s.logging.info('end time: %s' % t.now)
 s.logging.info('full run time: %s minutes' % ((full_run_end - full_run_start) / 60))
 
 s.logging.info('creating ecosystem areas table')
-analysis.ecosystem_areas()
