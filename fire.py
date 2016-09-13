@@ -384,7 +384,7 @@ class FireDisturbance(d.Disturbance):
 
             # s.logging.info('landscape file loaded')
 
-            project_inputs.SetFocus()
+            project_inputs.Wait('ready').SetFocus()
             project_inputs[u'&OK'].Click()
 
         except pywinauto.findwindows.WindowNotFoundError:
