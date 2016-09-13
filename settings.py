@@ -12,7 +12,6 @@ TRIAL_NAME = 'test'
 ROOT_DIR = os.path.join(r'F:\_data\Welikia\WelikiaDisturbance')
 REGION = '1'
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
 LOG_DIR = r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME
@@ -40,7 +39,7 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1410)
+RUN_LENGTH = range(1409, 1610)
 
 # FIRE
 # initial parameters
