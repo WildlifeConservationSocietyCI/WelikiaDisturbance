@@ -10,8 +10,10 @@ import numpy
 TRIAL_NAME = 'test'
 
 ROOT_DIR = os.path.join(r'F:\_data\Welikia\WelikiaDisturbance')
+REGION = '1'
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
+OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
 LOG_DIR = r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME
 
