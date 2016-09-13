@@ -16,14 +16,9 @@ OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
 LOG_DIR = r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME
 
-REGION = '2'
-
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities_int.tif' % REGION)
 community_table = os.path.join(ROOT_DIR, 'welikia_community_table_int.csv')
-UPLAND_AREA = 87.7
-INPUT_FILES = [
-    ecocommunities
-]
+
 
 #
 DEBUG_MODE = False
