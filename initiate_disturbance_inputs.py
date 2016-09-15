@@ -12,12 +12,12 @@ env.overwriteOutput = True
 
 INPUT_DIR = os.path.join(s.ROOT_DIR, '_inputs_full_extent')
 
-DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft.tif', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft_CLIP.tif')
+DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'dem', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft_CLIP.tif')
 ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'Welikia_Ecocommunities', 'Welikia_Ecocommunities_int.tif')
 SITES = os.path.join(INPUT_DIR, 'garden_sites', 'GARDEN_SITES.shp')
 BUFFER = os.path.join(INPUT_DIR, 'garden_sites', 'SITE_BUFFER.shp')
 TRAILS = os.path.join(INPUT_DIR, 'trails', 'fire_trails.asc')
-REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi_14b_av', 'nybbwi.shp')
+REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'region_boundaries', 'nybbwi.shp')
 
 # Tabular Inputs
 PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.txt')

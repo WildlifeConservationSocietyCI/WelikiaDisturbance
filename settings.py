@@ -12,19 +12,13 @@ TRIAL_NAME = 'test'
 ROOT_DIR = os.path.join(r'F:\_data\Welikia\WelikiaDisturbance')
 REGION = '1'
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
 LOG_DIR = r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME
 
-REGION = '2'
-
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities_int.tif' % REGION)
 community_table = os.path.join(ROOT_DIR, 'welikia_community_table_int.csv')
-UPLAND_AREA = 87.7
-INPUT_FILES = [
-    ecocommunities
-]
+
 
 #
 DEBUG_MODE = False
@@ -40,13 +34,12 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1410)
+RUN_LENGTH = range(1409, 1610)
 
 # FIRE
 # initial parameters
 # initial conditions
 INITIAL_TIME_SINCE_DISTURBANCE = 20
-TRAIL_OVERGROWN_YRS = 15
 TRAIL_OVERGROWN_YRS = 20
 
 # duration settings
@@ -74,8 +67,6 @@ EXPECTED_GARDEN_ESCAPE = 0.0001777777778
 NONBURNABLE = [14, 15, 16, 98, 99]
 
 # fuel accumulation time
-TIME_TO_MID_FUEL = 20
-TIME_TO_CLIMAX_FUEL = 80
 TIME_TO_MID_FUEL = 10
 TIME_TO_CLIMAX_FUEL = 20
 
@@ -83,13 +74,11 @@ TIME_TO_CLIMAX_FUEL = 20
 SHRUBLAND_CANOPY = 10
 
 # GUI controls
-INITIATE_RENDER_WAIT_TIME = 10
 INITIATE_RENDER_WAIT_TIME = 20
 SIMULATION_TIMEOUT = 100000
 
 # PONDS
 # density: number of ponds/km^2
-DENSITY = 0.1
 DENSITY = 0.4
 # minimum distance: used to buffer out from existing ponds to create territories
 MINIMUM_DISTANCE = 1000
