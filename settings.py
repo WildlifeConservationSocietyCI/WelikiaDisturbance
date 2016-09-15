@@ -7,14 +7,14 @@ import numpy
 
 
 # DIRECTORIES
-TRIAL_NAME = 'test'
+TRIAL_NAME = ''
 
-ROOT_DIR = os.path.join(r'F:\_data\Welikia\WelikiaDisturbance')
-REGION = '1'
+ROOT_DIR = os.path.join(r'')
+REGION = ''
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r"F:\_data\Welikia\disturbance_logs\%s" % TRIAL_NAME
+LOG_DIR = r"%s" % TRIAL_NAME
 
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities_int.tif' % REGION)
 community_table = os.path.join(ROOT_DIR, 'welikia_community_table_int.csv')
@@ -58,8 +58,8 @@ CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities number of fires / km^2
 EXPECTED_LIGHTNING_FIRE = 0.0005425
-EXPECTED_TRAIL_ESCAPE = 0.001222222222
-EXPECTED_GARDEN_ESCAPE = 0.0001777777778
+EXPECTED_TRAIL_ESCAPE = 0
+EXPECTED_GARDEN_ESCAPE = 0
 # PROB_HUNT_ESCAPE = 10
 
 # nonburnable fuel types
