@@ -33,18 +33,12 @@ Region specific fuel moistures were used as start conditions in FARSITE [@reinha
 
 ## Initial Conditions - Forest Age
 
-Forest communities were initialized with ages drawn from the following normal distribution [@pan_age_2011; @loewenstein_age_2000]. All other community types were initialized with a forest age of 0
+Forest communities were initialized with an age of 65 [@pan_age_2011; @loewenstein_age_2000]. All other community types were initialized with a forest age of 0
 
 ![age class distribution](figures/northeast_forest_age_hist.jpg)
 
 ## Initial Conditions - Canopy
-For community types that can have a canopy, start values were randomized (using uniform distributions) within the following canopy classes:
-
-    * grassland 0 < canopy < 20
-    * shrubland 20 < canopy < 60
-    * forest 60 < canopy
-
-Community types that do not have canopies were initialized with a value of 0.
+Communities were initialized with their maximum canopy values as defined in the community table.
 
 ## fire size and frequency literature
 effects of fires on temperate forests [@kozlowski_fire_2012]
