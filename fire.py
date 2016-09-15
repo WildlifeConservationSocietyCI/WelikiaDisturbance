@@ -315,7 +315,7 @@ class FireDisturbance(d.Disturbance):
         # full extent test input_dir
 
         farsite = pywinauto.Application()
-        farsite.start(os.path.join('C:\\', 'Program Files (x86)', 'farsite4.exe'))
+        farsite.start(s.FARSITE)
 
         # Load FARSITE project file
         # s.logging.info('Loading FARSITE project file')

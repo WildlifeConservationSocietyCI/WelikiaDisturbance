@@ -37,7 +37,7 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 RUN_LENGTH = range(1409, 1610)
 
 # FIRE
-# initial parameters
+FARSITE = r''
 # initial conditions
 INITIAL_TIME_SINCE_DISTURBANCE = 20
 TRAIL_OVERGROWN_YRS = 20
