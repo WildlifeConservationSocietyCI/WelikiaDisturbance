@@ -34,8 +34,8 @@ def clear_dir(directory):
             shutil.rmtree(path)
 
 # log trial settings
-shutil.copyfile(os.path.join(s.ROOT_DIR, 'settings.py'),
-                os.path.join(s.LOG_DIR, 'settings.py'))
+shutil.copyfile(os.path.join(s.ROOT_DIR, 'settings_scenario.py'),
+                os.path.join(s.LOG_DIR, 'settings_scenario.py'))
 
 clear_dir(s.TEMP_DIR)
 
