@@ -8,13 +8,19 @@ import numpy
 
 # DIRECTORIES
 TRIAL_NAME = ''
-
-ROOT_DIR = os.path.join(r'')
+ROOT_DIR = ''
 REGION = ''
+LOG_DIR = '%s' % TRIAL_NAME
+FARSITE = ''
+
+try:
+    from settings_local import *
+except ImportError, e:
+    pass
+
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r"%s" % TRIAL_NAME
 
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities_int.tif' % REGION)
 community_table = os.path.join(ROOT_DIR, 'welikia_community_table_int.csv')
@@ -37,7 +43,6 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 RUN_LENGTH = range(1409, 1610)
 
 # FIRE
-FARSITE = r''
 # initial conditions
 INITIAL_TIME_SINCE_DISTURBANCE = 20
 TRAIL_OVERGROWN_YRS = 20
@@ -118,3 +123,8 @@ else:
     arcpy.AddError("Unable to get spatial analyst extension")
     arcpy.AddMessage(arcpy.GetMessages(0))
     sys.exit(0)
+
+try:
+    from settings_scenario import *
+except ImportError, e:
+    pass
