@@ -8,19 +8,42 @@ from prettyprint import *
 import glob
 import arcpy
 import settings as s
+import linecache
+import itertools
 
 def ascii_to_array(in_ascii_path):
     ascii = gdal.Open(in_ascii_path, GA_ReadOnly)
     array = gdal_array.DatasetReadAsArray(ascii)
     return array
 
-cell_size = 5
-ll_corner = arcpy.Point(589779.34038235, 4515478.8842849)
+
+def get_header(raster):
+    header = [linecache.getline(raster, i) for i in range(1, 6)]
+    h = {}
+
+    for line in header:
+        attribute, value = line.split()
+        h[attribute] = value
+    print h
+    h['NCOLS'] = int(h['NCOLS'])
+    h['NROWS'] = int(h['NROWS'])
+    h['CELLSIZE'] = int(float(h['CELLSIZE']))
+    h['XLLCORNER'] = float(h['XLLCORNER'])
+    h['YLLCORNER'] = float(h['YLLCORNER'])
+
+    return h
+
+
+cell_size = s.CELL_SIZE
+
 
 trials = range(1, 2)
 pp(trials)
 
 def number_of_times_burned():
+
+    h = None
+    ll_corner = None
 
     flame_dir =os.path.join(s.OUTPUT_DIR, 'fire', 'burn_rasters')
     print flame_dir
@@ -32,6 +55,10 @@ def number_of_times_burned():
     # # pp(raster_list)
     times_burned = []
     for i in raster_list:
+
+        if h is None:
+            h = get_header(os.path.join(flame_dir, i))
+            ll_corner = arcpy.Point(h['XLLCORNER'], h['YLLCORNER'])
         print 'loading raster %s' % i
         path = os.path.join(flame_dir, i)
 
