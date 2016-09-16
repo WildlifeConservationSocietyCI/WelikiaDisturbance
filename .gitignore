@@ -31,3 +31,5 @@ pond.py.rej
 *.asc
 _inputs_full_extent/
 tests/
+settings_local.py
+settings_scenario.py
