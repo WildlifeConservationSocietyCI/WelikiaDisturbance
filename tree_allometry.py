@@ -1,7 +1,17 @@
+import settings as s
+import os
 import numpy as np
+import pandas as pd
+
+"""
+site index curve parameters
+reference: 'Site Index Curves for Forest Tree Species in the Eastern United States'
+Carmean et al. 1989
+"""
+site_index_parameters = pd.read_csv(os.path.join(s.ROOT_DIR, 'site_index_curve_table.csv'), index_col=0)
 
 
-def tree_height_carmean(params, A, S):
+def tree_height_carmean(key, A, S):
     """
     tree height formula
     reference: 'Site Index Curves for Forest Tree Species in the Eastern United States'
@@ -12,16 +22,17 @@ def tree_height_carmean(params, A, S):
     S = site index
     bi = model parameters
 
-    :param params:
+    :param key:
     :param A:
     :param S:
     :return:
     """
-    b1 = params["b1"]
-    b2 = params["b2"]
-    b3 = params["b3"]
-    b4 = params["b4"]
-    b5 = params["b5"]
+
+    b1 = site_index_parameters.ix[key]["b1"]
+    b2 = site_index_parameters.ix[key]["b2"]
+    b3 = site_index_parameters.ix[key]["b3"]
+    b4 = site_index_parameters.ix[key]["b4"]
+    b5 = site_index_parameters.ix[key]["b5"]
 
     H = b1 * S**b2 * (1 - np.exp(b3 * A)**(b4 * S**b5))
     return H
@@ -100,9 +111,66 @@ def DBH_eq_2_loewenstein(A):
     return DBH
 
 
-# Site Index Curve Parameters
-red_oak_params = {'b1': 6.1785,
-                  'b2': 0.6619,
-                  'b3': -0.0241,
-                  'b4': 25.0185,
-                  'b5': -0.74}
+coeffecients = pd.read_csv(os.path.join(s.ROOT_DIR, 'basal_area_growth_coeffecients.csv'), index_col=0)
+
+def POTBAG(species, DBH, SI):
+    """
+    potential basal area growth
+    reference: Individual-Tree Diameter Growth Model for Northeastern U.S.
+    Teck and Hilt 1990
+
+    POTBAG = potential basal area growth
+    DBH = diameter at brest height
+    SI = site index
+
+    :param species:
+    :param DBH:
+    :param SI:
+    :return: potbag:
+    """
+
+    b1 = coeffecients.ix[species].b1
+    b2 = coeffecients.ix[species].b2
+
+    potbag = b1 * SI * (1.0 - np.exp(-b2 * DBH * 10))
+
+    return potbag
+
+
+def BAG(species, DBH, SI):
+    """
+    limit basal area growth by competition
+    reference: Individual-Tree Diameter Growth Model for Northeastern U.S.
+    Teck and Hilt 1990
+
+    DBH = diameter at brest height
+    SI = site index
+    BAL = basal area of trees larger than or equal to subject tree
+
+    :param species:
+    :param DBH:
+    :param SI:
+    :return: bag:
+    """
+    b3 = coeffecients.ix[species].b3
+    BAL = coeffecients.ix[species].BAL
+
+    potbag = POTBAG(species, DBH, SI)
+    bag = potbag * (np.exp(-b3 * BAL))
+    return bag
+
+
+def DGROW(species, DBH, SI):
+    """
+    convert basal area growth to diameter
+    reference: Individual-Tree Diameter Growth Model for Northeastern U.S.
+    Teck and Hilt 1990
+    :param bag:
+    :param dbh:
+    :return:
+    """
+
+    bag = BAG(species, DBH, SI)
+    dgrow = (((0.00545415 * DBH ** 2) + bag) / 0.00545415) ** 0.5 - DBH
+
+    return dgrow

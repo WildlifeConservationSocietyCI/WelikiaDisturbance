@@ -19,6 +19,7 @@ class Disturbance(object):
         self.DEM_ascii = os.path.join(s.INPUT_DIR, 'fire', 'spatial', s.REGION, 'dem.asc')
         self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
         self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
+        self.DBH_ascii = os.path.join(s.OUTPUT_DIR, 'dbh.asc')
         self._ecocommunities_filename = 'ecocommunities_%s.tif'
 
         # arrays
@@ -26,16 +27,19 @@ class Disturbance(object):
         self.ecocommunities_array = None
         self.forest_age = None
         self.canopy = None
+        self.dbh = None
 
         # community info table
         self.community_table = pd.read_csv(s.community_table, index_col=0)
 
         self.upland_area = 0
 
+        self.shape = None
         self.get_header()
         self.set_ecocommunities()
-        self.set_forest_age()
         self.set_canopy()
+        self.set_forest_age()
+        self.set_dbh()
 
     def get_header(self):
         """
@@ -57,6 +61,7 @@ class Disturbance(object):
 
         self.header = h
         self.header_text = header
+        self.shape = (h['nrows'], h['ncols'])
 
     def raster_to_array(self, in_raster):
         """
@@ -69,7 +74,7 @@ class Disturbance(object):
 
         return array
 
-    def array_to_ascii(self, out_ascii_path, array):
+    def array_to_ascii(self, out_ascii_path, array, fmt="%4i"):
         """
 
         :rtype: object
@@ -78,7 +83,7 @@ class Disturbance(object):
         for attribute in self.header_text:
             out_asc.write(attribute)
 
-        np.savetxt(out_asc, array, fmt="%4i")
+        np.savetxt(out_asc, array, fmt=fmt)
         out_asc.close()
 
     def set_ecocommunities(self):
@@ -154,12 +159,54 @@ class Disturbance(object):
             if self.ecocommunities_array is None:
                 self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
-            self.forest_age = np.full((self.header['nrows'], self.header['ncols']), fill_value=65, dtype=np.int16)
+
+            # create truncated normal distrbution for age
+            lower = s.MINIMUM_FOREST_AGE
+            upper = s.UPPER
+            mu = s.MEAN_INITIAL_FOREST_AGE
+            sigma = s.AGE_VAR
+
+            n = ss.truncnorm((lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma)
+
+            # populate an array with ages from distribution
+            tn = n.rvs(self.shape).astype(int)
+
+            self.forest_age = np.empty(shape=self.shape, dtype=int)
+
+            # replace reset age for non-forest communities
             for index, row in self.community_table.iterrows():
-                if row.forest != 1:
-                    self.forest_age[self.ecocommunities_array == index] = 0
+                if row.forest == 1:
+                    self.forest_age = np.where(self.ecocommunities_array == index, tn, self.forest_age)
 
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
+
+    def set_dbh(self):
+        """
+
+        :return:
+        """
+        if os.path.isfile(self.DBH_ascii):
+            s.logging.info('Setting dbh')
+            self.dbh = self.raster_to_array(self.DBH_ascii)
+
+        else:
+            s.logging.info('Assigning initial values to dbh array')
+            self.dbh = np.empty(shape=self.shape, dtype=np.float16)
+            age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'dbh_lookup.csv'), index_col=0)
+
+            for index, row in self.community_table.iterrows():
+                print "forest: %s" % row.forest
+                print "bool: ", row.forest == 1
+                if row.forest == 1:
+                    age = np.ma.masked_where(self.ecocommunities_array != index, self.forest_age)
+                    print index
+                    print np.unique(age)
+                    for a in np.ma.compressed(np.unique(age)):
+                        print a
+                        d = age_dbh_lookup.ix[int(a)][str(index)]
+                        self.dbh[(self.ecocommunities_array == index) & (self.forest_age == a)] = d
+
+            self.array_to_ascii(self.DBH_ascii, self.dbh, fmt="%2.4f")
 
     # ensure that dir structure exists
     # def setup_dirs(self):

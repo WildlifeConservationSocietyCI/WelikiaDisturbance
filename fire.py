@@ -1,7 +1,7 @@
 import settings as s
 import disturbance as d
 import tree_allometry as ta
-import numpy
+import numpy as np
 import arcpy
 import pywinauto
 import time
@@ -224,8 +224,8 @@ class FireDisturbance(d.Disturbance):
         s.logging.info('converting ecosystem to fuel model')
 
         if self.fuel is None:
-            self.fuel = numpy.empty((self.header['nrows'], self.header['ncols']))
-            self.fuel.astype(numpy.int32)
+            self.fuel = np.empty((self.header['nrows'], self.header['ncols']))
+            self.fuel.astype(np.int32)
 
         for key in self.community_table.index:
             fuel_c = self.community_table.ix[key]['fuel_c']
@@ -283,8 +283,8 @@ class FireDisturbance(d.Disturbance):
 
         else:
             # s.logging.info('Assigning initial values to time since disturbance array')
-            self.time_since_disturbance = numpy.empty((self.header['nrows'], self.header['ncols']))
-            self.time_since_disturbance.astype(numpy.int32)
+            self.time_since_disturbance = np.empty((self.header['nrows'], self.header['ncols']))
+            self.time_since_disturbance.astype(np.int32)
             self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
             self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
 
@@ -293,7 +293,7 @@ class FireDisturbance(d.Disturbance):
 
     def get_ignition(self, in_ascii):
         array = self.raster_to_array(in_ascii)
-        for index, cell_value in numpy.ndenumerate(array):
+        for index, cell_value in np.ndenumerate(array):
             if cell_value == 1:
                 if self.fuel[index[0]][index[1]] not in s.NONBURNABLE:
                     self.potential_trail_ignition_sites.append(index)
@@ -580,6 +580,7 @@ class FireDisturbance(d.Disturbance):
         # Exit FARSITE
         farsite.Kill_()
 
+    @property
     def tree_mortality(self):
         """
         Tree_mortality calculates the percentage of the canopy in a cell killed during a burning event
@@ -599,26 +600,36 @@ class FireDisturbance(d.Disturbance):
         scorch = (3.1817 * (flame ** 1.4503))
 
         # Calculate tree height
-        log_age = numpy.ma.log(age)
+        log_age = np.ma.log(age)
 
-        #TODO remove np where, add tree_height.fill_value = 0
-        tree_height = numpy.where(age > 0, ta.tree_height_bean(age), age)
-        tree_height[tree_height < 0] = 1
+        # TODO remove np where, add tree_height.fill_value = 0
+
+        tree_height = np.empty(shape=(self.header['nrows'], self.header['ncols']))
+        for index, row in self.community_table.iterrows():
+            if row.forest == 1:
+                tree_height_model = int(row.tree_height_model)
+                site_index = int(row.site_index)
+                tree_height = np.where(self.ecocommunities == index, ta.tree_height_carmean(key=tree_height_model,
+                                                                                            A=age,
+                                                                                            S=site_index), tree_height)
+
+        out_raster = arcpy.NumPyArrayToRaster(in_array=tree_height,
+                                              lower_left_corner=arcpy.Point(self.header['xllcorner'],
+                                                                            self.header['yllcorner']),
+                                              x_cell_size=self.header['cellsize']
+                                              )
+
+        out_raster.save(os.path.join(self.OUTPUT_DIR, 'tree_height.tif'))
 
         # Calculate tree diameter at breast height TODO use method from tree_allomety lib
-        dbh = numpy.array((age - 36.329) / .919 * 0.393700787) # numpy.array(25.706 * log_age - 85.383)
-        dbh[age <= 35] = 5
-        dbh[age <= 25] = 3
-        dbh[age <= 20] = 2
-        dbh[age <= 15] = 1
 
         # Calculate bark thickness
-        vsp_multiplier = numpy.empty(shape=(self.header['nrows'], self.header['ncols']))
+        vsp_multiplier = np.empty(shape=(self.header['nrows'], self.header['ncols']))
 
         for index, row in self.community_table.iterrows():
             vsp_multiplier[self.ecocommunities == index] = row.bark_thickness
 
-        bark_thickness = vsp_multiplier * dbh
+        bark_thickness = vsp_multiplier * self.dbh
 
         out_raster = arcpy.NumPyArrayToRaster(in_array=bark_thickness,
                                               lower_left_corner=arcpy.Point(self.header['xllcorner'],
@@ -640,23 +651,23 @@ class FireDisturbance(d.Disturbance):
         crown_scorch[crown_scorch < 0] = 0
 
         crown_length = tree_height * crown_ratio
-        crown_length = numpy.ma.array(crown_length, mask=(crown_length == 0))
+        crown_length = np.ma.array(crown_length, mask=(crown_length == 0))
 
         # zero place-holder array
-        zero = numpy.full(shape=flame.shape, fill_value=0, dtype=numpy.float32)
+        zero = np.full(shape=flame.shape, fill_value=0, dtype=np.float32)
 
-        crown_kill = numpy.where(crown_scorch > 0,
-                                 numpy.array(41.961 * (100 * numpy.ma.log(numpy.ma.divide(crown_scorch, crown_length))) - 89.721),
-                                 zero)
+        crown_kill = np.where(crown_scorch > 0,
+                              np.array(41.961 * (100 * np.ma.log(np.ma.divide(crown_scorch, crown_length))) - 89.721),
+                              zero)
 
         crown_kill[crown_kill < 0] = 0
         crown_kill[crown_kill > 100] = 100
 
         # calculate percent mortality
-        mortality = numpy.where(flame > 0,
-                                numpy.array(
-                                    1 / (1 + numpy.exp((-1.941 + (6.3136 * (1 - (numpy.exp(-1 * bark_thickness))))) - (
-                                        .000535 * (crown_kill ** 2))))), zero)
+        mortality = np.where(flame > 0,
+                             np.array(
+                                 1 / (1 + np.exp((-1.941 + (6.3136 * (1 - (np.exp(-1 * bark_thickness))))) - (
+                                     .000535 * (crown_kill ** 2))))), zero)
 
         return 1 - mortality
 
@@ -705,10 +716,17 @@ class FireDisturbance(d.Disturbance):
                                     (self.canopy < self.community_table.ix[
                                         s.SHALLOW_EMERGENT_MARSH_ID].max_canopy)] = s.SHALLOW_EMERGENT_MARSH_ID
 
-            # Reset forest age
-            l = [62400, 62500, 63500, 64900]
+            # Reset forest age for grassland community types
+            l = [s.SHALLOW_EMERGENT_MARSH_ID, s.SUCCESSIONAL_GRASSLAND_ID]
             for i in l:
-                self.forest_age[self.ecocommunities == i] = 0
+                self.forest_age[(self.ecocommunities == i) & (self.flame_length != 0)] = 0
+
+                # Reset dbh in cells that have been converted to grassland
+                self.dbh[(self.ecocommunities == i) &
+                         (self.forest_age == 0) &
+                         (self.flame_length != 0)] = 0.5
+
+            self.array_to_ascii(self.DBH_ascii, self.dbh, fmt="%2.4f")
 
     def run_year(self):
 
@@ -738,18 +756,18 @@ class FireDisturbance(d.Disturbance):
         s.logging.info('upland area: %s | scaled expected trail fire: %s'
                        % (self.upland_area, scaled_expected_trail_escape))
 
-        number_of_trail_ignitions = numpy.random.poisson(lam=scaled_expected_trail_escape)
+        number_of_trail_ignitions = np.random.poisson(lam=scaled_expected_trail_escape)
         if number_of_trail_ignitions > 0:
 
             # Get list of potential trail fire sites
             trail_array = self.raster_to_array(self.TRAIL_ascii)
 
-            rows, cols = numpy.where((trail_array == 1) &
-                                     (self.time_since_disturbance >= s.TRAIL_OVERGROWN_YRS) &
-                                     (self.fuel != 14) &
-                                     (self.fuel != 16) &
-                                     (self.fuel != 98) &
-                                     (self.fuel != 99))
+            rows, cols = np.where((trail_array == 1) &
+                                  (self.time_since_disturbance >= s.TRAIL_OVERGROWN_YRS) &
+                                  (self.fuel != 14) &
+                                  (self.fuel != 16) &
+                                  (self.fuel != 98) &
+                                  (self.fuel != 99))
 
             for row, col in zip(rows, cols):
                 self.potential_trail_ignition_sites.append((row, col))
@@ -761,13 +779,13 @@ class FireDisturbance(d.Disturbance):
                     self.ignition_sites.append(random.choice(self.potential_trail_ignition_sites))
 
         # Check if garden fires escaped
-        number_of_garden_ignitions = numpy.random.poisson(lam=s.EXPECTED_GARDEN_ESCAPE)
+        number_of_garden_ignitions = np.random.poisson(lam=s.EXPECTED_GARDEN_ESCAPE)
         if number_of_garden_ignitions > 0:
 
             # Get list of potential garden fire sites
             if self.garden_disturbance is not None:
-                rows, cols = numpy.where((self.ecocommunities == 650) &
-                                         (self.garden_disturbance <= 1))
+                rows, cols = np.where((self.ecocommunities == 650) &
+                                      (self.garden_disturbance <= 1))
 
                 for row, col in zip(rows, cols):
                     self.potential_garden_ignition_sites.append((row, col))
@@ -781,12 +799,12 @@ class FireDisturbance(d.Disturbance):
         scaled_expected_lightning_fire = s.EXPECTED_LIGHTNING_FIRE * self.upland_area
         s.logging.info('upland area: %s | scaled expected lightning fire: %s'
                        % (self.upland_area, scaled_expected_lightning_fire))
-        number_of_lightning_ignitions = numpy.random.poisson(lam=scaled_expected_lightning_fire)
+        number_of_lightning_ignitions = np.random.poisson(lam=scaled_expected_lightning_fire)
         if number_of_lightning_ignitions > 0:
-            rows, cols = numpy.where(((self.fuel != 14) &
-                                      (self.fuel != 16) &
-                                      (self.fuel != 98) &
-                                      (self.fuel != 99)))
+            rows, cols = np.where(((self.fuel != 14) &
+                                   (self.fuel != 16) &
+                                   (self.fuel != 98) &
+                                   (self.fuel != 99)))
 
             for row, col in zip(rows, cols):
                 self.potential_lightning_ignition_sites.append((row, col))
@@ -825,21 +843,23 @@ class FireDisturbance(d.Disturbance):
             if os.path.exists(self.FLAME_LENGTH_ascii):
                 self.flame_length = self.raster_to_array(self.FLAME_LENGTH_ascii)
                 self.flame_length[self.flame_length == -1] = 0
-                self.area_burned = numpy.count_nonzero(self.flame_length)
+                self.area_burned = np.count_nonzero(self.flame_length)
 
                 # Update time since disturbance
                 self.time_since_disturbance[self.flame_length > 0] = 0
                 self.time_since_disturbance[self.flame_length <= 0] += 1
 
                 # Calculate tree mortality due to fire
-                percent_mortality = self.tree_mortality()
+                s.logging.info('calculating tree mortality')
+                percent_mortality = self.tree_mortality
 
                 # Update canopy based on percent mortality
-                self.canopy = numpy.where(self.flame_length != 0,
-                                          numpy.array(self.canopy * percent_mortality, dtype=numpy.int8),
-                                          self.canopy)
+                self.canopy = np.where(self.flame_length != 0,
+                                       np.array(self.canopy * percent_mortality, dtype=np.int8),
+                                       self.canopy)
 
                 # Update communities based on burned canopy
+                s.logging.info('updating communities based on lost canopy')
                 self.retrogression()
 
             self.get_memory()

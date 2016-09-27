@@ -149,6 +149,8 @@ class PondDisturbance(d.Disturbance):
             new_ponds_array = arcpy.RasterToNumPyArray(self.new_ponds)
             self.canopy[new_ponds_array == s.ACTIVE_BEAVER_POND_ID] = 0
             self.forest_age[new_ponds_array == s.ACTIVE_BEAVER_POND_ID] = 0
+            self.dbh[new_ponds_array == s.ACTIVE_BEAVER_POND_ID] = 0
+
 
     def calculate_territory(self):
         """
@@ -345,4 +347,5 @@ class PondDisturbance(d.Disturbance):
         self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
         self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
         self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
+        self.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, fmt="%2.4f")
         self.set_pond_area()

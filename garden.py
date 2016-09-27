@@ -113,13 +113,6 @@ class GardenDisturbance(d.Disturbance):
             # set local exent for garden creation
             arcpy.env.extent = self.temp_buffer
 
-    def update_time_since_disturbance(self):
-        """
-
-        :return:
-        """
-        self.time_since_disturbance = arcpy.sa.Con(self.new_garden == s.GARDEN_ID, 1, self.time_since_disturbance)
-
     def get_garden_area(self, in_raster):
         """
         return count of garden cells in community raster
@@ -331,7 +324,7 @@ class GardenDisturbance(d.Disturbance):
 
         self.set_populations()
 
-        self.time_since_disturbance = arcpy.sa.Con(self.time_since_disturbance, self.time_since_disturbance + 1)
+        self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities != s.GARDEN_ID, self.time_since_disturbance + 1)
 
         # self.succession()
 
@@ -368,14 +361,12 @@ class GardenDisturbance(d.Disturbance):
                     e = arcpy.RasterToNumPyArray(self.ecocommunities)
                     self.canopy[e == s.GARDEN_ID] = 0
                     self.forest_age[e == s.GARDEN_ID] = 0
+                    self.dbh[e == s.GARDEN_ID] = 0
+                    # self.dbh[(e == s.SUCCESSIONAL_OLD_FIELD_ID) & (self.forest_age == 0)] = 0.5
 
-                    if self.year == s.RUN_LENGTH[0]:
-                        random_age = numpy.random.random_integers(1, 19)
-                        self.time_since_disturbance = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, random_age,
-                                                                   self.time_since_disturbance)
-                    else:
-                        self.time_since_disturbance = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, 1,
-                                                                   self.time_since_disturbance)
+
+                    self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities == s.GARDEN_ID, 0,
+                                                               self.time_since_disturbance)
 
             arcpy.env.extent = s.ecocommunities
 
@@ -388,5 +379,6 @@ class GardenDisturbance(d.Disturbance):
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
         self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
         self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
+        self.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, fmt="%2.4f")
         self.calculate_garden_area()
         print 'garden area: %s' % self.new_garden_area
