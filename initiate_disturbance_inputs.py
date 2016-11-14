@@ -17,6 +17,7 @@ ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'Welikia_Ecocommuni
 SITES = os.path.join(INPUT_DIR, 'garden_sites', 'GARDEN_SITES.shp')
 BUFFER = os.path.join(INPUT_DIR, 'garden_sites', 'SITE_BUFFER.shp')
 TRAILS = os.path.join(INPUT_DIR, 'trails', 'fire_trails.asc')
+HUNTING = os.path.join(INPUT_DIR, 'hunting_sites', 'hunting_sites.asc')
 REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'region_boundaries', 'nybbwi.shp')
 
 # Tabular Inputs
@@ -176,6 +177,12 @@ for feature in cursor:
             trail_clip = arcpy.sa.Con(dem_ref, TRAILS)
 
             arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc'))
+
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'hunting_sites.asc')) is False:
+
+            trail_clip = arcpy.sa.Con(dem_ref, HUNTING)
+
+            arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'hunting_sites.asc'))
 
         dem = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif')
         if arcpy.Exists(dem) is False:

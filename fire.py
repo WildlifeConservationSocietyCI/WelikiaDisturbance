@@ -34,6 +34,7 @@ class FireDisturbance(d.Disturbance):
     TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'time_since_disturbance.asc')
 
     TRAIL_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'fire_trails.asc')
+    HUNTING_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'hunting_sites.asc')
     FPJ = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'PROJECT.FPJ')
     LCP = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'LANDSCAPE.LCP')
     IGNITION = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'ignition.shp')
@@ -69,6 +70,7 @@ class FireDisturbance(d.Disturbance):
         self.ignition_sites = []
         self.potential_trail_ignition_sites = []
         self.potential_garden_ignition_sites = []
+        self.potential_hunting_ignition_sites = []
         self.potential_lightning_ignition_sites = []
         self.start_date = None
         self.con_month = None
@@ -266,14 +268,6 @@ class FireDisturbance(d.Disturbance):
             arcpy.Delete_management(self.IGNITION)
 
         arcpy.CopyFeatures_management(point_geomtery_list, self.IGNITION)
-
-        # with open(self.IGNITION, 'w') as ignition_file:
-        #     for s, i in zip(self.ignition_sites, range(len(self.ignition_sites))):
-        #         x = (self.header['xllcorner'] + (self.header['cellsize'] * s[1]))
-        #         y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - s[0])))
-        #
-        #         ignition_file.write('%s %s %s\n' % ((i + 1), x, y))
-        #     ignition_file.write('END')
 
     def set_time_since_disturbance(self):
 
@@ -599,11 +593,6 @@ class FireDisturbance(d.Disturbance):
         # Calculate scorch height
         scorch = (3.1817 * (flame ** 1.4503))
 
-        # Calculate tree height
-        log_age = np.ma.log(age)
-
-        # TODO remove np where, add tree_height.fill_value = 0
-
         tree_height = np.empty(shape=(self.header['nrows'], self.header['ncols']))
         for index, row in self.community_table.iterrows():
             if row.forest == 1:
@@ -762,12 +751,15 @@ class FireDisturbance(d.Disturbance):
             # Get list of potential trail fire sites
             trail_array = self.raster_to_array(self.TRAIL_ascii)
 
-            rows, cols = np.where((trail_array == 1) &
+            rows, cols = np.where((trail_array == s.TRAIL_ID) &
                                   (self.time_since_disturbance >= s.TRAIL_OVERGROWN_YRS) &
                                   (self.fuel != 14) &
                                   (self.fuel != 16) &
                                   (self.fuel != 98) &
                                   (self.fuel != 99))
+
+            # Clear array from memory
+            trail_array = None
 
             for row, col in zip(rows, cols):
                 self.potential_trail_ignition_sites.append((row, col))
@@ -784,7 +776,7 @@ class FireDisturbance(d.Disturbance):
 
             # Get list of potential garden fire sites
             if self.garden_disturbance is not None:
-                rows, cols = np.where((self.ecocommunities == 650) &
+                rows, cols = np.where((self.ecocommunities == s.GARDEN_ID) &
                                       (self.garden_disturbance <= 1))
 
                 for row, col in zip(rows, cols):
@@ -794,6 +786,29 @@ class FireDisturbance(d.Disturbance):
             if len(self.potential_garden_ignition_sites) > 0:
                 for i in range(number_of_garden_ignitions):
                     self.ignition_sites.append(random.choice(self.potential_garden_ignition_sites))
+
+        # Check if hunting fires escaped
+        number_of_hunting_ignitions = s.EXPECTED_HUNTING_ESCAPE #np.random.poisson(lam=s.EXPECTED_HUNTING_ESCAPE)
+        if number_of_hunting_ignitions > 0:
+
+            # Get list of potential hunting fire sites
+            hunting_sites = self.raster_to_array(self.HUNTING_ascii)
+            rows, cols = np.where((hunting_sites == s.HUNTING_SITE_ID) &
+                                  (self.fuel != 14) &
+                                  (self.fuel != 16) &
+                                  (self.fuel != 98) &
+                                  (self.fuel != 99))
+
+            # clear array from memory
+            hunting_sites = None
+
+            for row, col in zip(rows, cols):
+                self.potential_hunting_ignition_sites.append((row, col))
+
+            # Select i sites from potential sites and appended to ignition_sites
+            if len(self.potential_hunting_ignition_sites) > 0:
+                for i in range(number_of_hunting_ignitions):
+                    self.ignition_sites.append(random.choice(self.potential_hunting_ignition_sites))
 
         # Check if lightning fires
         scaled_expected_lightning_fire = s.EXPECTED_LIGHTNING_FIRE * self.upland_area
@@ -816,6 +831,7 @@ class FireDisturbance(d.Disturbance):
 
         s.logging.info('escaped trail fires: %s' % number_of_trail_ignitions)
         s.logging.info('escaped garden fires: %s' % number_of_garden_ignitions)
+        s.logging.info('escaped hunting fires: %s' % number_of_hunting_ignitions)
         s.logging.info('lightning fires: %s' % number_of_lightning_ignitions)
 
         s.logging.info('ignition sites: %s' % self.ignition_sites)
