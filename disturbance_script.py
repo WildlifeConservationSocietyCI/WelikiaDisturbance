@@ -1,4 +1,5 @@
 import settings as s
+import sys
 import os
 import pond
 import fire
@@ -11,7 +12,18 @@ import pandas as pd
 import datetime
 import succession
 
-# set environment
+
+# ArcGIS Extensions
+
+if arcpy.CheckExtension("Spatial") == "Available":
+    arcpy.AddMessage("Checking out Spatial")
+    arcpy.CheckOutExtension("Spatial")
+else:
+    arcpy.AddError("Unable to get spatial analyst extension")
+    arcpy.AddMessage(arcpy.GetMessages(0))
+    sys.exit(0)
+
+# Environment Settings
 
 arcpy.env.extent = s.ecocommunities
 arcpy.env.cellSize = s.ecocommunities

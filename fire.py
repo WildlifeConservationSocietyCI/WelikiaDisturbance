@@ -255,7 +255,7 @@ class FireDisturbance(d.Disturbance):
         point_geomtery_list = []
         point = arcpy.Point()
 
-        print self.ignition_sites
+        print(self.ignition_sites)
         for ignition, i in zip(self.ignition_sites, range(len(self.ignition_sites))):
             x = (self.header['xllcorner'] + (self.header['cellsize'] * ignition[1]))
             y = (self.header['yllcorner'] + (self.header['cellsize'] * (self.header['nrows'] - ignition[0])))
@@ -559,7 +559,7 @@ class FireDisturbance(d.Disturbance):
             #     contains_line.SetFocus()
             #     contains_line[u'&No'].Click()
             # except:
-            #     print 'no poly line dialog'
+            #     print('no poly line dialog')
         except farsite.findwindows.WindowNotFoundError:
             s.logging.error('can not find SELECT VECTOR IGNITION FILE window')
 

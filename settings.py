@@ -69,8 +69,7 @@ EXPECTED_TRAIL_ESCAPE = 0
 EXPECTED_GARDEN_ESCAPE = 0
 EXPECTED_HUNTING_ESCAPE = 0
 
-# nonburnable fuel types
-#TODO check these types
+# nonburnable fuel type
 NONBURNABLE = [14, 15, 16, 98, 99]
 
 # fuel accumulation time
@@ -115,15 +114,7 @@ RED_MAPLE_BLACK_GUM_SWAMP = 71000
 RED_MAPLE_SWEETGUM_SWAMP = 71001
 
 
-# Environment Setting
-
-if arcpy.CheckExtension("Spatial") == "Available":
-    arcpy.AddMessage("Checking out Spatial")
-    arcpy.CheckOutExtension("Spatial")
-else:
-    arcpy.AddError("Unable to get spatial analyst extension")
-    arcpy.AddMessage(arcpy.GetMessages(0))
-    sys.exit(0)
+# Scenario Settings
 
 try:
     from settings_scenario import *

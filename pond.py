@@ -60,7 +60,7 @@ class PondDisturbance(d.Disturbance):
         :return:
         """
         num_points = int(s.DENSITY * self.upland_area) - self.pond_count
-        print 'num points: ', num_points
+        print('num points: ', num_points)
         # constraint is the area of all suitable locations for new_ponds
         # num_points is the maximum number of new_ponds that should be assigned
         arcpy.CreateRandomPoints_management(out_path=s.TEMP_DIR,
@@ -71,8 +71,8 @@ class PondDisturbance(d.Disturbance):
 
     def dam_points_coordinates(self):
         """
-        take points shp and convert to X Y coordinate tuples, this intermediate is needed to
-        create pour points for the watershed tool.
+        take points shp and convert to X Y coordinate tuples, this intermediate format
+        is needed to create pour points for the watershed tool.
         :return: coordinate_list
         """
 
@@ -83,11 +83,11 @@ class PondDisturbance(d.Disturbance):
             coordinate_list.append((point[0][0], point[0][1]))
 
         self.coordinate_list = coordinate_list
-        print 'coordinate list: ', self.coordinate_list
+        print('coordinate list: ', self.coordinate_list)
 
     def flood_pond(self, coordinates):
         """
-        create a raster with a single pond using watershed tool and conditional statement.
+        create a raster with a single pond using watershed tool and dam height.
         The location of the pond is specified by the temp_point argument. DEM must be hydrologicaly
         conditioned to use this method.
         :param coordinates:
@@ -156,7 +156,8 @@ class PondDisturbance(d.Disturbance):
         """
         calculate territory creates a euclidean distance buffer using the global DISTANCE
         parameter. The returned raster is used to exclude areas from the set of points used
-        to create new new_ponds, ensuring that pond density does not exceed the specified threshold.
+        to create new_ponds, ensuring that pond density does not exceed the threshold
+        specified in the settings file.
         :rtype: object
         :return: exclude_territory
         """
@@ -189,12 +190,12 @@ class PondDisturbance(d.Disturbance):
 
             # self._region_group.save(os.path.join(s.TEMP_DIR, 'region_group_%s.tif' % self.year))
         else:
-            print 'no active ponds in landscape'
+            print('no active ponds in landscape')
 
     def count_ponds(self):
         """
         Count_ponds calculates and assigns the class attribute pond_count.
-        This method takes a binary pond raster (pond = 1, background = 0), and uses a region group
+        This method takes a binary pond raster (pond = 1, background = 0), and uses a region group function
         to assigns unique identifiers to each patch/pond.
         :return:
         """
@@ -212,8 +213,8 @@ class PondDisturbance(d.Disturbance):
 
     def calculate_suitability(self):
         """
-        calculate set of suitability points to constrain the potential locations of new new_ponds.
-        new new_ponds can only be placed:
+        calculate set of suitability points to constrain the potential locations of new_ponds.
+        new_ponds can only be placed on cells that meet the following conditions:
             1) outside the bounds existing beaver territory
             2) on mapped streams with gradients <= 8 degrees
             3) above the highest tidal influence
@@ -245,8 +246,6 @@ class PondDisturbance(d.Disturbance):
         :return:
         """
 
-        # for some reason the conditional statement in the succesional method is not converting 0 to ecid 622
-        # setting the age of new ponds to 1 instead of 0 seems to solve this problem for now
         self.time_since_disturbance = arcpy.sa.Con(self.new_ponds == s.ACTIVE_BEAVER_POND_ID, 1,
                                                    self.time_since_disturbance)
 
@@ -275,10 +274,10 @@ class PondDisturbance(d.Disturbance):
             # create region group array
             group_array = arcpy.RasterToNumPyArray(region_group, nodata_to_value=-9999)
             pond_list = np.unique(group_array)
-            print pond_list
+            print(pond_list)
             for i in pond_list[1:]:
                 if np.random.randint(0, 100) <= s.POND_ABANDONMENT_PROBABILITY:
-                    print '***********abandon pond'
+                    print('***********abandon pond')
                     com_array[group_array == i] = s.SHALLOW_EMERGENT_MARSH_ID
 
             self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lower_left, cell_size, value_to_nodata=-9999)

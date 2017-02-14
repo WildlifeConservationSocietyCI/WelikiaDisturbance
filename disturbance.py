@@ -147,7 +147,7 @@ class Disturbance(object):
     def set_forest_age(self):
         """
         set forest age for given year, if no forest age raster exists, use previous year,
-        else: initialize froest age raster
+        else: initialize forest age raster
         :return:
         """
         if os.path.isfile(self.FOREST_AGE_ascii):
@@ -182,7 +182,7 @@ class Disturbance(object):
 
     def set_dbh(self):
         """
-
+        set DBH raster, if no raster exists initialize using age raster and age_dbh_lookup table
         :return:
         """
         if os.path.isfile(self.DBH_ascii):
@@ -195,27 +195,18 @@ class Disturbance(object):
             age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'dbh_lookup.csv'), index_col=0)
 
             for index, row in self.community_table.iterrows():
-                print "forest: %s" % row.forest
-                print "bool: ", row.forest == 1
+                print("forest: %s" % row.forest)
+                print("bool: ", row.forest == 1)
                 if row.forest == 1:
                     age = np.ma.masked_where(self.ecocommunities_array != index, self.forest_age)
-                    print index
-                    print np.unique(age)
+                    print(index)
+                    print(np.unique(age))
                     for a in np.ma.compressed(np.unique(age)):
-                        print a
+                        print(a)
                         d = age_dbh_lookup.ix[int(a)][str(index)]
                         self.dbh[(self.ecocommunities_array == index) & (self.forest_age == a)] = d
 
             self.array_to_ascii(self.DBH_ascii, self.dbh, fmt="%2.4f")
-
-    # ensure that dir structure exists
-    # def setup_dirs(self):
-    #     if not os.path.isdir(ROOT_DIR):
-    #         pass
-    #
-    # def check_inputs(self):
-    #     for file in INPUT_FILES:
-    #         pass
 
     def set_upland_area(self):
         if type(self.ecocommunities) is np.ndarray:
