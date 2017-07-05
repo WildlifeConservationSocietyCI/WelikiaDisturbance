@@ -8,8 +8,9 @@ site index curve parameters
 reference: 'Site Index Curves for Forest Tree Species in the Eastern United States'
 Carmean et al. 1989
 """
-site_index_parameters = pd.read_csv(os.path.join(s.ROOT_DIR, 'site_index_curve_table.csv'), index_col=0)
 
+site_index_parameters = pd.read_csv(os.path.join(s.ROOT_DIR, 'tables', 'site_index_curve_table.csv'), index_col=0)
+coeffecients = pd.read_csv(os.path.join(s.ROOT_DIR, 'tables', 'basal_area_growth_coeffecients.csv'), index_col=0)
 
 def tree_height_carmean(key, A, S):
     """
@@ -111,7 +112,6 @@ def DBH_eq_2_loewenstein(A):
     return DBH
 
 
-coeffecients = pd.read_csv(os.path.join(s.ROOT_DIR, 'basal_area_growth_coeffecients.csv'), index_col=0)
 
 def POTBAG(species, DBH, SI):
     """

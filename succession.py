@@ -179,7 +179,7 @@ class Succession(object):
             s.logging.info('Assigning initial values to dbh array')
             self.dbh = np.zeros(shape=self.shape, dtype=np.float16)
             # self.dbh = np.empty(shape=self.shape, dtype=np.float16)
-            age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'dbh_lookup.csv'), index_col=0)
+            age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'tables', 'dbh_lookup.csv'), index_col=0)
 
             for index, row in self.community_table.iterrows():
 
