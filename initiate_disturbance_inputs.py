@@ -12,11 +12,13 @@ env.overwriteOutput = True
 
 INPUT_DIR = os.path.join(s.ROOT_DIR, '_inputs_full_extent')
 
-DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'dem.tif')
-ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'ecocommunities.tif')
-SITES = os.path.join(INPUT_DIR, 'GARDEN_SITES.shp')
-TRAILS = os.path.join(INPUT_DIR, 'fire_trails.tif')
-REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'nybbwi.shp')
+DEM = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'dem', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft_CLIP.tif')
+ECOSYSTEMS = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'Welikia_Ecocommunities', 'Welikia_Ecocommunities_int.tif')
+SITES = os.path.join(INPUT_DIR, 'garden_sites', 'GARDEN_SITES.shp')
+BUFFER = os.path.join(INPUT_DIR, 'garden_sites', 'SITE_BUFFER.shp')
+TRAILS = os.path.join(INPUT_DIR, 'trails', 'fire_trails.asc')
+HUNTING = os.path.join(INPUT_DIR, 'hunting_sites', 'hunting_sites.asc')
+REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'region_boundaries', 'nybbwi.shp')
 
 # Tabular Inputs
 PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.txt')
@@ -25,7 +27,6 @@ SLOPE_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'slope_reclass.tx
 GARDEN_SLOPE_SUITABILITY = os.path.join(INPUT_DIR, 'slope_suitability.tif')
 PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, 'proximity_suitability.tif')
 STREAM_SUITABILITY = os.path.join(INPUT_DIR, 'stream_suitability.tif')
-
 
 
 def set_arc_env(in_raster):
@@ -46,11 +47,25 @@ def reset_arc_env():
     arcpy.env.cartographicCoordinateSystem = None
 
 # create full extent products
+set_arc_env(DEM)
 
 # dem
 if arcpy.Exists(os.path.join(INPUT_DIR, 'dem.asc')) is False:
     logging.info('creating ascii dem')
     arcpy.RasterToASCII_conversion(DEM, os.path.join(INPUT_DIR, 'dem.asc'))
+
+if arcpy.Exists(os.path.join(INPUT_DIR, 'ecocommunities.tif')) is False:
+    logging.info('creating communities')
+    ecocommunities_fe = arcpy.Raster(ECOSYSTEMS)
+    lenape_sites = arcpy.PolygonToRaster_conversion(in_features=BUFFER,
+                                                    value_field='RASTERVALU',
+                                                    cellsize=s.CELL_SIZE)
+    ecocommunities_fe = arcpy.sa.Con((ecocommunities_fe), arcpy.sa.Con((arcpy.sa.IsNull(lenape_sites) == 0), 65400, ecocommunities_fe))
+
+    ecocommunities_fe.save(os.path.join(INPUT_DIR, 'ecocommunities.tif'))
+
+else:
+    ecocommunities_fe = os.path.join(INPUT_DIR, 'ecocommunities.tif')
 
 # slope
 if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.tif')) is False:
@@ -92,15 +107,16 @@ else:
 
 # stream suitability
 if arcpy.Exists(os.path.join(INPUT_DIR, 'stream_suitability.tif')) is False:
+    ECOSYSTEMS = arcpy.Raster(ECOSYSTEMS)
 
     logging.info('creating stream suitability')
-    stream_suitability = arcpy.sa.Con((ECOSYSTEMS == 618.1) |
-                                      (ECOSYSTEMS == 618.2) |
-                                      (ECOSYSTEMS == 618.3) |
-                                      (ECOSYSTEMS == 618.4) |
-                                      (ECOSYSTEMS == 620) |
-                                      (ECOSYSTEMS == 617.1) |
-                                      (ECOSYSTEMS == 617.2) &
+    stream_suitability = arcpy.sa.Con((ECOSYSTEMS == 61801) |
+                                      (ECOSYSTEMS == 61802) |
+                                      (ECOSYSTEMS == 61803) |
+                                      (ECOSYSTEMS == 61804) |
+                                      (ECOSYSTEMS == 62000) |
+                                      (ECOSYSTEMS == 61701) |
+                                      (ECOSYSTEMS == 61702) &
                                       (slope <= 8), 1, 0)
 
     stream_suitability.save(os.path.join(INPUT_DIR, 'stream_suitability.tif'))
@@ -132,11 +148,11 @@ print rasters
 cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
 
 for feature in cursor:
-
-    print feature.BoroName
-    boro_code = str(int(feature.BoroCode))
-    print boro_code
-    if int(boro_code) == 2:
+        reset_arc_env()
+        print feature.BoroName
+        boro_code = str(int(feature.BoroCode))
+    # print boro_code
+    # if int(boro_code) == 2:
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')) is False:
             dem_clip = arcpy.Clip_management(in_raster=DEM,
                                              in_template_dataset=feature.Shape,
@@ -149,10 +165,10 @@ for feature in cursor:
         # set environment
         set_arc_env(dem_ref)
 
-        ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities.tif' % boro_code)
+        ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities_int.tif' % boro_code)
         if arcpy.Exists(ecocommunities) is False:
 
-            ecocommunities_clip = arcpy.sa.Con(dem_ref, ECOSYSTEMS)
+            ecocommunities_clip = arcpy.sa.Con(dem_ref, ecocommunities_fe)
 
             ecocommunities_clip.save(ecocommunities)
 
@@ -161,6 +177,12 @@ for feature in cursor:
             trail_clip = arcpy.sa.Con(dem_ref, TRAILS)
 
             arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc'))
+
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'hunting_sites.asc')) is False:
+
+            trail_clip = arcpy.sa.Con(dem_ref, HUNTING)
+
+            arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'hunting_sites.asc'))
 
         dem = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif')
         if arcpy.Exists(dem) is False:
@@ -210,7 +232,7 @@ for feature in cursor:
 
             proximity_suitability_clip.save(prx_path)
 
-        garden_sites = os.path.join(s.INPUT_DIR, 'garden','spatial', boro_code, 'garden_sites.shp')
+        garden_sites = os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'garden_sites.shp')
         if arcpy.Exists(garden_sites) is False:
             arcpy.Clip_analysis(in_features=SITES,
                                 clip_features=feature.Shape,

@@ -25,12 +25,12 @@ def get_counts(array):
     return dict(zip(unique[0], unique[1]))
 
 def ecosystem_areas():
-    communities = [600, 608, 609, 616, 621, 622, 625, 629, 632, 635, 644, 647, 649, 650, 654]
-    index = range(1409, 1610)  #s.RUN_LENGTH
-    df = pd.DataFrame(columns=communities, index=index)
+    df = pd.read_csv(os.path.join(s.ROOT_DIR, 'welikia_community_table_int.csv'), index_col=0)
+    index = range(1409, 1509)  #s.RUN_LENGTH
+    df = pd.DataFrame(columns=df.index, index=index)
     ecocommunities = os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif')
 
-    for year in range(1409, 1610):
+    for year in range(1409, 1509):
 
         if arcpy.Exists(ecocommunities % year):
             array = raster_to_array(ecocommunities % year)

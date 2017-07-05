@@ -5,24 +5,26 @@ import sys
 import logging
 import numpy
 
-# TODO
+
 # DIRECTORIES
-TRIAL_NAME = 'test'
+TRIAL_NAME = ''
+ROOT_DIR = ''
+REGION = ''
+LOG_DIR = '%s' % TRIAL_NAME
+FARSITE = ''
 
-ROOT_DIR = os.path.join('')
+try:
+    from settings_local import *
+except ImportError, e:
+    pass
+
 INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
+OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-LOG_DIR = r"%s" % TRIAL_NAME
 
-REGION = '2'
+ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities_int.tif' % REGION)
+community_table = os.path.join(ROOT_DIR, 'welikia_community_table_int.csv')
 
-ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities.tif' % REGION)
-community_table = os.path.join(ROOT_DIR, 'welikia_community_table.csv')
-UPLAND_COMMUNITIES = [616, 621, 622, 625, 629, 632, 635, 644, 647, 648, 649, 650, 654, 733]
-INPUT_FILES = [
-    ecocommunities
-]
 
 #
 DEBUG_MODE = False
@@ -38,16 +40,22 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(, )
+RUN_LENGTH = range(1409, 1610)
 
 # FIRE
-# initial parameters
+# initial conditions
+MEAN_INITIAL_FOREST_AGE = 0
+MINIMUM_FOREST_AGE = 0
 INITIAL_TIME_SINCE_DISTURBANCE = 20
-TRAIL_OVERGROWN_YRS = 15
+TRAIL_OVERGROWN_YRS = 20
 
 # duration settings
 FIRE_SEASON_START = (1, 3)
 FIRE_SEASON_END = (31, 5)
+
+# model parameters (m)
+PERIMETER_RESOLUTION = 20
+DISTANCE_RESOLUTION = 10
 
 # Minimum amount of rain in 1/100" needed to extinguish a fire
 CRITICAL_RAINFALL = 10
@@ -57,27 +65,25 @@ CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities number of fires / km^2
 EXPECTED_LIGHTNING_FIRE = 0.0005425
-EXPECTED_TRAIL_ESCAPE = 
-EXPECTED_GARDEN_ESCAPE = 
-# PROB_HUNT_ESCAPE = 10
+EXPECTED_TRAIL_ESCAPE = 0
+EXPECTED_GARDEN_ESCAPE = 0
+EXPECTED_HUNTING_ESCAPE = 0
 
-# nonburnable fuel types
-NONBURNABLE = [14, 16, 98, 99]
+# nonburnable fuel type
+NONBURNABLE = [14, 15, 16, 98, 99]
 
 # fuel accumulation time
-TIME_TO_MID_FUEL = 20
-TIME_TO_CLIMAX_FUEL = 80
-
-# canopy based succession
-SHRUBLAND_CANOPY = 10
+TIME_TO_MID_FUEL = 10
+TIME_TO_CLIMAX_FUEL = 20
 
 # GUI controls
-INITIATE_RENDER_WAIT_TIME = 10
+INITIATE_RENDER_WAIT_TIME = 20
 SIMULATION_TIMEOUT = 100000
 
 # PONDS
-# carrying capacity is
+# density: number of ponds/km^2
 DENSITY = 0.4
+# minimum distance: used to buffer out from existing ponds to create territories
 MINIMUM_DISTANCE = 1000
 POND_ABANDONMENT_PROBABILITY = 10
 CELL_SIZE = 5
@@ -89,21 +95,28 @@ PER_CAPITA_GARDEN_AREA = 15
 REQUIREMENT_VARIANCE = range(-5, 6)
 ABANDONMENT_PROBABILITY = 5
 
-# TIME_TO_ABANDON = 20
-# SHRUB_SUCCESSION = 36
-# FOREST_SUCCESSION = 80
 
 # COMMUNITY CODES
-GARDEN_ID = 650  # ecosystem id for gardens (will look for this value when processing raster.
-GRASSLAND_ID = 635  # 648  # ecosystem id for abandoned fields.
-SHRUBLAND_ID = 649
+GARDEN_ID = 65000
+TRAIL_ID = 1
+HUNTING_SITE_ID = 1
+SUCCESSIONAL_OLD_FIELD_ID = 64800
+SUCCESSIONAL_GRASSLAND_ID = 63500
+SUCCESSIONAL_SHRUBLAND_ID = 64900
+SUCCESSIONAL_HARDWOOD_FOREST_ID = 73600
 
-# Environment Setting
+ACTIVE_BEAVER_POND_ID = 62201
+SHALLOW_EMERGENT_MARSH_ID = 62400
+SHRUB_SWAMP_ID = 62500
+RED_MAPLE_HARDWOOD_SWAMP = 62900
+ATLANTIC_CEDAR_SWAMP = 70900
+RED_MAPLE_BLACK_GUM_SWAMP = 71000
+RED_MAPLE_SWEETGUM_SWAMP = 71001
 
-if arcpy.CheckExtension("Spatial") == "Available":
-    arcpy.AddMessage("Checking out Spatial")
-    arcpy.CheckOutExtension("Spatial")
-else:
-    arcpy.AddError("Unable to get spatial analyst extension")
-    arcpy.AddMessage(arcpy.GetMessages(0))
-    sys.exit(0)
+
+# Scenario Settings
+
+try:
+    from settings_scenario import *
+except ImportError, e:
+    pass

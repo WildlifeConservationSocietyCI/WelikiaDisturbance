@@ -1,59 +1,53 @@
 import settings as s
+import tree_allometry as ta
 from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo import gdal_array
-import numpy
+import numpy as np
 import linecache
 import arcpy
 import os
 import pandas as pd
+import scipy.stats as ss
 
 
-class Succession():
-
+class Succession(object):
     _ecocommunities_filename = 'ecocommunities_%s.tif'
 
     def __init__(self, year):
 
         self.year = year
 
+        # raster paths
         self.DEM_ascii = os.path.join(s.INPUT_DIR, 'fire', 'spatial', s.REGION, 'dem.asc')
         self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
         self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
+        self.DBH_ascii = os.path.join(s.OUTPUT_DIR, 'dbh.asc')
         self._ecocommunities_filename = 'ecocommunities_%s.tif'
 
+        # arrays
         self.canopy = None
         self.forest_age = None
+        self.dbh = None
         self.ecocommunities = None
-        self.ecocommunities_array = None
-        self.climax_communities = self.raster_to_array(s.ecocommunities)
-        self.soil = None
+        self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
+        self.climax_canopy = None
         self.pond_time_since_disturbance = None
         self.garden_time_since_disturbance = None
-        # self.succession_table = pd.read_csv(os.path.join(s.ROOT_DIR, 'community_table.csv'))
 
+        # header
+        self.shape = None
         self.header = None
         self.header_text = None
-        # self.com_list = [624] #self.succession_table['from_ID']
 
+        # community info table
         self.community_table = pd.read_csv(s.community_table, index_col=0)
 
-
-        # TEST ARRAYS
-        # self.shape = (10, 10)
-        # self.communities = np.empty(shape=self.shape)
-        #
-        # # create random land cover grid
-        # for index, val in np.ndenumerate(self.communities):
-        #     self.communities[index[0]][index[1]] = np.random.choice(self.com_list)
-        # self.communities = np.full(shape=self.shape, fill_value=648, dtype=np.int32)
-        # self.canopy = np.random.randint(30, size=self.shape)
-        # self.forest_age = np.random.randint(30, size=self.shape)
-        # self.climax_communities = np.full(shape=self.shape, fill_value=644)
         self.get_header()
         self.set_ecocommunities()
         self.set_canopy()
         self.set_forest_age()
+        self.set_dbh()
 
     def get_header(self):
         header = [linecache.getline(self.DEM_ascii, i) for i in range(1, 7)]
@@ -71,22 +65,24 @@ class Succession():
 
         self.header = h
         self.header_text = header
+        self.shape = (h['nrows'], h['ncols'])
 
     def raster_to_array(self, raster_path):
         ascii = gdal.Open(raster_path, GA_ReadOnly)
         array = gdal_array.DatasetReadAsArray(ascii)
         return array
 
-    def array_to_ascii(self, out_ascii_path, array):
+    def array_to_ascii(self, out_ascii_path, array, fmt="%4i"):
         """
 
         :rtype: object
         """
+
         out_asc = open(out_ascii_path, 'w')
         for attribute in self.header_text:
             out_asc.write(attribute)
 
-        numpy.savetxt(out_asc, array, fmt="%4i")
+        np.savetxt(out_asc, array, fmt=fmt)
         out_asc.close()
 
     def set_ecocommunities(self):
@@ -99,20 +95,25 @@ class Succession():
         if os.path.isfile(this_year_ecocomms):
             print this_year_ecocomms
             self.ecocommunities = arcpy.Raster(this_year_ecocomms)
-            self.ecocommunities= arcpy.RasterToNumPyArray(self.ecocommunities)
+            self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
 
         elif os.path.isfile(last_year_ecocomms):
             print last_year_ecocomms
             self.ecocommunities = arcpy.Raster(last_year_ecocomms)
-            self.ecocommunities= arcpy.RasterToNumPyArray(self.ecocommunities)
+            self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
 
         else:
             print 'initial run'
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
-            self.ecocommunities= arcpy.RasterToNumPyArray(self.ecocommunities)
-            # self.ecocommunities.save(os.path.join(self.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+            self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
+            # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
     def set_canopy(self):
+        """
+        set canopy for given year if no canopy raster exists, use previous year,
+        else: initialize canopy raster
+        :return:
+        """
 
         if os.path.isfile(self.CANOPY_ascii):
             s.logging.info('Setting canopy')
@@ -120,36 +121,77 @@ class Succession():
 
         else:
             s.logging.info('Assigning initial values to canopy array')
-            self.canopy = numpy.full((self.header['nrows'], self.header['ncols']), fill_value=-9999, dtype=numpy.int32)
+            # if self.ecocommunities_array is None:
+            #     self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
+            self.canopy = np.empty((self.header['nrows'], self.header['ncols']))
 
-            # for key in self.translation_table.keys():
-            for key in self.community_table.index:
-
-                self.canopy[self.ecocommunities == key] = int(self.community_table.ix[key]['max_canopy'])
-                # self.canopy = numpy.where((self.ecocommunities_array == key),
-                #                           max_canopy, self.canopy)
+            for index, row in self.community_table.iterrows():
+                self.canopy[self.ecocommunities == index] = row.max_canopy
 
             self.array_to_ascii(self.CANOPY_ascii, self.canopy)
 
     def set_forest_age(self):
-
+        """
+        set forest age for given year, if no forest age raster exists, use previous year,
+        else: initialize froest age raster
+        :return:
+        """
         if os.path.isfile(self.FOREST_AGE_ascii):
             s.logging.info('Setting forest age')
             self.forest_age = self.raster_to_array(self.FOREST_AGE_ascii)
 
         else:
-
             s.logging.info('Assigning initial values to forest age array')
-            self.forest_age = numpy.full((self.header['nrows'], self.header['ncols']), fill_value=-9999, dtype=numpy.int32)
+            # if self.ecocommunities_array is None:
+            #     self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
 
-            for key in self.community_table.index:
-                self.forest_age[self.ecocommunities == key] = self.community_table.ix[key]['start_age']
-                # self.forest_age = numpy.where((self.ecocommunities_array == key),
-                #                               self.community_table.ix[key]['start_age'], self.forest_age)
+            # create truncated normal distrbution for age
+            lower = s.MINIMUM_FOREST_AGE
+            upper = s.UPPER
+            mu = s.MEAN_INITIAL_FOREST_AGE
+            sigma = s.AGE_VAR
+
+            n = ss.truncnorm((lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma)
+
+            # populate an array with ages from distribution
+            tn = n.rvs(self.shape).astype(int)
+
+            self.forest_age = np.empty(shape=self.shape, dtype=int)
+
+            for index, row in self.community_table.iterrows():
+                if row.forest == 1:
+                    self.forest_age = np.where(self.ecocommunities == index, tn, self.forest_age)
 
             self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
+
+    def set_dbh(self):
+        """
+
+        :return:
+        """
+        if os.path.isfile(self.DBH_ascii):
+            s.logging.info('Setting dbh')
+            self.dbh = self.raster_to_array(self.DBH_ascii)
+
+        else:
+            s.logging.info('Assigning initial values to dbh array')
+            self.dbh = np.zeros(shape=self.shape, dtype=np.float16)
+            # self.dbh = np.empty(shape=self.shape, dtype=np.float16)
+            age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'dbh_lookup.csv'), index_col=0)
+
+            for index, row in self.community_table.iterrows():
+
+                if row.forest == 1:
+                    age = np.ma.masked_where(self.ecocommunities != index, self.forest_age)
+                    print index
+                    for a in np.ma.compressed(np.unique(age)):
+                        print a
+                        d = age_dbh_lookup.ix[int(a)][str(index)]
+                        self.dbh[(self.ecocommunities == index) & (self.forest_age == a)] = d
+
+            self.array_to_ascii(self.DBH_ascii, self.dbh, fmt="%2.4f")
 
     def grow(self):
         """
@@ -160,16 +202,38 @@ class Succession():
         # TODO: create single table that contains the fuel, succession, and canopy info for all communities
 
         for index, row in self.community_table.iterrows():
+                canopy_growth = int(row['canopy_growth'])
+                max_canopy = int(row['max_canopy'])
 
-            canopy_growth = row['canopy_growth']
+                # increment age of all communities that have trees all upland communities
 
-            # increment forest age and canopy
-            if row['forest'] == 1:
-                self.forest_age[self.ecocommunities == index] += 1
+                if row.forest == 1:
 
-            # increment canopy
-            self.canopy[(self.ecocommunities == index) &
-                        (self.canopy < 100)] += int(canopy_growth)
+                    # increment canopy
+                    self.canopy[(self.ecocommunities == index) & (self.canopy < max_canopy)] += canopy_growth
+
+                else:
+                    # increment non forest canopy
+                    self.canopy[(self.ecocommunities == index)] += canopy_growth
+
+                print row.dbh_model
+                if max_canopy > 0:
+                    # increment forest age
+                    self.forest_age[self.ecocommunities == index] += 1
+
+                    # increment dbh
+                    print "%s %s | max canopy: %s" % (index, row.Name, max_canopy)
+                    self.dbh[(self.ecocommunities == index) &
+                             (self.forest_age == 1)
+                             & (self.dbh == 0)] = 0.5
+
+                    dbh_model = int(row.dbh_model)
+                    site_index = int(row.site_index)
+
+                    d_grow = ta.DGROW(species=dbh_model, SI=site_index, DBH=self.dbh)
+
+                    self.dbh = np.where(self.ecocommunities == index, self.dbh + d_grow, self.dbh)
+
 
     def transition(self):
         """
@@ -178,46 +242,16 @@ class Succession():
         """
         for index, row in self.community_table.iterrows():
 
-            try:
-                to_key = row['to_ID']
-            except:
-                print 'to initial'
-
-            # SUCCESSIONAL GRASSLAND
-            if index == 635:
+            # CANOPY BASED SUCCESSION
+            if row.succession_code == 1:
                 self.ecocommunities[(self.ecocommunities == index) &
-                                 (self.canopy > row['max_canopy'])] = to_key
-            # SUCCESSIONAL OLD FIELD
-            if index == 648:
-                self.ecocommunities[(self.ecocommunities == index) &
-                                 (self.canopy > row['max_canopy'])] = to_key
+                                    (self.canopy > row['max_canopy'])] = row.to_ID
 
-            # SUCCESSIONAL SHRUBLAND
-            if index == 649:
-                self.ecocommunities[(self.ecocommunities == index) &
-                                 (self.canopy > row['max_canopy'])] = to_key
-
-            # SUCCESSIONAL HARDWOOD FOREST
-            if index == 736:
-                self.ecocommunities = numpy.where((self.ecocommunities == index) &
-                                               (self.forest_age > row['age_out']),
-                                               self.climax_communities, self.ecocommunities)
-
-            # SHALLOW EMERGENT MARSH
-            if index == 624:
-                self.ecocommunities[(self.ecocommunities == index) &
-                                 (self.canopy > row['max_canopy'])] = to_key
-
-            # SHRUB SWAMP
-            if index == 625:
-                self.ecocommunities[(self.ecocommunities == index) &
-                                 (self.canopy > row['max_canopy'])] = to_key
-
-            # RED MAPLE HARDWOOD SWAMP
-            if index == 629:
-                self.ecocommunities = numpy.where((self.ecocommunities == index) &
-                                               (self.forest_age > row['age_out']),
-                                                self.climax_communities, self.ecocommunities)
+            # AGE BASED SUCCESSION
+            elif row.succession_code == 2:
+                self.ecocommunities = np.where((self.ecocommunities == index) &
+                                                  (self.forest_age > row['age_out']),
+                                                  self.climax_communities, self.ecocommunities)
 
     def run_succession(self):
         """
@@ -227,8 +261,6 @@ class Succession():
 
         self.grow()
         self.transition()
-
-        # self.array_to_ascii(array=self.ecocommunities, out_ascii_path=os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
                                               lower_left_corner=arcpy.Point(self.header['xllcorner'],
@@ -240,19 +272,20 @@ class Succession():
 
         self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
         self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
-
-# s1 = Succession(1508)
-# print s1.succession_table.head()
-# s1.run_succession()
-#
-# for index, row in s1.succession_table.iterrows():
-#     key = row['from_ID']
-#     print key, type(key)
-#     print row['max_canopy']
-#     print row['to_ID'], type(row['to_ID'])
+        self.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, fmt='%10.4f')
+    # s1 = Succession(1508)
+    # print s1.succession_table.head()
+    # s1.run_succession()
+    #
+    # for index, row in s1.succession_table.iterrows():
+    #     key = row['from_ID']
+    #     print key, type(key)
+    #     print row['max_canopy']
+    #     print row['to_ID'], type(row['to_ID'])
     # if key == 635:
     # self.communities[(self.communities == key) &
     #                  (self.canopy > row['max_canopy'])] = row['to_ID']
+
 # print 'communities \n'
 # print s1.communities
 # print 'canopy \n'

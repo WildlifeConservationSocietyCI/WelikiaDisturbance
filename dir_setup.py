@@ -1,12 +1,12 @@
 import os
 import arcpy
 import shutil
+import settings as s
 
-ROOT_DIR = r'F:\_data\Welikia\WelikiaDisturbance'
-INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs')
+INPUT_DIR = os.path.join(s.ROOT_DIR, 'inputs')
+OUTPUT_DIR = os.path.join(s.ROOT_DIR, 'outputs')
 
-REGION_BOUNDARIES = os.path.join(ROOT_DIR, '_inputs_full_extent', 'nybbwi.shp')
+REGION_BOUNDARIES = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'region_boundaries', 'nybbwi.shp')
 
 regions = []
 
@@ -38,17 +38,18 @@ mkdir(os.path.join(INPUT_DIR, 'garden', 'tabular'))
 
 # create output directory
 mkdir(OUTPUT_DIR)
-
-for i in disturbance_types:
-    mkdir(os.path.join(OUTPUT_DIR, '%s' % i))
-    if i == 'fire':
-        mkdir(os.path.join(OUTPUT_DIR, '%s' % i, 'burn_rasters'))
+for region in regions:
+    mkdir(os.path.join(OUTPUT_DIR, '%s' % region))
+    for i in disturbance_types:
+        mkdir(os.path.join(OUTPUT_DIR, '%s' % region,'%s' % i))
+        if i == 'fire':
+            mkdir(os.path.join(OUTPUT_DIR, '%s' % region, '%s' % i, 'burn_rasters'))
 
 for region in regions:
     mkdir(os.path.join(INPUT_DIR, 'fire', 'spatial', '%s' % region))
     mkdir(os.path.join(INPUT_DIR, 'garden', 'spatial', '%s' % region))
     mkdir(os.path.join(INPUT_DIR, 'pond', '%s' % region))
 
-mkdir(os.path.join(ROOT_DIR, 'temp'))
+mkdir(os.path.join(s.ROOT_DIR, 'temp'))
 
 # move files from full extent inputs
