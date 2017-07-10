@@ -4,6 +4,7 @@ from settings import arcpy
 from settings import os
 import numpy as np
 import logging
+import utils
 
 
 class PondDisturbance(d.Disturbance):
@@ -344,7 +345,7 @@ class PondDisturbance(d.Disturbance):
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
         self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
-        self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
-        self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
-        self.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, fmt="%2.4f")
+        utils.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii, header=self.header_text)
+        utils.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii, header=self.header_text)
+        utils.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, header=self.header_text, fmt="%2.4f")
         self.set_pond_area()

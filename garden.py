@@ -4,7 +4,7 @@ import disturbance as d
 import arcpy
 import numpy
 import random
-
+import utils
 
 
 class GardenDisturbance(d.Disturbance):
@@ -351,8 +351,6 @@ class GardenDisturbance(d.Disturbance):
 
                 self.set_garden_center()
 
-
-
                 # self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden.tif'))
 
                 if self.garden is not None:
@@ -370,10 +368,8 @@ class GardenDisturbance(d.Disturbance):
                     self.dbh[e == s.GARDEN_ID] = 0
                     # self.dbh[(e == s.SUCCESSIONAL_OLD_FIELD_ID) & (self.forest_age == 0)] = 0.5
 
-
                     self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities == s.GARDEN_ID, 0,
                                                                self.time_since_disturbance)
-
             arcpy.env.extent = s.ecocommunities
 
         if arcpy.Exists((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))):
@@ -383,8 +379,8 @@ class GardenDisturbance(d.Disturbance):
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
-        self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
-        self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
-        self.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, fmt="%2.4f")
+        utils.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii, header=self.header_text)
+        utils.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii, header=self.header_text)
+        utils.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, header=self.header_text, fmt="%2.4f")
         self.calculate_garden_area()
         print('garden area: %s' % self.new_garden_area)

@@ -2,6 +2,7 @@ import os
 import arcpy
 import numpy as np
 import settings as s
+import utils
 from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo import gdal_array
@@ -117,7 +118,7 @@ class Disturbance(object):
 
         if os.path.isfile(self.CANOPY_ascii):
             s.logging.info('Setting canopy')
-            self.canopy = self.raster_to_array(self.CANOPY_ascii)
+            self.canopy = utils.raster_to_array(self.CANOPY_ascii)
 
         else:
             s.logging.info('Assigning initial values to canopy array')
@@ -142,7 +143,7 @@ class Disturbance(object):
                 # elif row.max_canopy == 0:
                 #     self.canopy[self.ecocommunities_array == index] = row.max_canopy
 
-            self.array_to_ascii(self.CANOPY_ascii, self.canopy)
+            utils.array_to_ascii(self.CANOPY_ascii, self.canopy, header=self.header)
 
     def set_forest_age(self):
         """
@@ -152,7 +153,7 @@ class Disturbance(object):
         """
         if os.path.isfile(self.FOREST_AGE_ascii):
             s.logging.info('Setting forest age')
-            self.forest_age = self.raster_to_array(self.FOREST_AGE_ascii)
+            self.forest_age = utils.raster_to_array(self.FOREST_AGE_ascii)
 
         else:
             s.logging.info('Assigning initial values to forest age array')
@@ -178,7 +179,7 @@ class Disturbance(object):
                 if row.forest == 1:
                     self.forest_age = np.where(self.ecocommunities_array == index, tn, self.forest_age)
 
-            self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
+            utils.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age, header=self.header_text)
 
     def set_dbh(self):
         """
@@ -187,12 +188,12 @@ class Disturbance(object):
         """
         if os.path.isfile(self.DBH_ascii):
             s.logging.info('Setting dbh')
-            self.dbh = self.raster_to_array(self.DBH_ascii)
+            self.dbh = utils.raster_to_array(self.DBH_ascii)
 
         else:
             s.logging.info('Assigning initial values to dbh array')
             self.dbh = np.empty(shape=self.shape, dtype=np.float16)
-            age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'dbh_lookup.csv'), index_col=0)
+            age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'tables', 'dbh_lookup.csv'), index_col=0)
 
             for index, row in self.community_table.iterrows():
                 print("forest: %s" % row.forest)
@@ -206,17 +207,17 @@ class Disturbance(object):
                         d = age_dbh_lookup.ix[int(a)][str(index)]
                         self.dbh[(self.ecocommunities_array == index) & (self.forest_age == a)] = d
 
-            self.array_to_ascii(self.DBH_ascii, self.dbh, fmt="%2.4f")
+            utils.array_to_ascii(self.DBH_ascii, self.dbh, header=self.header_text, fmt="%2.4f")
 
     def set_upland_area(self):
         if type(self.ecocommunities) is np.ndarray:
             unique = np.unique(self.ecocommunities, return_counts=True)
         else:
             unique = np.unique(arcpy.RasterToNumPyArray(self.ecocommunities), return_counts=True)
-        hist = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
+        area_hist = dict(zip(unique[0], (unique[1] * (s.CELL_SIZE ** 2) / 1000000.0)))
         for index, row in self.community_table.iterrows():
-            if row.upland == 1 and index in hist:
-                self.upland_area += hist[index]
+            if row.upland == 1 and index in area_hist:
+                self.upland_area += area_hist[index]
 
 
 def hist(a):

@@ -9,6 +9,7 @@ import datetime
 import random
 import os
 import shutil
+import utils
 from wmi import WMI
 
 
@@ -273,20 +274,20 @@ class FireDisturbance(d.Disturbance):
 
         if os.path.isfile(self.TIME_SINCE_DISTURBANCE_ascii):
             # s.logging.info('Setting time since disturbance')
-            self.time_since_disturbance = self.raster_to_array(self.TIME_SINCE_DISTURBANCE_ascii)
+            self.time_since_disturbance = utils.raster_to_array(self.TIME_SINCE_DISTURBANCE_ascii)
 
         else:
             # s.logging.info('Assigning initial values to time since disturbance array')
             self.time_since_disturbance = np.empty((self.header['nrows'], self.header['ncols']))
             self.time_since_disturbance.astype(np.int32)
             self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
-            self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
+            utils.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance, header=self.header_text)
 
         self.get_memory()
         # s.logging.info('memory usage: %r Mb' % self.memory)
 
     def get_ignition(self, in_ascii):
-        array = self.raster_to_array(in_ascii)
+        array = utils.raster_to_array(in_ascii)
         for index, cell_value in np.ndenumerate(array):
             if cell_value == 1:
                 if self.fuel[index[0]][index[1]] not in s.NONBURNABLE:
@@ -715,7 +716,7 @@ class FireDisturbance(d.Disturbance):
                          (self.forest_age == 0) &
                          (self.flame_length != 0)] = 0.5
 
-            self.array_to_ascii(self.DBH_ascii, self.dbh, fmt="%2.4f")
+            utils.array_to_ascii(self.DBH_ascii, self.dbh, header=self.header_text, fmt="%2.4f")
 
     def run_year(self):
 
@@ -735,7 +736,7 @@ class FireDisturbance(d.Disturbance):
         self.set_time_since_disturbance()
         self.set_fuel()
 
-        self.array_to_ascii(self.FUEL_ascii, self.fuel)
+        utils.array_to_ascii(self.FUEL_ascii, self.fuel, self.header_text)
 
         initialize_time = time.time()
         s.logging.info('initialize run time: %s' % (initialize_time - start_time))
@@ -749,7 +750,7 @@ class FireDisturbance(d.Disturbance):
         if number_of_trail_ignitions > 0:
 
             # Get list of potential trail fire sites
-            trail_array = self.raster_to_array(self.TRAIL_ascii)
+            trail_array = utils.raster_to_array(self.TRAIL_ascii)
 
             rows, cols = np.where((trail_array == s.TRAIL_ID) &
                                   (self.time_since_disturbance >= s.TRAIL_OVERGROWN_YRS) &
@@ -792,7 +793,7 @@ class FireDisturbance(d.Disturbance):
         if number_of_hunting_ignitions > 0:
 
             # Get list of potential hunting fire sites
-            hunting_sites = self.raster_to_array(self.HUNTING_ascii)
+            hunting_sites = utils.raster_to_array(self.HUNTING_ascii)
             rows, cols = np.where((hunting_sites == s.HUNTING_SITE_ID) &
                                   (self.fuel != 14) &
                                   (self.fuel != 16) &
@@ -857,7 +858,7 @@ class FireDisturbance(d.Disturbance):
 
             # Create flame length array
             if os.path.exists(self.FLAME_LENGTH_ascii):
-                self.flame_length = self.raster_to_array(self.FLAME_LENGTH_ascii)
+                self.flame_length = utils.raster_to_array(self.FLAME_LENGTH_ascii)
                 self.flame_length[self.flame_length == -1] = 0
                 self.area_burned = np.count_nonzero(self.flame_length)
 
@@ -887,11 +888,11 @@ class FireDisturbance(d.Disturbance):
         self.set_fuel()
 
         # s.logging.info('saving arrays as ascii')
-        self.array_to_ascii(self.FUEL_ascii, self.fuel)
-        self.array_to_ascii(self.CANOPY_ascii, self.canopy)
-        self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
-        self.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance)
-        self.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities)
+        utils.array_to_ascii(self.FUEL_ascii, self.fuel, header=self.header_text)
+        utils.array_to_ascii(self.CANOPY_ascii, self.canopy, header=self.header_text)
+        utils.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age, header=self.header_text)
+        utils.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance, header=self.header_text)
+        utils.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities, header=self.header_text)
 
         # save the updated community array as a TIF raster to the shared output directory
         out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,

@@ -130,7 +130,7 @@ def array_to_raster(array, out_raster, geotransform, projection, driver='GTiff',
     output_raster.GetRasterBand(1).WriteArray(array)
 
 
-def ndarray_to_ascii(out_ascii_path, array, header, fmt="%4i"):
+def array_to_ascii(out_ascii_path, array, header, fmt="%4i"):
     """
     write numpy array to ascii raster
     :rtype: object
