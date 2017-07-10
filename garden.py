@@ -169,29 +169,33 @@ class GardenDisturbance(d.Disturbance):
         :return:
         """
 
-        maxsuit = arcpy.sa.Con(self.local_suitability == self.local_suitability.maximum, self.local_suitability)
+        if self.local_suitability.maximum is None:
+            self.garden = None
 
-        if s.DEBUG_MODE:
-            maxsuit.save(os.path.join(self.OUTPUT_DIR, 'maxsuit.tif'))
+        else:
+            maxsuit = arcpy.sa.Con(self.local_suitability == self.local_suitability.maximum, self.local_suitability)
 
-        # Create random raster to associate with most suitable areas to randomly select garden centroid cell
-        self.randrast = arcpy.sa.CreateRandomRaster(345, self.local_suitability, self.local_suitability)
+            if s.DEBUG_MODE:
+                maxsuit.save(os.path.join(self.OUTPUT_DIR, 'maxsuit.tif'))
 
-        if s.DEBUG_MODE:
-            self.randrast.save(os.path.join(self.OUTPUT_DIR, 'randrast.tif'))
+            # Create random raster to associate with most suitable areas to randomly select garden centroid cell
+            self.randrast = arcpy.sa.CreateRandomRaster(345, self.local_suitability, self.local_suitability)
 
-        randrastclip = arcpy.sa.Con(maxsuit, self.randrast)
+            if s.DEBUG_MODE:
+                self.randrast.save(os.path.join(self.OUTPUT_DIR, 'randrast.tif'))
 
-        if s.DEBUG_MODE:
-            randrastclip.save(os.path.join(self.OUTPUT_DIR, 'randrastclip.tif'))
+            randrastclip = arcpy.sa.Con(maxsuit, self.randrast)
 
-        # print("selecting garden center")
-        gardencenter = arcpy.sa.Con(randrastclip == randrastclip.maximum, s.GARDEN_ID)
+            if s.DEBUG_MODE:
+                randrastclip.save(os.path.join(self.OUTPUT_DIR, 'randrastclip.tif'))
 
-        if s.DEBUG_MODE:
-            gardencenter.save(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
+            # print("selecting garden center")
+            gardencenter = arcpy.sa.Con(randrastclip == randrastclip.maximum, s.GARDEN_ID)
 
-        self.garden = gardencenter
+            if s.DEBUG_MODE:
+                gardencenter.save(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
+
+            self.garden = gardencenter
 
     def points_to_coordinates(self):
         """
@@ -347,13 +351,15 @@ class GardenDisturbance(d.Disturbance):
 
                 self.set_garden_center()
 
-                self.create_garden()
 
-                arcpy.env.extent = s.ecocommunities
 
                 # self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden.tif'))
 
                 if self.garden is not None:
+                    self.create_garden()
+
+                    arcpy.env.extent = s.ecocommunities
+
                     self.garden = arcpy.sa.Plus(self.garden, 0)
                     self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, self.garden,
                                                        self.ecocommunities)
