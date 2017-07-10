@@ -9,6 +9,7 @@ import arcpy
 import os
 import pandas as pd
 import scipy.stats as ss
+import utils
 
 
 class Succession(object):
@@ -30,7 +31,7 @@ class Succession(object):
         self.forest_age = None
         self.dbh = None
         self.ecocommunities = None
-        self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities, nodata_to_value=-9999)
+        self.climax_communities = utils.raster_to_array(s.ecocommunities, nodata_to_value=-9999)
         self.climax_canopy = None
         self.pond_time_since_disturbance = None
         self.garden_time_since_disturbance = None
@@ -43,47 +44,11 @@ class Succession(object):
         # community info table
         self.community_table = pd.read_csv(s.community_table, index_col=0)
 
-        self.get_header()
+        self.header, self.header_text, self.shape = utils.get_ascii_header(self.DEM_ascii)
         self.set_ecocommunities()
         self.set_canopy()
         self.set_forest_age()
         self.set_dbh()
-
-    def get_header(self):
-        header = [linecache.getline(self.DEM_ascii, i) for i in range(1, 7)]
-        h = {}
-
-        for line in header:
-            attribute, value = line.split()
-            h[attribute] = value
-
-        h['ncols'] = int(h['ncols'])
-        h['nrows'] = int(h['nrows'])
-        h['cellsize'] = int(h['cellsize'])
-        h['xllcorner'] = float(h['xllcorner'])
-        h['yllcorner'] = float(h['yllcorner'])
-
-        self.header = h
-        self.header_text = header
-        self.shape = (h['nrows'], h['ncols'])
-
-    def raster_to_array(self, raster_path):
-        ascii = gdal.Open(raster_path, GA_ReadOnly)
-        array = gdal_array.DatasetReadAsArray(ascii)
-        return array
-
-    def array_to_ascii(self, out_ascii_path, array, fmt="%4i"):
-        """
-
-        :rtype: object
-        """
-
-        out_asc = open(out_ascii_path, 'w')
-        for attribute in self.header_text:
-            out_asc.write(attribute)
-
-        np.savetxt(out_asc, array, fmt=fmt)
-        out_asc.close()
 
     def set_ecocommunities(self):
         """
@@ -117,7 +82,7 @@ class Succession(object):
 
         if os.path.isfile(self.CANOPY_ascii):
             s.logging.info('Setting canopy')
-            self.canopy = self.raster_to_array(self.CANOPY_ascii)
+            self.canopy = utils.raster_to_array(self.CANOPY_ascii)
 
         else:
             s.logging.info('Assigning initial values to canopy array')
@@ -129,7 +94,7 @@ class Succession(object):
             for index, row in self.community_table.iterrows():
                 self.canopy[self.ecocommunities == index] = row.max_canopy
 
-            self.array_to_ascii(self.CANOPY_ascii, self.canopy)
+            utils.array_to_ascii(self.CANOPY_ascii, self.canopy, header=self.header_text)
 
     def set_forest_age(self):
         """
@@ -139,7 +104,7 @@ class Succession(object):
         """
         if os.path.isfile(self.FOREST_AGE_ascii):
             s.logging.info('Setting forest age')
-            self.forest_age = self.raster_to_array(self.FOREST_AGE_ascii)
+            self.forest_age = utils.raster_to_array(self.FOREST_AGE_ascii)
 
         else:
             s.logging.info('Assigning initial values to forest age array')
@@ -164,7 +129,7 @@ class Succession(object):
                 if row.forest == 1:
                     self.forest_age = np.where(self.ecocommunities == index, tn, self.forest_age)
 
-            self.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age)
+            utils.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age, header=self.header_text)
 
     def set_dbh(self):
         """
@@ -173,7 +138,7 @@ class Succession(object):
         """
         if os.path.isfile(self.DBH_ascii):
             s.logging.info('Setting dbh')
-            self.dbh = self.raster_to_array(self.DBH_ascii)
+            self.dbh = utils.raster_to_array(self.DBH_ascii)
 
         else:
             s.logging.info('Assigning initial values to dbh array')
@@ -191,7 +156,7 @@ class Succession(object):
                         d = age_dbh_lookup.ix[int(a)][str(index)]
                         self.dbh[(self.ecocommunities == index) & (self.forest_age == a)] = d
 
-            self.array_to_ascii(self.DBH_ascii, self.dbh, fmt="%2.4f")
+            utils.array_to_ascii(self.DBH_ascii, self.dbh, header=self.header_text, fmt="%2.4f")
 
     def grow(self):
         """
@@ -234,7 +199,6 @@ class Succession(object):
 
                     self.dbh = np.where(self.ecocommunities == index, self.dbh + d_grow, self.dbh)
 
-
     def transition(self):
         """
         for each community type, transition the community to new state if conditions are met
@@ -270,9 +234,9 @@ class Succession(object):
 
         out_raster.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
-        self.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii)
-        self.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii)
-        self.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, fmt='%10.4f')
+        utils.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii, header=self.header_text)
+        utils.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii, header=self.header_text)
+        utils.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, header=self.header_text, fmt='%10.4f')
     # s1 = Succession(1508)
     # print s1.succession_table.head()
     # s1.run_succession()

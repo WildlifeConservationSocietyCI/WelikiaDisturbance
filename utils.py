@@ -43,10 +43,10 @@ def get_ascii_header(ascii_raster):
     :return:
     """
 
-    header = [linecache.getline(ascii_raster, i) for i in range(1, 7)]
+    header_text = [linecache.getline(ascii_raster, i) for i in range(1, 7)]
     header = {}
 
-    for line in header:
+    for line in header_text:
         attribute, value = line.split()
         header[attribute] = value
 
@@ -56,7 +56,9 @@ def get_ascii_header(ascii_raster):
     header['xllcorner'] = float(header['xllcorner'])
     header['yllcorner'] = float(header['yllcorner'])
 
-    return header
+    shape = (header['nrows'], header['ncols'])
+
+    return header, header_text, shape
 
 
 def get_geo_info(FileName):

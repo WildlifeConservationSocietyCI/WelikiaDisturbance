@@ -37,55 +37,11 @@ class Disturbance(object):
 
         self.shape = None
         self.get_header()
+        self.header, self.header_text, self.shape = utils.get_ascii_header(self.DEM_ascii)
         self.set_ecocommunities()
         self.set_canopy()
         self.set_forest_age()
         self.set_dbh()
-
-    def get_header(self):
-        """
-        store raster header info, used to save np arrays out as ascii rasters
-        :return:
-        """
-        header = [linecache.getline(self.DEM_ascii, i) for i in range(1, 7)]
-        h = {}
-
-        for line in header:
-            attribute, value = line.split()
-            h[attribute] = value
-
-        h['ncols'] = int(h['ncols'])
-        h['nrows'] = int(h['nrows'])
-        h['cellsize'] = int(h['cellsize'])
-        h['xllcorner'] = float(h['xllcorner'])
-        h['yllcorner'] = float(h['yllcorner'])
-
-        self.header = h
-        self.header_text = header
-        self.shape = (h['nrows'], h['ncols'])
-
-    def raster_to_array(self, in_raster):
-        """
-        convert ascii grid in to numpy array
-        :type in_ascii: object
-        """
-        # print in_ascii
-        ascii = gdal.Open(in_raster, GA_ReadOnly)
-        array = gdal_array.DatasetReadAsArray(ascii)
-
-        return array
-
-    def array_to_ascii(self, out_ascii_path, array, fmt="%4i"):
-        """
-
-        :rtype: object
-        """
-        out_asc = open(out_ascii_path, 'w')
-        for attribute in self.header_text:
-            out_asc.write(attribute)
-
-        np.savetxt(out_asc, array, fmt=fmt)
-        out_asc.close()
 
     def set_ecocommunities(self):
         """
