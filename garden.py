@@ -20,7 +20,7 @@ class GardenDisturbance(d.Disturbance):
     CLIMAX_COMMUNITIES = s.ecocommunities
     SLOPE_SUITABILITY = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'slope_suitability.tif')
     PROXIMITY_SUITABILITY = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'proximity_suitability.tif')
-    COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR, TABULAR, 'lc_reclass.txt')
+    COMMUNITY_RECLASS_TABLE = os.path.join(s.ROOT_DIR, 'tables', 'welikia_lc_reclass_temp.txt')
     SITES = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'garden_sites.shp')
 
     def __init__(self, year):
