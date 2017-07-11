@@ -23,7 +23,7 @@ OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
 
 ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities_int.tif' % REGION)
-community_table = os.path.join(ROOT_DIR, 'welikia_community_table_int.csv')
+community_table = os.path.join(ROOT_DIR, 'tables', 'welikia_community_table_int.csv')
 
 
 #

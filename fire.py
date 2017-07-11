@@ -730,7 +730,7 @@ class FireDisturbance(d.Disturbance):
         self.select_climate_records()
         self.select_duration()
         self.write_wnd()
-        self.get_header()
+        self.header, self.header_text, self.shape = utils.get_ascii_header(self.DEM_ascii)
 
         # set tracking rasters
         self.set_time_since_disturbance()

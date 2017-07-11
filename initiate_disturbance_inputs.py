@@ -3,6 +3,17 @@ import arcpy
 import os
 import logging
 from arcpy import env
+import sys
+
+# ArcGIS Extensions
+
+if arcpy.CheckExtension("Spatial") == "Available":
+    arcpy.AddMessage("Checking out Spatial")
+    arcpy.CheckOutExtension("Spatial")
+else:
+    arcpy.AddError("Unable to get spatial analyst extension")
+    arcpy.AddMessage(arcpy.GetMessages(0))
+    sys.exit(0)
 
 # Spatial Inputs
 
@@ -18,7 +29,7 @@ SITES = os.path.join(INPUT_DIR, 'garden_sites', 'GARDEN_SITES.shp')
 BUFFER = os.path.join(INPUT_DIR, 'garden_sites', 'SITE_BUFFER.shp')
 TRAILS = os.path.join(INPUT_DIR, 'trails', 'fire_trails.asc')
 HUNTING = os.path.join(INPUT_DIR, 'hunting_sites', 'hunting_sites.asc')
-REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'region_boundaries', 'nybbwi.shp')
+REGION_BOUNDARIES = os.path.join(INPUT_DIR, 'region_boundaries', 'disturbance_regions.shp')
 
 # Tabular Inputs
 PROXIMITY_RECLASS = os.path.join(s.INPUT_DIR, 'garden', 'tabular', 'proximity_reclass.txt')

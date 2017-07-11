@@ -69,8 +69,8 @@ The extent and effect of human caused fires on the landscape prior to European s
 
 | source | no human fire | Russell (1983) | Day (1953) |
 |--------|---------------|----------------|------------|
-| trail  |             0 |        0.00222 |    0.01778 |
-| garden |             0 |        0.00028 |    0.00222 |
+| trail  |             0 |            ??? |        ??? |
+| garden |             0 |            ??? |        ??? |
 
 ## Critical Rainfall
 
@@ -86,9 +86,9 @@ In the model, fire spread was stopped when it encountered one of the following c
 | Bark Thickness | $BT = vsp * DBH$         | [@reinhardt_fire_2015]  |
 
 
-*Communities to Bark Thickness* 
+### Communities to Bark Thickness
 
-Bark thickness multipliers for each community are based on the dominant tree type, for communities with co-dominate species we calculated average bark thickness [@reinhardt_fire_2015].
+Bark thickness multipliers for each community are based on the dominant tree type (Edinger et al. 2014), for communities with co-dominate species we calculated average bark thickness [@reinhardt_fire_2015].
 
 | community                            | dominant tree species                     | vsp scaler  |
 | ------------------------------------ | ----------------------------------------- | ----------: |
@@ -180,7 +180,7 @@ The freshwater wetland succession sequence has four stages[@allen_habitat_1983; 
 
 $$\mbox{active beaver pond} \rightarrow \mbox{emergent marsh} \rightarrow \mbox{shrub swamp} \rightarrow \mbox{forested wetland}$$
 
-Conversion from non-wetland community to active pond can occur along any perennial streams where the gradient of the stream is less than 15 degrees. Due to the temporal scale of our study (200 yrs), forested wetlands are treated as a terminal community in this series [@_ecology_1993]. This rule defines beaver caused disturbance as a unidirectional change in successional trajectory. A non-wetland communities can be converted into a wetland type but this conversion cannot be reversed.   
+Conversion from non-wetland community to active pond can occur along any perennial streams where the gradient of the stream is less than 8 degrees [@allen_habitat_1983]. Due to the temporal scale of our study (200 yrs), forested wetlands are treated as a terminal community in this series [@_ecology_1993]. This rule defines beaver caused disturbance as a one directional change in successional trajectory. A non-wetland communities can be converted into a wetland type but this conversion cannot be reversed.
 
 ## Model Parameters
 

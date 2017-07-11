@@ -6,7 +6,7 @@ import settings as s
 INPUT_DIR = os.path.join(s.ROOT_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(s.ROOT_DIR, 'outputs')
 
-REGION_BOUNDARIES = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'region_boundaries', 'nybbwi.shp')
+REGION_BOUNDARIES = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'region_boundaries', 'disturbance_regions.shp')
 
 regions = []
 

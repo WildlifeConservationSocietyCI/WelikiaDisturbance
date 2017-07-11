@@ -19,7 +19,7 @@ if arcpy.CheckExtension("Spatial") == "Available":
     arcpy.AddMessage("Checking out Spatial")
     arcpy.CheckOutExtension("Spatial")
 else:
-    arcpy.AddError("Unable to get spatial analyst extension")
+    arcpy.AddError("Unable to checkout spatial analyst extension")
     arcpy.AddMessage(arcpy.GetMessages(0))
     sys.exit(0)
 

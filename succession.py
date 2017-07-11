@@ -111,7 +111,6 @@ class Succession(object):
             # if self.ecocommunities_array is None:
             #     self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
-
             # create truncated normal distrbution for age
             lower = s.MINIMUM_FOREST_AGE
             upper = s.UPPER

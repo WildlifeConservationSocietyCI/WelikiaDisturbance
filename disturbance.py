@@ -36,7 +36,7 @@ class Disturbance(object):
         self.upland_area = 0
 
         self.shape = None
-        self.get_header()
+        # self.get_header()
         self.header, self.header_text, self.shape = utils.get_ascii_header(self.DEM_ascii)
         self.set_ecocommunities()
         self.set_canopy()
@@ -99,7 +99,7 @@ class Disturbance(object):
                 # elif row.max_canopy == 0:
                 #     self.canopy[self.ecocommunities_array == index] = row.max_canopy
 
-            utils.array_to_ascii(self.CANOPY_ascii, self.canopy, header=self.header)
+            utils.array_to_ascii(self.CANOPY_ascii, self.canopy, header=self.header_text)
 
     def set_forest_age(self):
         """
