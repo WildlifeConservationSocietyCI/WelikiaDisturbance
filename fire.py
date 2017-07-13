@@ -707,17 +707,17 @@ class FireDisturbance(d.Disturbance):
                                     (self.canopy < self.community_table.ix[
                                         s.SHALLOW_EMERGENT_MARSH_ID].max_canopy)] = s.SHALLOW_EMERGENT_MARSH_ID
 
-            # Reset forest age for grassland community types
-            l = [s.SHALLOW_EMERGENT_MARSH_ID, s.SUCCESSIONAL_GRASSLAND_ID]
-            for i in l:
-                self.forest_age[(self.ecocommunities == i) & (self.flame_length != 0)] = 0
+        # Reset forest age for grassland community types
+        l = [s.SHALLOW_EMERGENT_MARSH_ID, s.SUCCESSIONAL_GRASSLAND_ID]
+        for i in l:
+            self.forest_age[(self.ecocommunities == i) & (self.flame_length != 0)] = 0
 
-                # Reset dbh in cells that have been converted to grassland
-                self.dbh[(self.ecocommunities == i) &
-                         (self.forest_age == 0) &
-                         (self.flame_length != 0)] = 0.5
+            # Reset dbh in cells that have been converted to grassland
+            self.dbh[(self.ecocommunities == i) &
+                     (self.forest_age == 0) &
+                     (self.flame_length != 0)] = 0.5
 
-            utils.array_to_ascii(self.DBH_ascii, self.dbh, header=self.header_text, fmt="%2.4f")
+        utils.array_to_ascii(self.DBH_ascii, self.dbh, header=self.header_text, fmt="%2.4f")
 
     def run_year(self):
 
@@ -738,7 +738,6 @@ class FireDisturbance(d.Disturbance):
 
         # set tracking rasters
         self.set_time_since_disturbance()
-        self.set_fuel()
 
 
         initialize_time = time.time()
@@ -751,6 +750,8 @@ class FireDisturbance(d.Disturbance):
 
         number_of_trail_ignitions = np.random.poisson(lam=scaled_expected_trail_escape)
         if number_of_trail_ignitions > 0:
+
+            self.set_fuel()
 
             # down sample fuel and canopy for FARSITE
 

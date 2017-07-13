@@ -17,7 +17,7 @@ class Disturbance(object):
         self.year = year
 
         # raster paths
-        self.REFERENCE_ascii = os.path.join(s.INPUT_DIR, 'reference_grid.asc')
+        self.REFERENCE_ascii = os.path.join(s.INPUT_DIR, 'reference_grid_%s.asc' % s.REGION)
         self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
         self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
         self.DBH_ascii = os.path.join(s.OUTPUT_DIR, 'dbh.asc')
