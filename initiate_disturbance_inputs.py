@@ -79,7 +79,7 @@ else:
     ecocommunities_fe = os.path.join(INPUT_DIR, 'ecocommunities.tif')
 
 # slope
-if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.tif')) is False:
+if arcpy.Exists(os.path.join(INPUT_DIR, 'slope.asc')) is False:
     logging.info('creating ascii slope')
     slope = arcpy.sa.Slope(DEM, output_measurement='DEGREE')
     slope.save(os.path.join(INPUT_DIR, 'slope.tif'))
@@ -162,84 +162,87 @@ for feature in cursor:
         reset_arc_env()
         print feature.BoroName
         boro_code = str(int(feature.BoroCode))
-    # print boro_code
-    # if int(boro_code) == 2:
-        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')) is False:
-            dem_clip = arcpy.Clip_management(in_raster=DEM,
-                                             in_template_dataset=feature.Shape,
-                                             clipping_geometry='ClippingGeometry')
-
-            arcpy.RasterToASCII_conversion(dem_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc'))
-
-        dem_ref = os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')
-
-        # set environment
-        set_arc_env(dem_ref)
 
         ecocommunities = os.path.join(s.INPUT_DIR, '%s_ecocommunities_int.tif' % boro_code)
         if arcpy.Exists(ecocommunities) is False:
+            arcpy.Clip_management(in_raster=ecocommunities_fe,
+                                  out_raster=ecocommunities,
+                                  in_template_dataset=feature.Shape,
+                                  clipping_geometry='ClippingGeometry')
 
-            ecocommunities_clip = arcpy.sa.Con(dem_ref, ecocommunities_fe)
+            # ecocommunities_clip.save(ecocommunities)
 
-            ecocommunities_clip.save(ecocommunities)
+        # set environment
+        arcpy.env.extent = ecocommunities
+        arcpy.env.mask = ecocommunities
+        # set_arc_env(ecocommunities)
+
+
+        # FIRE INPUTS
+        arcpy.env.cellSize = s.FARSITE_RESOLUTION
+
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')) is False:
+            dem_clip = arcpy.sa.ExtractByMask(DEM, ecocommunities)
+            dem_temp = os.path.join(s.TEMP_DIR, "dem.tif")
+            arcpy.Resample_management(DEM, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
+
+            arcpy.RasterToASCII_conversion(dem_temp, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc'))
+
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc')) is False:
+            slope_clip = arcpy.sa.ExtractByMask(slope, ecocommunities)
+            slope_temp = os.path.join(s.TEMP_DIR, "slope.tif")
+            arcpy.Resample_management(slope, slope_temp, s.FARSITE_RESOLUTION, "BILINEAR")
+
+            arcpy.RasterToASCII_conversion(slope_temp, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc'))
+
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc')) is False:
+            aspect_clip = arcpy.sa.ExtractByMask(aspect, ecocommunities)
+            aspect_temp = os.path.join(s.TEMP_DIR, "aspect.tif")
+            arcpy.Resample_management(aspect, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
+
+            arcpy.RasterToASCII_conversion(aspect_temp, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc'))
+
+        arcpy.cellSize = ecocommunities
 
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc')) is False:
 
-            trail_clip = arcpy.sa.Con(dem_ref, TRAILS)
+            trail_clip = arcpy.sa.Con(ecocommunities, TRAILS)
 
             arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'fire_trails.asc'))
 
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'hunting_sites.asc')) is False:
 
-            trail_clip = arcpy.sa.Con(dem_ref, HUNTING)
+            trail_clip = arcpy.sa.Con(ecocommunities, HUNTING)
 
             arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'hunting_sites.asc'))
 
-        dem = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif')
-        if arcpy.Exists(dem) is False:
-
-            dem_clip = arcpy.sa.Con(dem_ref, DEM)
-
-            dem_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif'))
-
-        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc')) is False:
-
-            slope_clip = arcpy.sa.Con(dem_ref, slope)
-
-            arcpy.RasterToASCII_conversion(slope_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc'))
-
-        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc')) is False:
-
-            aspect_clip = arcpy.sa.Con(dem_ref, aspect)
-
-            arcpy.RasterToASCII_conversion(aspect_clip,
-                                           os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc'))
-
+        # POND INPUTS
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'flow_direction.tif')) is False:
 
-            flow_direction_clip = arcpy.sa.Con(dem_ref, flow_direction)
+            flow_direction_clip = arcpy.sa.Con(ecocommunities, flow_direction)
 
             flow_direction_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'flow_direction.tif'))
 
         # stream_suitability = os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif')
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif')) is False:
 
-            stream_suitability_clip = arcpy.sa.Con(dem_ref, stream_suitability)
+            stream_suitability_clip = arcpy.sa.Con(ecocommunities, stream_suitability)
 
             stream_suitability_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'stream_suitability.tif'))
 
         # slope_suitability = os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'garden', boro_code, 'slope_suitability.tif')) is False:
 
-            slope_suitability_clip = arcpy.sa.Con(dem_ref, slope_suitability)
+            slope_suitability_clip = arcpy.sa.Con(ecocommunities, slope_suitability)
 
             slope_suitability_clip.save(os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'slope_suitability.tif'))
 
+        # GARDEN INPUTS
         # proximity_suitability = os.path.join(s.INPUT_DIR, 'garden', boro_code, 'proximity_suitability.tif')
         prx_path = os.path.join(s.INPUT_DIR, 'garden', 'spatial', boro_code, 'proximity_suitability.tif')
         if arcpy.Exists([prx_path]) is False:
 
-            proximity_suitability_clip = arcpy.sa.Con(dem_ref, proximity_suitability)
+            proximity_suitability_clip = arcpy.sa.Con(ecocommunities, proximity_suitability)
 
             proximity_suitability_clip.save(prx_path)
 
