@@ -17,7 +17,7 @@ class Disturbance(object):
         self.year = year
 
         # raster paths
-        self.DEM_ascii = os.path.join(s.INPUT_DIR, 'fire', 'spatial', s.REGION, 'dem.asc')
+        self.REFERENCE_ascii = os.path.join(s.INPUT_DIR, 'reference_grid.asc')
         self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
         self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
         self.DBH_ascii = os.path.join(s.OUTPUT_DIR, 'dbh.asc')
@@ -37,7 +37,7 @@ class Disturbance(object):
 
         self.shape = None
         # self.get_header()
-        self.header, self.header_text, self.shape = utils.get_ascii_header(self.DEM_ascii)
+        self.header, self.header_text, self.shape = utils.get_ascii_header(self.REFERENCE_ascii)
         self.set_ecocommunities()
         self.set_canopy()
         self.set_forest_age()

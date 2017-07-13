@@ -56,6 +56,7 @@ FIRE_SEASON_END = (31, 5)
 # model parameters (m)
 PERIMETER_RESOLUTION = 20
 DISTANCE_RESOLUTION = 10
+FARSITE_RESOLUTION = 10
 
 # Minimum amount of rain in 1/100" needed to extinguish a fire
 CRITICAL_RAINFALL = 10
