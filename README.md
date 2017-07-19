@@ -87,6 +87,18 @@ This class allows the addition of beaver ponds to the ecosystem raster by floodi
 ### Horticulture
 This class uses a cell based growing method to add gardens to the ecosystem raster. Garden placement at the landscape scale is determined by the location of sites (identified in the ethnohistorical, cartographic, archaeological records). At the local scale gardens are positioned based on horticultural suitability (slope, ecosystem, proximity to habitation site).
 
-### Successional Model
+### Ecological Succession
 This class updates the growth of forest type communities (DBH, age, tree height) and transitions early succesional communities to advanced states using pathways defined in welikia_community_table_int.csv
 
+## Module Integration 
+![alt text](https://github.com/WildlifeConservationSocietyCI/WelikiaDisturbance/blob/master/disturbance_model_notes/figures/succession_disturbance_diagram.png "Logo Title Text 1")
+
+## Setup
+ 1. clone WelikiaDistrubance repository 
+ 2. download welikia_full_extent_inputs move to WelikiaDisturbance directory
+ 3. Set project and log paths in configuration local_settings.py
+ 4. Run initiate_disturbance_inputs.py
+ 5. Create FARSITE PROJECT and LANDSCAPE files manually in FARSITE GUI
+ 6. Configure settings in scenario_settings.py
+ 7. Run disturbance_script.py
+ 
