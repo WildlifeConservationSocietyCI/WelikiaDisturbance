@@ -174,7 +174,7 @@ for feature in cursor:
 
         # set environment
         arcpy.env.extent = ecocommunities
-        arcpy.env.mask = ecocommunities
+        # arcpy.env.mask = ecocommunities
         # set_arc_env(ecocommunities)
 
 
@@ -184,21 +184,21 @@ for feature in cursor:
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc')) is False:
             dem_clip = arcpy.sa.ExtractByMask(DEM, ecocommunities)
             dem_temp = os.path.join(s.TEMP_DIR, "dem.tif")
-            arcpy.Resample_management(DEM, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
+            arcpy.Resample_management(dem_clip, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
 
             arcpy.RasterToASCII_conversion(dem_temp, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'dem.asc'))
 
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc')) is False:
             slope_clip = arcpy.sa.ExtractByMask(slope, ecocommunities)
             slope_temp = os.path.join(s.TEMP_DIR, "slope.tif")
-            arcpy.Resample_management(slope, slope_temp, s.FARSITE_RESOLUTION, "BILINEAR")
+            arcpy.Resample_management(slope_clip, slope_temp, s.FARSITE_RESOLUTION, "BILINEAR")
 
             arcpy.RasterToASCII_conversion(slope_temp, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'slope.asc'))
 
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc')) is False:
             aspect_clip = arcpy.sa.ExtractByMask(aspect, ecocommunities)
             aspect_temp = os.path.join(s.TEMP_DIR, "aspect.tif")
-            arcpy.Resample_management(aspect, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
+            arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
 
             arcpy.RasterToASCII_conversion(aspect_temp, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'aspect.asc'))
 
@@ -217,6 +217,10 @@ for feature in cursor:
             arcpy.RasterToASCII_conversion(trail_clip, os.path.join(s.INPUT_DIR, 'fire', 'spatial', boro_code, 'hunting_sites.asc'))
 
         # POND INPUTS
+        if arcpy.Exists(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif')) is False:
+            dem_clip = arcpy.sa.ExtractByMask(DEM, ecocommunities)
+            dem_clip.save(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'dem.tif'))
+
         if arcpy.Exists(os.path.join(s.INPUT_DIR, 'pond', boro_code, 'flow_direction.tif')) is False:
 
             flow_direction_clip = arcpy.sa.Con(ecocommunities, flow_direction)

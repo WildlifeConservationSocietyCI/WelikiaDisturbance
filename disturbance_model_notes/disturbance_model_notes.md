@@ -15,12 +15,12 @@ importance of lightning caused forest fires [@loope_human_1998]
 
 ## Custom Fuel Models
 
-Hardwood forest types are based on model F9 [@scott_standard_2005; @anderson_aids_1982]. Where average loads for 1 hr, 10 hr, and 100 hr fuels were available for northeastern forest types the values were substituted into the custom fuel model [@reinhardt_fire_2015]. The remaining fuel attributes were carried over from the base model. The USFS community types were cross-walked to the NY State Heritage community classification so fuels could be assigned for our landscape. 
+Fuel parameters for hardwood forest types are based on [USFS model 9 (hardwood litter)](https://docs.google.com/spreadsheets/d/1l0hA0Qm5_sujWBDBlpwe_nDqYx2zkpEKaRocAqbOfeM/edit#gid=0), which is used to simulate fires in long leaf pine and hardwood stands, especially oak-hickory types [@scott_standard_2005; @anderson_aids_1982]. Where average loads for 1 hr, 10 hr, and 100 hr fuels were available for northeastern forest types the values were substituted into the custom fuel model [@reinhardt_fire_2015] ([section 4.13.9](https://docs.google.com/spreadsheets/d/1wHe1_AEqAl64A2HmxTpRQQWaDUt3yfcIlARfRiXEagU/edit#gid=0)). The remaining fuel attributes were carried over from the base model. The USFS FIA community types were cross-walked to the NY State Heritage community classification so fuels could be assigned for our landscape.
 
 [cross walk table]
 
-## Fuel Moisture
-Region specific fuel moistures were used as start conditions in FARSITE [@reinhardt_fire_2015]. All freshwater wetland communities (marshes, shrub-swamps and forested wetlands) were initialized with a wet fuel profile, all other communities with burnable fuel types were initialized with a moist fuel profile.
+## Fuel Moisture Content
+Region specific fuel moisture classes were used as start conditions in FARSITE [@reinhardt_fire_2015] (section 4.14.6). All freshwater wetland communities (marshes, shrub-swamps and forested wetlands) were initialized with a wet fuel profile, all other communities with burnable fuel types were initialized with a moist fuel profile.
 
 | Size Class       | Very Dry | Dry | Moist | Wet |
 |------------------|---------:|----:|------:|----:|
@@ -30,25 +30,27 @@ Region specific fuel moistures were used as start conditions in FARSITE [@reinha
 | Live woody       |       89 | 105 |   135 | 140 |
 | Liver herbaceous |       60 |  82 |   116 | 120 |
 
+Table XX. Four predefined moisture values(%) which alter fire intensity and consumption (from [@reinhardt_fire_2015])
+
 
 ## Initial Conditions - Forest Age
 
-Forest communities were initialized with an age of 65 [@pan_age_2011; @loewenstein_age_2000]. All other community types were initialized with a forest age of 0
+The initial age of forest type communities randomly assigned  using a truncated normal distribution ($\mu=65$ , minimum=0, max=200)[@pan_age_2011; @loewenstein_age_2000]. All other community types were initialized with a forest age of zero.
 
 ![age class distribution](figures/northeast_forest_age_hist.jpg)
 
 ## Initial Conditions - Canopy
-Communities were initialized with their maximum canopy values as defined in the community table.
+Communities were initialized with their maximum canopy values as defined in the community table. [needs reference\rational]
 
 ## fire size and frequency literature
 effects of fires on temperate forests [@kozlowski_fire_2012]
 power law[@reed_power-law_2002; @cui_what_2008; @stephens_forest_2005]
 
 ## Modeling Expected Frequencies
-A Poisson distribution is used to model annual forest fire events [@johnson_forest_2001; @yang_spatial_2008]. We created distributions for trail fires, garden fires and lightning fires. 
+A Poisson distribution is used to model annual forest fire events [@johnson_forest_2001; @yang_spatial_2008]. We created distributions for trail fires, garden fires and lightning fires.
 
-### Lightning Frequencies 
-The expected frequency ($lambda$) of lighting caused fires are based on areal frequencies from region 9 (U.S. Northeast) USFS wildfire records between 1940  and 2000 [@stephens_forest_2005]. These values were converted from the given units (frequency/400000 ha)/yr to (frequency/km^2^)/yr. 
+### Lightning Frequencies
+The expected frequency ($lambda$) of lighting caused fires are based on areal frequencies from region 9 (U.S. Northeast) USFS wildfire records between 1940  and 2000 [@stephens_forest_2005]. These values were converted from the given units (frequency/400000 ha)/yr to (frequency/km^2^)/yr.
 
 
 |  Region  |  Lightning  |            |   Human    |            |
@@ -65,7 +67,7 @@ The expected frequency ($lambda$) of lighting caused fires are based on areal fr
 
 ### Human Fire Frequency Scenarios
 
-The extent and effect of human caused fires on the landscape prior to European settlement is debated[@day_indian_1953;@russell_indian-set_1983; @patterson_indian_1988]. We have proposed two frequency scenarios:   
+The extent and effect of human caused fires on the landscape prior to European settlement is debated[@day_indian_1953; @russell_indian-set_1983; @patterson_indian_1988]. Disagreement stems from the lack of empirical evidence in the ecological record, most observable signs of fire disturbance has been erased by landuse change. Because of this  our understanding of these processes are primarily based on the historical record. Early travelers from the 16th and 17th century made note of fire as a land management tool in the North Eastern US by Native Americans, but these accounts general lack quantitative description. Those accounts including estimates of burn frequency are often annual or semmi-annual. We have proposed two frequency scenarios, which bound what we believe are the upper and lower limits of human caused fire disturbance in this region.
 
 | source | no human fire | Russell (1983) | Day (1953) |
 |--------|---------------|----------------|------------|
@@ -74,7 +76,7 @@ The extent and effect of human caused fires on the landscape prior to European s
 
 ## Critical Rainfall
 
-In the model, fire spread was stopped when it encountered one of the following conditions: (1) a non-flammable type of land cover; (2) boundaries of the region; and (3) when rainfall exceeded a certain critical amount. By assuming that a daily precipitation of 30 mm or more would stop a fire, the R Crit in Eq. (2) was estimated as 0.026 (the proportion of total number of days that has daily precipitation of 30 mm or more) from the historical precipitation data of the Edison weather station. [@li_reconstruction_2000]
+Modeled fire spread stops when it encounters one of the following conditions: (1) a non-flammable type of land cover; (2) boundaries of the region; and (3) when rainfall exceeded a certain critical amount. By assuming that a daily precipitation of 30 mm or more would stop a fire, the R Crit in Eq. (2) was estimated as 0.026 (the proportion of total number of days that has daily precipitation of 30 mm or more) from the historical precipitation data of the Edison weather station. [@li_reconstruction_2000]
 
 ## Tree Allometry
 
@@ -88,7 +90,7 @@ In the model, fire spread was stopped when it encountered one of the following c
 
 ### Communities to Bark Thickness
 
-Bark thickness multipliers for each community are based on the dominant tree type (Edinger et al. 2014), for communities with co-dominate species we calculated average bark thickness [@reinhardt_fire_2015].
+Bark thickness multipliers for each community are based on the dominant tree type (Edinger et al. 2014), for communities with co-dominate species we calculated average bark thickness [@reinhardt_fire_2015] ([section 4.13.4]()).
 
 | community                            | dominant tree species                     | vsp scaler  |
 | ------------------------------------ | ----------------------------------------- | ----------: |
@@ -122,7 +124,7 @@ Bark thickness multipliers for each community are based on the dominant tree typ
 [@bean_using_2008]
 
 
-*Crown Kill* 
+*Crown Kill*
 
 **[2]**      $$CK= 41.961( 100(\ln({SH -CH) \over CL})) - 89.721$$
 [@bean_using_2008]
@@ -130,7 +132,7 @@ Bark thickness multipliers for each community are based on the dominant tree typ
 
 *Percent Mortality*
 
-**[3]**      $$P_{m}= {1.0 \over 1.0 + e^{-1.941 + 6.316(1.0-e^{-BT}) - 0.000535 CK^2}}$$  
+**[3]**      $$P_{m}= {1.0 \over 1.0 + e^{-1.941 + 6.316(1.0-e^{-BT}) - 0.000535 CK^2}}$$
 [@bean_using_2008]
 
 # Horticulture
@@ -138,10 +140,10 @@ Bark thickness multipliers for each community are based on the dominant tree typ
 ## Site Selection
 Gardens were modeled at historical sites meeting the following two criteria.
 
-    1.  historical and archealogical records provide evidence for semi-permanent habitation.   
+    1.  historical and archealogical records provide evidence for semi-permanent habitation.
     2. site point is located within 250 m of freshwater source
 
-Garden loacations are then selected using a suitability model which takes into account proximity to the site center, slope and community type. 
+Garden locations are then selected using a suitability model which takes into account proximity to the site center, slope and community type.
 
 ## Archaeological Evidence for Gardening
 [@kraft_lenape-delaware_2001, @cantwell_unearthing_2001, @benison_horticulture_1997]
@@ -176,7 +178,7 @@ caloric requirements [@speth_energy_1983]
 
 ## Succession
 
-The freshwater wetland succession sequence has four stages[@allen_habitat_1983; @hay_succession_2010; @johnston_use_1990; @logofet_succession_2016; @naiman_alteration_1988; @_ecology_1993]. 
+The freshwater wetland succession sequence has four stages[@allen_habitat_1983; @hay_succession_2010; @johnston_use_1990; @logofet_succession_2016; @naiman_alteration_1988; @_ecology_1993].
 
 $$\mbox{active beaver pond} \rightarrow \mbox{emergent marsh} \rightarrow \mbox{shrub swamp} \rightarrow \mbox{forested wetland}$$
 
