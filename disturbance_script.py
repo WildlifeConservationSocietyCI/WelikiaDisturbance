@@ -51,14 +51,15 @@ shutil.copyfile(os.path.join(s.ROOT_DIR, 'settings_scenario.py'),
 
 clear_dir(s.TEMP_DIR)
 
-dist_type = ['fire_area', 'fire_occurrence', 'pond_area', 'garden_area']
+columns = ['fire_area', 'fire_occurrence', 'pond_area', 'garden_area',
+           'year_run_time', 'garden_run_time', 'fire_run_time', 'pond_run_time']
 
 # create or load disturbance data frame
 if os.path.isfile(os.path.join(s.LOG_DIR, 'disturbance_table.csv')):
     disturbance_table = pd.read_csv(os.path.join(s.LOG_DIR, 'disturbance_table.csv'), index_col=0)
     print disturbance_table.head()
 else:
-    disturbance_table = pd.DataFrame(columns=dist_type, index=s.RUN_LENGTH)
+    disturbance_table = pd.DataFrame(columns=columns, index=s.RUN_LENGTH)
 
 s.logging.info('starting %s year simulation' % len(s.RUN_LENGTH))
 full_run_start = time.time()
@@ -76,26 +77,36 @@ for year in s.RUN_LENGTH:
     # garden
     if s.GARDEN:
         s.logging.info('_____starting garden disturbance')
+        garden_start = time.time()
         garden_dis = garden.GardenDisturbance(year)
         garden_dis.run_year()
-        disturbance_table.loc[year]['garden_area'] = garden_dis.new_garden_area
+        garden_end = time.time()
+        disturbance_table.loc[year, 'garden_area'] = garden_dis.new_garden_area
+        disturbance_table.loc[year, 'garden_run_time'] = ((garden_end - garden_start) / 60)
         del garden_dis
 
     # fire
     if s.FIRE:
         s.logging.info('_____starting fire disturbance')
+        fire_start = time.time()
         fire_dis = fire.FireDisturbance(year)
         fire_dis.run_year()
-        disturbance_table.loc[year]['fire_occurrence'] = len(fire_dis.ignition_sites)
-        disturbance_table.loc[year]['fire_area'] = fire_dis.area_burned
+        disturbance_table.loc[year, 'fire_occurrence'] = len(fire_dis.ignition_sites)
+        fire_end = time.time()
+        disturbance_table.loc[year, 'fire_area'] = fire_dis.area_burned
+        disturbance_table.loc[year, 'fire_run_time'] = ((fire_end - fire_start) / 60)
+
         del fire_dis
 
     # beaver pond
     if s.POND:
         s.logging.info('_____starting pond disturbance')
+        pond_start = time.time()
         pond_dis = pond.PondDisturbance(year)
         pond_dis.run_year()
-        disturbance_table.loc[year]['pond_area'] = pond_dis.new_pond_area
+        pond_end = time.time()
+        disturbance_table.loc[year, 'pond_area'] = pond_dis.new_pond_area
+        disturbance_table.loc[year, 'pond_run_time'] = ((pond_end - pond_start) / 60)
         del pond_dis
 
     # run succession module
@@ -105,6 +116,7 @@ for year in s.RUN_LENGTH:
     del succ
 
     year_end = time.time()
+    disturbance_table.loc[year, 'year_run_time'] = ((year_end - year_start) / 60)
     s.logging.info('end time: %s' % t.now())
     s.logging.info('year run time: %s minutes' % ((year_end - year_start) / 60))
 
