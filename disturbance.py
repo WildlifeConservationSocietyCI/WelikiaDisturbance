@@ -18,9 +18,10 @@ class Disturbance(object):
 
         # raster paths
         self.REFERENCE_ascii = os.path.join(s.INPUT_DIR, 'reference_grid_%s.asc' % s.REGION)
-        self.CANOPY_ascii = os.path.join(s.OUTPUT_DIR, 'canopy.asc')
-        self.FOREST_AGE_ascii = os.path.join(s.OUTPUT_DIR, 'forest_age.asc')
-        self.DBH_ascii = os.path.join(s.OUTPUT_DIR, 'dbh.asc')
+        self.REFERENCE_raster = os.path.join(s.INPUT_DIR, 'reference_grid_%s.tif' % s.REGION)
+        self.CANOPY_raster = os.path.join(s.OUTPUT_DIR, 'canopy.tif')
+        self.FOREST_AGE_raster = os.path.join(s.OUTPUT_DIR, 'forest_age.tif')
+        self.DBH_raster = os.path.join(s.OUTPUT_DIR, 'dbh.tif')
         self._ecocommunities_filename = 'ecocommunities_%s.tif'
 
         # arrays
@@ -38,6 +39,7 @@ class Disturbance(object):
         self.shape = None
         # self.get_header()
         self.header, self.header_text, self.shape = utils.get_ascii_header(self.REFERENCE_ascii)
+        self.geot, self.projection = utils.get_geo_info(self.REFERENCE_raster)
         self.set_ecocommunities()
         self.set_canopy()
         self.set_forest_age()
@@ -72,9 +74,9 @@ class Disturbance(object):
         :return:
         """
 
-        if os.path.isfile(self.CANOPY_ascii):
+        if os.path.isfile(self.CANOPY_raster):
             s.logging.info('Setting canopy')
-            self.canopy = utils.raster_to_array(self.CANOPY_ascii)
+            self.canopy = utils.raster_to_array(self.CANOPY_raster)
 
         else:
             s.logging.info('Assigning initial values to canopy array')
@@ -99,7 +101,8 @@ class Disturbance(object):
                 # elif row.max_canopy == 0:
                 #     self.canopy[self.ecocommunities_array == index] = row.max_canopy
 
-            utils.array_to_ascii(self.CANOPY_ascii, self.canopy, header=self.header_text)
+            utils.array_to_raster(self.canopy, self.CANOPY_raster,
+                                  geotransform=self.geot, projection=self.projection)
 
     def set_forest_age(self):
         """
@@ -107,9 +110,9 @@ class Disturbance(object):
         else: initialize forest age raster
         :return:
         """
-        if os.path.isfile(self.FOREST_AGE_ascii):
+        if os.path.isfile(self.FOREST_AGE_raster):
             s.logging.info('Setting forest age')
-            self.forest_age = utils.raster_to_array(self.FOREST_AGE_ascii)
+            self.forest_age = utils.raster_to_array(self.FOREST_AGE_raster)
 
         else:
             s.logging.info('Assigning initial values to forest age array')
@@ -135,26 +138,28 @@ class Disturbance(object):
                 if row.forest == 1:
                     self.forest_age = np.where(self.ecocommunities_array == index, tn, self.forest_age)
 
-            utils.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age, header=self.header_text)
+            utils.array_to_raster(self.forest_age, self.FOREST_AGE_raster,
+                                  geotransform=self.geot, projection=self.projection)
 
     def set_dbh(self):
         """
         set DBH raster, if no raster exists initialize using age raster and age_dbh_lookup table
         :return:
         """
-        if os.path.isfile(self.DBH_ascii):
+        if os.path.isfile(self.DBH_raster):
             s.logging.info('Setting dbh')
-            self.dbh = utils.raster_to_array(self.DBH_ascii)
+            self.dbh = utils.raster_to_array(self.DBH_raster)
 
         else:
             s.logging.info('Assigning initial values to dbh array')
-            self.dbh = np.empty(shape=self.shape, dtype=np.float16)
+            self.dbh = np.empty(shape=self.shape, dtype=np.float32)
             age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'tables', 'dbh_lookup.csv'), index_col=0)
 
             for index, row in self.community_table.iterrows():
-                print("forest: %s" % row.forest)
-                print("bool: ", row.forest == 1)
+                # print("forest: %s" % row.forest)
+                # print("bool: ", row.forest == 1)
                 if row.forest == 1:
+                    assert isinstance(self.ecocommunities_array, np.ndarray)
                     age = np.ma.masked_where(self.ecocommunities_array != index, self.forest_age)
                     print(index)
                     print(np.unique(age))
@@ -163,7 +168,8 @@ class Disturbance(object):
                         d = age_dbh_lookup.ix[int(a)][str(index)]
                         self.dbh[(self.ecocommunities_array == index) & (self.forest_age == a)] = d
 
-            utils.array_to_ascii(self.DBH_ascii, self.dbh, header=self.header_text, fmt="%2.4f")
+            utils.array_to_raster(self.dbh, self.DBH_raster,
+                                  geotransform=self.geot, projection=self.projection) #, dtype=gdal.GDT_Float32)
 
     def set_upland_area(self):
         if type(self.ecocommunities) is np.ndarray:

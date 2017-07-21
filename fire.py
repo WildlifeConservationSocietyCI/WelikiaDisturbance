@@ -22,7 +22,7 @@ class FireDisturbance(d.Disturbance):
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'fire')
     # INPUT_DIR = s.INPUT_DIR
     # OUTPUT_DIR = s.OUTPUT_DIR
-    LOG_DIR = os.path.join(OUTPUT_DIR, '%s_%s.asc')
+    # LOG_DIR = os.path.join(OUTPUT_DIR, '%s_%s.asc')
     SPATIAL = 'spatial'
     TABULAR = 'tabular'
 
@@ -33,10 +33,10 @@ class FireDisturbance(d.Disturbance):
 
     FUEL_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'fuel.asc')
     CANOPY_ascii_ds = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'canopy.asc')
-    TIME_SINCE_DISTURBANCE_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'time_since_disturbance.asc')
+    TIME_SINCE_DISTURBANCE_raster = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'time_since_disturbance.tif')
 
-    TRAIL_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'fire_trails.asc')
-    HUNTING_ascii = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'hunting_sites.asc')
+    TRAIL_raster = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'fire_trails.tif')
+    HUNTING_raster = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'hunting_sites.tif')
     FPJ = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'PROJECT.FPJ')
     LCP = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'LANDSCAPE.LCP')
     IGNITION = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'ignition.shp')
@@ -57,9 +57,7 @@ class FireDisturbance(d.Disturbance):
         super(FireDisturbance, self).__init__(year)
 
         self.year = year
-        # self.ECOCOMMUNITIES_ascii = os.path.join(self.INPUT_DIR, self.SCRIPT, s.REGION, 'ecocommunities_%s.asc' %
-        # year)
-        self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
+        self.ecocommunities = utils.raster_to_array(self.ecocommunities)
         self.drought = None
         self.climate_years = None
         self.equivalent_climate_year = None
@@ -273,16 +271,17 @@ class FireDisturbance(d.Disturbance):
 
     def set_time_since_disturbance(self):
 
-        if os.path.isfile(self.TIME_SINCE_DISTURBANCE_ascii):
+        if os.path.isfile(self.TIME_SINCE_DISTURBANCE_raster):
             # s.logging.info('Setting time since disturbance')
-            self.time_since_disturbance = utils.raster_to_array(self.TIME_SINCE_DISTURBANCE_ascii)
+            self.time_since_disturbance = utils.raster_to_array(self.TIME_SINCE_DISTURBANCE_raster)
 
         else:
             # s.logging.info('Assigning initial values to time since disturbance array')
             self.time_since_disturbance = np.empty((self.header['nrows'], self.header['ncols']))
             self.time_since_disturbance.astype(np.int32)
             self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
-            utils.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance, header=self.header_text)
+            utils.array_to_raster(self.time_since_disturbance, self.TIME_SINCE_DISTURBANCE_raster,
+                                  geotransform=self.geot, projection=self.projection)
 
         self.get_memory()
         # s.logging.info('memory usage: %r Mb' % self.memory)
@@ -717,7 +716,7 @@ class FireDisturbance(d.Disturbance):
                      (self.forest_age == 0) &
                      (self.flame_length != 0)] = 0.5
 
-        utils.array_to_ascii(self.DBH_ascii, self.dbh, header=self.header_text, fmt="%2.4f")
+        utils.array_to_raster(self.dbh, self.DBH_raster, geotransform=self.geot, projection=self.projection)
 
     def run_year(self):
 
@@ -734,6 +733,9 @@ class FireDisturbance(d.Disturbance):
         self.header, self.header_text, self.shape = utils.get_ascii_header(self.REFERENCE_ascii)
         print(self.shape)
         print(self.header)
+        print('upland area %s' % self.upland_area)
+        print(type(self.fuel))
+        print('ecocomunities type', type(self.ecocommunities))
 
 
         # set tracking rasters
@@ -752,7 +754,7 @@ class FireDisturbance(d.Disturbance):
         if number_of_trail_ignitions > 0:
 
             self.set_fuel()
-
+            print self.fuel.shape
             # down sample fuel and canopy for FARSITE
 
             arcpy.env.cellSize = s.FARSITE_RESOLUTION
@@ -771,7 +773,7 @@ class FireDisturbance(d.Disturbance):
             arcpy.env.cellSize = s.CELL_SIZE
 
             # Get list of potential trail fire sites
-            trail_array = utils.raster_to_array(self.TRAIL_ascii)
+            trail_array = utils.raster_to_array(self.TRAIL_raster)
 
             rows, cols = np.where((trail_array == s.TRAIL_ID) &
                                   (self.time_since_disturbance >= s.TRAIL_OVERGROWN_YRS) &
@@ -814,7 +816,7 @@ class FireDisturbance(d.Disturbance):
         if number_of_hunting_ignitions > 0:
 
             # Get list of potential hunting fire sites
-            hunting_sites = utils.raster_to_array(self.HUNTING_ascii)
+            hunting_sites = utils.raster_to_array(self.HUNTING_raster)
             rows, cols = np.where((hunting_sites == s.HUNTING_SITE_ID) &
                                   (self.fuel != 14) &
                                   (self.fuel != 16) &
@@ -923,41 +925,47 @@ class FireDisturbance(d.Disturbance):
         # s.logging.info('Area burned %r: %r acres' % (self.year, (self.area_burned * 100 * 0.000247105)))
 
         # Revise fuel model
-        time_s = time.time()
-        self.set_fuel()
-        time_e = time.time()
-        s.logging.info('updated fuel : %s' % (time_e - time_s))
+        # time_s = time.time()
+        # self.set_fuel()
+        # time_e = time.time()
+        # s.logging.info('updated fuel : %s' % (time_e - time_s))
 
-        # s.logging.info('saving arrays as ascii')
+        s.logging.info('saving arrays as ascii')
         time_s = time.time()
-        utils.array_to_ascii(self.FUEL_ascii, self.fuel, header=self.header_text)
-        utils.array_to_ascii(self.CANOPY_ascii, self.canopy, header=self.header_text)
-        utils.array_to_ascii(self.FOREST_AGE_ascii, self.forest_age, header=self.header_text)
-        utils.array_to_ascii(self.TIME_SINCE_DISTURBANCE_ascii, self.time_since_disturbance, header=self.header_text)
-        utils.array_to_ascii(self.LOG_DIR % (self.year, 'ecocommunities'), self.ecocommunities, header=self.header_text)
+        # utils.array_to_ascii(self.FUEL_ascii, self.fuel, header=self.header_text)
+        # utils.array_to_ascii(self.CANOPY_raster, self.canopy, header=self.header_text)
+        utils.array_to_raster(self.canopy, self.CANOPY_raster,
+                              geotransform=self.geot, projection=self.projection)
+        utils.array_to_raster(self.forest_age, self.FOREST_AGE_raster,
+                              geotransform=self.geot, projection=self.projection)
+        utils.array_to_raster(self.time_since_disturbance, self.TIME_SINCE_DISTURBANCE_raster,
+                              geotransform=self.geot, projection=self.projection)
+        # utils.array_to_raster(self.ecocommunities, os.path.join(self.OUTPUT_DIR, 'ecocommunities.tif'),
+        #                       geotransform=self.geot, projection=self.projection)
         time_e = time.time()
         s.logging.info('saved arrays as ascii rasters : %s' % (time_e - time_s))
 
         # save the updated community array as a TIF raster to the shared output directory
-        out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
-                                              lower_left_corner=arcpy.Point(self.header['xllcorner'],
-                                                                            self.header['yllcorner']),
-                                              x_cell_size=s.CELL_SIZE,
-                                              value_to_nodata=-9999)
+        # out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
+        #                                       lower_left_corner=arcpy.Point(self.header['xllcorner'],
+        #                                                                     self.header['yllcorner']),
+        #                                       x_cell_size=s.CELL_SIZE,
+        #                                       value_to_nodata=-9999)
+        #
+        #
+        # out_raster.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
+        utils.array_to_raster(self.ecocommunities, os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
+                              geotransform=self.geot, projection=self.projection)
 
-        out_raster.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
-
-        # log outputs when a fire occurs and on the file year
+        # log outputs when a fire occurs and on the final year
         if self.area_burned > 0 or self.year == max(s.RUN_LENGTH):
             # s.logging.info('copying outputs to log folder')
-            shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
-            shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
-            shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
-        shutil.copyfile(self.FUEL_ascii, self.LOG_DIR % (self.year, 'fuel'))
-        shutil.copyfile(self.CANOPY_ascii, self.LOG_DIR % (self.year, 'canopy'))
-        shutil.copyfile(self.FOREST_AGE_ascii, self.LOG_DIR % (self.year, 'forest_age'))
-        shutil.copyfile(self.TIME_SINCE_DISTURBANCE_ascii, self.LOG_DIR % (self.year, 'time_since_disturbance'))
+            shutil.copy(self.FUEL_ascii, os.path.join(self.OUTPUT_DIR, '%s_%s' % (self.year, 'fuel.asc')))
+        # shutil.copy(self.CANOPY_raster, os.path.join(self.OUTPUT_DIR, '%s_%s' % (self.year, 'canopy.tif')))
+        # shutil.copy(self.FOREST_AGE_raster, os.path.join(self.OUTPUT_DIR, '%s_%s' % (self.year, 'forest_age.tif')))
+        shutil.copy(self.TIME_SINCE_DISTURBANCE_raster, os.path.join(self.OUTPUT_DIR, '%s_%s' %
+                                                                     (self.year, 'time_since_disturbance.tif')))
 
         end_time = time.time()
 

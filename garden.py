@@ -379,8 +379,13 @@ class GardenDisturbance(d.Disturbance):
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
-        utils.array_to_ascii(array=self.canopy, out_ascii_path=self.CANOPY_ascii, header=self.header_text)
-        utils.array_to_ascii(array=self.forest_age, out_ascii_path=self.FOREST_AGE_ascii, header=self.header_text)
-        utils.array_to_ascii(array=self.dbh, out_ascii_path=self.DBH_ascii, header=self.header_text, fmt="%2.4f")
+
+        utils.array_to_raster(self.canopy, self.CANOPY_raster,
+                              geotransform=self.geot, projection=self.projection)
+        utils.array_to_raster(self.forest_age, self.FOREST_AGE_raster,
+                              geotransform=self.geot, projection=self.projection)
+        utils.array_to_raster(self.dbh, self.DBH_raster,
+                              geotransform=self.geot, projection=self.projection)
+
         self.calculate_garden_area()
         print('garden area: %s' % self.new_garden_area)
