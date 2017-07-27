@@ -36,9 +36,9 @@ class Disturbance(object):
 
         self.upland_area = 0
 
-        self.shape = None
+        self.shape = utils.raster_to_array(self.REFERENCE_raster).shape
         # self.get_header()
-        self.header, self.header_text, self.shape = utils.get_ascii_header(self.REFERENCE_ascii)
+        # self.header, self.header_text, self.shape = utils.get_ascii_header(self.REFERENCE_ascii)
         self.geot, self.projection = utils.get_geo_info(self.REFERENCE_raster)
         self.set_ecocommunities()
         self.set_canopy()
@@ -55,17 +55,17 @@ class Disturbance(object):
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
 
         if os.path.isfile(this_year_ecocomms):
-            print this_year_ecocomms
+            print 'disturbance set eco, using this year', this_year_ecocomms
             self.ecocommunities = arcpy.Raster(this_year_ecocomms)
 
         elif os.path.isfile(last_year_ecocomms):
-            print last_year_ecocomms
+            print 'disturbance set eco using last year', last_year_ecocomms
             self.ecocommunities = arcpy.Raster(last_year_ecocomms)
         else:
             print 'initial run'
             self.ecocommunities = arcpy.Raster(s.ecocommunities)
 
-        self.ecocommunities.save(os.path.join(s.TEMP_DIR, 'temp.tif'))
+        # self.ecocommunities.save(os.path.join(s.TEMP_DIR, 'temp.tif'))
 
     def set_canopy(self):
         """
@@ -83,7 +83,7 @@ class Disturbance(object):
             if self.ecocommunities_array is None:
                 self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
-            self.canopy = np.empty((self.header['nrows'], self.header['ncols']))
+            self.canopy = np.empty(self.shape, dtype=np.int8)
 
             # random canopy values for forests, shrublands and grasslands
             # f = np.random.randint(low=51, high=100, size=(self.header['nrows'], self.header['ncols']))
@@ -131,7 +131,7 @@ class Disturbance(object):
             # populate an array with ages from distribution
             tn = n.rvs(self.shape).astype(int)
 
-            self.forest_age = np.empty(shape=self.shape, dtype=int)
+            self.forest_age = np.empty(shape=self.shape, dtype=np.int16)
 
             # replace reset age for non-forest communities
             for index, row in self.community_table.iterrows():

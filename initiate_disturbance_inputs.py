@@ -272,3 +272,4 @@ for feature in cursor:
             arcpy.Clip_analysis(in_features=SITES,
                                 clip_features=feature.Shape,
                                 out_feature_class=garden_sites_region)
+
