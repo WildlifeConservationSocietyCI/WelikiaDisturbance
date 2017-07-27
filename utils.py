@@ -113,6 +113,14 @@ def array_to_raster(array, out_raster, geotransform, projection, driver='GTiff',
     # get array dimensions
     y_size, x_size = array.shape
 
+    try:
+        dtype_info = np.iinfo(array.dtype)
+        nodata = dtype_info.min
+    except ValueError:
+        nodata = None
+
+    print('nodata: %s' % nodata)
+
     # map numpy dtype to GDAL dtype if default arg is used
     if dtype is None:
         dtype = gdal_array.NumericTypeCodeToGDALTypeCode(array.dtype)
@@ -130,6 +138,8 @@ def array_to_raster(array, out_raster, geotransform, projection, driver='GTiff',
     output_raster.SetProjection(srs.ExportToWkt())
 
     # write to array to raster
+    if nodata is not None:
+        output_raster.GetRasterBand(1).SetNoDataValue(nodata)
     output_raster.GetRasterBand(1).WriteArray(array)
 
 
