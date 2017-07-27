@@ -70,6 +70,8 @@ class GardenDisturbance(d.Disturbance):
         land cover, proximity and slope suitability rasters for overall suitability score.
         :return:
         """
+        print (self.ecocommunities, type(self.ecocommunities))
+        # ec = os.path.join(s.TEMP_DIR, self._ecocommunities_filename % self.year)
         ecocommunity_suitability = arcpy.sa.ReclassByTable(self.ecocommunities, self.COMMUNITY_RECLASS_TABLE,
                                                            from_value_field='Field1',
                                                            to_value_field='Field1',
@@ -165,13 +167,15 @@ class GardenDisturbance(d.Disturbance):
     def set_garden_center(self):
         """
         choose center cell for new garden, out of cells in proximity radius with the
-        highest overall suitability.
+        highest overall suitability. DEBUG mode saves out intermediate raster products
         :return:
         """
 
-        if self.local_suitability.maximum is None:
+        # If the maximum suitability is no data or zero set self.garden to None
+        if self.local_suitability.maximum is None or self.local_suitability.maximum == 0:
             self.garden = None
 
+        # Else select random garden center out of cells with the highest suitability
         else:
             maxsuit = arcpy.sa.Con(self.local_suitability == self.local_suitability.maximum, self.local_suitability)
 
@@ -189,7 +193,7 @@ class GardenDisturbance(d.Disturbance):
             if s.DEBUG_MODE:
                 randrastclip.save(os.path.join(self.OUTPUT_DIR, 'randrastclip.tif'))
 
-            # print("selecting garden center")
+            # Select garden center using the maximum value in the random raster
             gardencenter = arcpy.sa.Con(randrastclip == randrastclip.maximum, s.GARDEN_ID)
 
             if s.DEBUG_MODE:
@@ -211,7 +215,7 @@ class GardenDisturbance(d.Disturbance):
 
     def create_garden(self):
         """
-        create a new garden
+        Create a new garden, based on Mannahatta AML script.
         :return:
         """
         if s.DEBUG_MODE:
@@ -296,14 +300,21 @@ class GardenDisturbance(d.Disturbance):
             self.garden_area = self.get_garden_area(self.garden)
 
     def calculate_garden_area(self):
+        pass
+        # time_since_disturbance = os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year)
+        # field_names = ['VALUE', 'COUNT']
 
-        time_since_disturbance = os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year)
-        field_names = ['VALUE', 'COUNT']
+        # with arcpy.da.SearchCursor(time_since_disturbance, field_names=field_names) as sc:
+        #     for row in sc:
+        #         if row[0] == 1:
+        #             self.new_garden_area = row[1]
 
-        with arcpy.da.SearchCursor(time_since_disturbance, field_names=field_names) as sc:
-            for row in sc:
-                if row[0] == 1:
-                    self.new_garden_area = row[1]
+        # hist = d.hist(self.time_since_disturbance)
+        #
+        # if 1 in hist:
+        #     self.new_pond_area = hist[1]
+        # else:
+        #     self.new_pond_area = 0
 
     def set_populations(self):
         """
@@ -322,6 +333,10 @@ class GardenDisturbance(d.Disturbance):
         """
         s.logging.info('starting garden disturbance for year: %s' % self.year)
 
+        print ('garden %s is using ecocom:' % self.year, self.ecocommunities, type(self.ecocommunities))
+        test_eco = os.path.join(s.OUTPUT_DIR, 'garden_ecocom_test_%s.tif' % self.year)
+        self.ecocommunities.save(test_eco)
+
         self.calculate_suitability()
 
         self.points_to_coordinates()
@@ -329,8 +344,6 @@ class GardenDisturbance(d.Disturbance):
         self.set_populations()
 
         self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities != s.GARDEN_ID, self.time_since_disturbance + 1)
-
-        # self.succession()
 
         s.logging.info('checking for existing gardens')
         for population, coordinates in zip(self.site_populations, self.coordinate_list):
@@ -344,21 +357,24 @@ class GardenDisturbance(d.Disturbance):
 
             self.set_local_extent()
             # check for gardens in area buffered around site
-
-            # self.succession()
-
+            # if garden area of garden is 0 create new garden
             if self.garden_area == 0:
 
                 self.set_garden_center()
 
-                # self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden.tif'))
-
+                # Continue only if garden center has been assigned
                 if self.garden is not None:
                     self.create_garden()
-
+                    self.new_garden_area += self.get_garden_area(self.garden)
+                    # add garden to community raster
+                    # reset to region extent
                     arcpy.env.extent = s.ecocommunities
 
                     self.garden = arcpy.sa.Plus(self.garden, 0)
+
+                    # self.garden.save(os.path.join(self.OUTPUT_DIR, 'garden_%.tif' self.year))
+
+                    # Return garden cells from self.garden else return existing communities
                     self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, self.garden,
                                                        self.ecocommunities)
 
@@ -368,14 +384,16 @@ class GardenDisturbance(d.Disturbance):
                     self.dbh[e == s.GARDEN_ID] = 0
                     # self.dbh[(e == s.SUCCESSIONAL_OLD_FIELD_ID) & (self.forest_age == 0)] = 0.5
 
-                    self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities == s.GARDEN_ID, 0,
-                                                               self.time_since_disturbance)
+
             arcpy.env.extent = s.ecocommunities
 
-        if arcpy.Exists((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))):
-            arcpy.Delete_management((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
+            self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities == s.GARDEN_ID, 0,
+                                                       self.time_since_disturbance)
 
-        # print(type(self.ecocommunities))
+        # if arcpy.Exists((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year))):
+        #     arcpy.Delete_management((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
+
+        print('saving ecocom after garden disturbance', type(self.ecocommunities))
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
@@ -387,5 +405,5 @@ class GardenDisturbance(d.Disturbance):
         utils.array_to_raster(self.dbh, self.DBH_raster,
                               geotransform=self.geot, projection=self.projection)
 
-        self.calculate_garden_area()
+        # self.calculate_garden_area()
         print('garden area: %s' % self.new_garden_area)

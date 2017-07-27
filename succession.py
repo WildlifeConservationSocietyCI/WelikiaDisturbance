@@ -22,6 +22,7 @@ class Succession(object):
         # raster paths
 
         self.REFERENCE_raster = os.path.join(s.INPUT_DIR, 'reference_grid_%s.tif' % s.REGION)
+        self.REFERENCE_ascii = os.path.join(s.INPUT_DIR, 'reference_grid_%s.asc' % s.REGION)
         self.CANOPY_raster = os.path.join(s.OUTPUT_DIR, 'canopy.tif')
         self.FOREST_AGE_raster = os.path.join(s.OUTPUT_DIR, 'forest_age.tif')
         self.DBH_raster = os.path.join(s.OUTPUT_DIR, 'dbh.tif')
@@ -44,7 +45,7 @@ class Succession(object):
 
         # community info table
         self.community_table = pd.read_csv(s.community_table, index_col=0)
-        # self.header, self.header_text, self.shape = utils.get_ascii_header(self.REFERENCE_raster)
+        self.header, self.header_text, self.shape = utils.get_ascii_header(self.REFERENCE_ascii)
         self.geot, self.projection = utils.get_geo_info(self.REFERENCE_raster)
         self.set_ecocommunities()
         self.set_canopy()
@@ -238,15 +239,19 @@ class Succession(object):
         self.grow()
         self.transition()
 
-        # out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
-        #                                       lower_left_corner=arcpy.Point(self.header['xllcorner'],
-        #                                                                     self.header['yllcorner']),
-        #                                       x_cell_size=self.header['cellsize'],
-        #                                       value_to_nodata=-9999)
-        #
-        # out_raster.save()os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
-        #
-        utils.array_to_raster(self.ecocommunities, os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
+        # using arc array to raster because of file lock/permission
+        out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
+                                              lower_left_corner=arcpy.Point(self.header['xllcorner'],
+                                                                            self.header['yllcorner']),
+                                              x_cell_size=s.CELL_SIZE)
+
+        out_raster.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+
+        # utils.array_to_raster(self.ecocommunities, os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
+        #                       geotransform=self.geot, projection=self.projection)
+
+        test_eco = os.path.join(s.OUTPUT_DIR, 'succ_ecocom_test_%s.tif' % self.year)
+        utils.array_to_raster(self.ecocommunities, test_eco,
                               geotransform=self.geot, projection=self.projection)
         utils.array_to_raster(self.canopy, self.CANOPY_raster,
                               geotransform=self.geot, projection=self.projection)
