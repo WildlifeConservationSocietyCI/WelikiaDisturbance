@@ -223,7 +223,7 @@ for feature in cursor:
             slope_clip = arcpy.sa.ExtractByMask(slope, ecocommunities)
             slope_temp = os.path.join(s.TEMP_DIR, "slope.tif")
             arcpy.Resample_management(slope_clip, slope_temp, s.FARSITE_RESOLUTION, "BILINEAR")
-            arcpy.RasterToASCII_conversion(slope_ascii_region)
+            arcpy.RasterToASCII_conversion(slope_temp, slope_ascii_region)
 
         if arcpy.Exists(aspect_ascii_region) is False:
             aspect_clip = arcpy.sa.ExtractByMask(aspect, ecocommunities)

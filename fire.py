@@ -41,11 +41,11 @@ class FireDisturbance(d.Disturbance):
     LCP = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'LANDSCAPE.LCP')
     IGNITION = os.path.join(INPUT_DIR, SPATIAL, s.REGION, 'ignition.shp')
 
-    FMD = os.path.join(INPUT_DIR, TABULAR, 'custom_fuel_test.fmd')
-    FMS = os.path.join(INPUT_DIR, TABULAR, 'fuel_moisture_test.fms')
-    ADJ = os.path.join(INPUT_DIR, TABULAR, 'fuel_adjustment_test.adj')
-    WND = os.path.join(INPUT_DIR, TABULAR, 'wind.wnd')
-    WTR = os.path.join(INPUT_DIR, TABULAR, 'weather.wtr')
+    FMD = os.path.join(INPUT_DIR, SPATIAL, 'custom_fuel_test.fmd')
+    FMS = os.path.join(INPUT_DIR, SPATIAL, 'fuel_moisture_test.fms')
+    ADJ = os.path.join(INPUT_DIR, SPATIAL, 'fuel_adjustment_test.adj')
+    WND = os.path.join(INPUT_DIR, SPATIAL, 'wind.wnd')
+    WTR = os.path.join(INPUT_DIR, SPATIAL, 'weather.wtr')
     TRANSLATOR = os.path.join(s.ROOT_DIR, 'ec_translator.txt')
     PSDI_YEARS = os.path.join(INPUT_DIR, TABULAR, 'psdi-years.txt')
     DROUGHT_YEARS = os.path.join(INPUT_DIR, TABULAR, 'mannahatta-psdi.txt')
@@ -234,9 +234,10 @@ class FireDisturbance(d.Disturbance):
         print ('ecocommunities shape', self.ecocommunities.shape)
         print ('time since disturbance shape', self.time_since_disturbance.shape)
         for key in self.community_table.index:
-            fuel_c = self.community_table.ix[key]['fuel_c']
-            fuel_m = self.community_table.ix[key]['fuel_m']
-            fuel_n = self.community_table.ix[key]['fuel_n']
+            # get fuel values for new, mid and climax states
+            fuel_c = self.community_table.loc[key, 'fuel_c']
+            fuel_m = self.community_table.loc[key, 'fuel_m']
+            fuel_n = self.community_table.loc[key, 'fuel_n']
 
             # set new fuels
             self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance < s.TIME_TO_MID_FUEL)] = fuel_n
@@ -249,6 +250,44 @@ class FireDisturbance(d.Disturbance):
             # set climax fuel
             self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance >= s.TIME_TO_CLIMAX_FUEL)] = fuel_c
 
+    def set_fuel_dbh(self):
+        """
+        Set fuels array based on community type and dbh
+        """
+        s.logging.info('converting ecosystem to fuel model')
+
+        # if self.fuel is None:
+        self.fuel = np.empty(shape=self.shape, dtype=np.int32)
+        for key in self.community_table.index:
+
+            # get fuel values for new, mid and climax states
+            fuel_c = self.community_table.loc[key, 'fuel_c']
+            fuel_m = self.community_table.loc[key, 'fuel_m']
+            fuel_n = self.community_table.loc[key, 'fuel_n']
+
+            if self.community_table.loc[key, 'forest'] == 0:
+                # set new fuels
+                self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance < s.TIME_TO_MID_FUEL)] = fuel_n
+
+                # set mid fuel
+                self.fuel[(self.ecocommunities == key) &
+                          (self.time_since_disturbance >= s.TIME_TO_MID_FUEL) &
+                          (self.time_since_disturbance < s.TIME_TO_CLIMAX_FUEL)] = fuel_m
+
+                # set climax fuel
+                self.fuel[(self.ecocommunities == key) & (self.time_since_disturbance >= s.TIME_TO_CLIMAX_FUEL)] = fuel_c
+
+            if self.community_table.loc[key, 'forest'] == 1:
+                # set new fuels
+                self.fuel[(self.ecocommunities == key) & (self.dbh < 5)] = fuel_n
+
+                # set mid fuel
+                self.fuel[(self.ecocommunities == key) &
+                          (self.dbh >= 5) & (self.dbh <= 10)] = fuel_m
+
+                # set climax fuel
+                self.fuel[
+                    (self.ecocommunities == key) & (self.dbh > 10)] = fuel_c
 
     def write_ignition(self):
         """
@@ -729,7 +768,10 @@ class FireDisturbance(d.Disturbance):
 
         # set tracking rasters
         self.set_time_since_disturbance()
-        self.set_fuel()
+        self.set_fuel_dbh()
+
+        # increment time since disturbance tracking raster
+        self.time_since_disturbance += 1
 
         initialize_time = time.time()
         s.logging.info('initialize run time: %s' % (initialize_time - start_time))
@@ -891,7 +933,6 @@ class FireDisturbance(d.Disturbance):
 
                     # Update time since disturbance
                     self.time_since_disturbance[self.flame_length > 0] = 0
-                    self.time_since_disturbance[self.flame_length <= 0] += 1
 
                     # Calculate tree mortality due to fire
                     time_s = time.time()
@@ -913,6 +954,7 @@ class FireDisturbance(d.Disturbance):
 
             self.get_memory()
             # s.logging.info('memory usage: %r Mb' % self.memory)
+
 
         s.logging.info('Area burned %r: %r acres' % (self.year, (self.area_burned * 100 * 0.000247105)))
 
