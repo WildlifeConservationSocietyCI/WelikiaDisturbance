@@ -3,16 +3,19 @@ Integrated fire and horticulture and pond disturbance model
 
 ## Requirements ##
  
-#### arcpy
+#### Python 2.7 + arcpy
 ESRI python distribution which contains arcpy library ([WCS license information](https://docs.google.com/document/d/1Mene0tUbbVP063KYKkhCV-sOWz3elkcMEq0bak3vxtE/edit#))
 
 64-bit Background Geoprocessing Python 2.7.10 [MSC v.1500 64 bit (AMD64)]
 
-#### GDAL
+#### Python Libraries
+[numpy‑1.13.1+mkl‑cp27‑cp27m‑win_amd64](http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy)
 [GDAL 2.0.2 x64 bindings](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
-
-#### pywinauto
 [pywin32-214.win-amd64-py3.0.exe](https://sourceforge.net/projects/pywin32/files/pywin32/Build%20214/)
+pandas
+scipy
+WMI
+
 
 #### FARSITE
 [FARSITE 4.1.055](http://www.firelab.org/document/farsite-software)
@@ -79,13 +82,13 @@ This is the set of spatial data inputs required to run all modules of the distur
 ## Disturbances Types
 
 ### Fire
-This class uses [FARSITE](https://www.firelab.org/project/farsite) to simulate the historical burning regime. Fire spread is modeled by FARSITE and the outputs of burning events are used to calculate tree mortality, update forest age and canopy rasters. Changes to these rasters are then used to modify ecosystem type.
+This class uses [FARSITE](https://www.firelab.org/project/farsite) to simulate the historical burning regime. Fire spread is modeled by FARSITE and the outputs of burning events are used to calculate tree mortality and update forest age and canopy rasters. Changes to these rasters are then used to modify ecosystem types.
 
 ### Beaver Ponds
-This class allows the addition of beaver ponds to the ecosystem raster by flooding the DEM at randomly selected dam points. Pond shape is determined by topography (flow direction -> watershed) and dam height (flooding depth). Location of ponds is random along the paths of mapped streams. Density is determined by a minimum territory distance parameter (1000 m).
+This class adds beaver disturbance to the landscape, including ponding and pond abandonment. Ponds are created by flooding the DEM at randomly selected dam points. Pond shape is determined by topography (flow direction -> watershed) and dam height (flooding depth). Location of ponds is random along the paths of mapped streams with slopes of eight degrees or less. Density is determined by a minimum territory distance parameter (1000 m).
  
 ### Horticulture
-This class uses a cell based growing method to add gardens to the ecosystem raster. Garden placement at the landscape scale is determined by the location of sites (identified in the ethnohistorical, cartographic, archaeological records). At the local scale gardens are positioned based on horticultural suitability (slope, ecosystem, proximity to habitation site).
+This class adds and abandons horticultural fields. The general placment of gardens is determined by the location of lenape sites (identified in the ethnohistorical, cartographic, archaeological records) which meet slope and distance to freshwater criteria. At the site scale gardens are positioned based on a horticultural suitability index(slope, ecosystem, proximity to habitation site).
 
 ### Ecological Succession
 This class updates the growth of forest type communities (DBH, age, tree height) and transitions early succesional communities to advanced states using pathways defined in welikia_community_table_int.csv
@@ -97,8 +100,9 @@ This class updates the growth of forest type communities (DBH, age, tree height)
  1. clone WelikiaDistrubance repository 
  2. download welikia_full_extent_inputs move to WelikiaDisturbance directory
  3. Set project and log paths in configuration local_settings.py
- 4. Run initiate_disturbance_inputs.py
- 5. Create FARSITE PROJECT and LANDSCAPE files manually in FARSITE GUI
- 6. Configure settings in scenario_settings.py
- 7. Run disturbance_script.py
+ 4. Run dir_setup.py
+ 5. Run initiate_disturbance_inputs.py
+ 6. Create FARSITE PROJECT and LANDSCAPE files manually in FARSITE GUI
+ 7. Configure settings in scenario_settings.py
+ 8. Run disturbance_script.py
  
