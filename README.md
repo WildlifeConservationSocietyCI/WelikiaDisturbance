@@ -9,11 +9,17 @@ ESRI python distribution which contains arcpy library ([WCS license information]
 64-bit Background Geoprocessing Python 2.7.10 [MSC v.1500 64 bit (AMD64)]
 
 #### Python Libraries
+
 [numpy‑1.13.1+mkl‑cp27‑cp27m‑win_amd64](http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy)
+
 [GDAL 2.0.2 x64 bindings](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+
 [pywin32-214.win-amd64-py3.0.exe](https://sourceforge.net/projects/pywin32/files/pywin32/Build%20214/)
+
 pandas
+
 scipy
+
 WMI
 
 
