@@ -90,8 +90,8 @@ class GardenDisturbance(d.Disturbance):
         :return:
         """
 
-        x = random.choice(s.REQUIREMENT_VARIANCE)
-        self.garden_area_target = int(self.population * s.PER_CAPITA_GARDEN_AREA / (s.CELL_SIZE ** 2)) + x
+        var = random.choice(s.POPULATION_VARIATION)
+        self.garden_area_target = int((self.population + var) * s.PER_CAPITA_GARDEN_AREA / (s.CELL_SIZE ** 2))
 
     def abandon_garden(self):
         """
