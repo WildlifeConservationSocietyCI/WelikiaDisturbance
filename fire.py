@@ -10,6 +10,7 @@ import random
 import os
 import shutil
 import utils
+import fnmatch
 from wmi import WMI
 
 
@@ -981,11 +982,14 @@ class FireDisturbance(d.Disturbance):
         time_e = time.time()
         s.logging.info('saved arrays as rasters : %s' % (time_e - time_s))
 
-
         # Log FARSITE outputs when a fire occurs
         if self.area_burned > 0:
             shutil.copy(self.FUEL_ascii, os.path.join(self.OUTPUT_DIR, '%s_%s' % (self.year, 'fuel.asc')))
-            shutil.copy(self.IGNITION, os.path.join(self.OUTPUT_DIR, '%s_%s' % (self.year, 'ignition.shp')))
+            for filename in os.listdir(self.INPUT_DIR):
+                if fnmatch.fnmatch(filename, 'ignition.*'):
+                    name, extension = os.path.splitext(filename)
+                    shutil.copyfile(os.path.join(self.INPUT_DIR, filename),
+                                    os.path.join(self.OUTPUT_DIR, "%s_ignition%s" % (self.year, extension)))
 
         shutil.copy(self.TIME_SINCE_DISTURBANCE_raster, os.path.join(self.OUTPUT_DIR, '%s_%s' %
                                                                      (self.year, 'time_since_disturbance.tif')))
