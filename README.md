@@ -113,4 +113,5 @@ This class updates the growth of forest type communities (DBH, age, tree height)
  8. Run disturbance_script.py
  
 #TODO
-- copy files from fire tabular inputs to region spatial directory with FARSITE project 
+- copy files from fire tabular inputs to region spatial directory with FARSITE project
+- move all tabular inputs to tables dir in model sub-dirs 
