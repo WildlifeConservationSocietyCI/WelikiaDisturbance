@@ -7,9 +7,42 @@ bibliography: Disturbances.bib
 
 scale and frequency of various natural and human disturbances in the North Eastern US [@lorimer_age_1980; @lorimer_scale_2003; @foster_land-use_1998, @pan_age_2011]
 
-Characterization of human influence on the landscape [@day_indian_1953; @russell_people_1997; @russell_people_1997; @krech_iii_ecological_1999, @patterson_indian_1988]
+Characterization of Native American influence on the landscape [@day_indian_1953; @russell_people_1997; @russell_people_1997; @krech_iii_ecological_1999, @patterson_indian_1988]
+
+# Integrated Disturbances
+
+This script contains three disturbance modules, fire, horticulture and beaver ponds, which can be run individually or in series. All modules use a shared set of inputs; these rasters are updated each time a disturbance processes is invoked and the outputs become inputs for subsequent disturbance modules or the following year.
+
+## Shared Disturbance Inputs
+   - (year)_ecocommunities.tif
+   - canopy.tif
+   - forest_age.tif
+   - DBH.tif
+
+![Figure. XX Diagram of Integrated Disturbance Model](figures/integrated_disturbance_model.png)
 
 # Fire
+
+## Inputs
+**Tables**
+  - custom_fuel.fmd <sup>[2](#myfootnote2)</sup>
+  - fuel_adjustment.adj <sup>[2](#myfootnote2)</sup>
+  - fuel_moisture.fms <sup>[2](#myfootnote2)</sup>
+  - mannahatta-psdi.txt <sup>[2](#myfootnote2)</sup>
+  - psdi-years.txt <sup>[2](#myfootnote2)</sup>
+  - wtr record <sup>[2](#myfootnote2)</sup>
+  - wind.wnd <sup>[2](#myfootnote2)</sup>
+
+ **Spatial Data**
+  - aspect.asc
+  - dem.asc
+  - slope.asc
+  - canopy.asc
+  - fuel.asc
+  - fire_trails.tif
+  - hunting_sites.tif
+  - PROJECT.FPJ <sup>[2](#myfootnote2)</sup>
+  - LANDSCAPE.LCP <sup>[2](#myfootnote2)</sup>
 
 ## Custom Fuel Models
 
@@ -28,14 +61,14 @@ Region specific fuel moisture classes were used as start conditions in FARSITE [
 | Live woody       |       89 | 105 |   135 | 140 |
 | Liver herbaceous |       60 |  82 |   116 | 120 |
 
-Table XX. Four predefined moisture values(%) which alter fire intensity and consumption (from [@reinhardt_fire_2015])
+Table XX. Four predefined moisture values(%) which alter fire intensity and consumption (reproduced from [@reinhardt_fire_2015])
 
 
 ## Initial Conditions - Forest Age
 
 The initial age of forest type communities randomly assigned  using a truncated normal distribution ($\mu=65$ , minimum=0, max=200)[@pan_age_2011; @loewenstein_age_2000]. All other community types were initialized with a forest age of zero.
 
-![age class distribution](figures/northeast_forest_age_hist.jpg)
+![Figure. XX Northeast Region (9) age class distribution (reproduced from [@pan_age_2011])](figures/northeast_forest_age_hist.jpg)
 
 ## Initial Conditions - Canopy
 Communities were initialized with their maximum canopy values as defined in the community table (needs reference/rational).
@@ -43,9 +76,6 @@ Communities were initialized with their maximum canopy values as defined in the 
 ## fire size and frequency literature
 effects of fires on temperate forests [@kozlowski_fire_2012]
 power law[@reed_power-law_2002; @cui_what_2008; @stephens_forest_2005]
-
-## Modeling Expected Frequencies
-A Poisson distribution is used to model annual forest fire events [@johnson_forest_2001; @yang_spatial_2008]. We created distributions for trail fires, garden fires and lightning fires.
 
 ### Lightning Frequencies
 Description of extent and impact of lightning caused forest fires [@loope_human_1998]
@@ -77,6 +107,9 @@ Welikia Fire Frequency Scenarios
 | garden |             0 |            ??? |        ??? |
 | hunting|             0 |            ??? |        ??? |
 
+## Modeling Expected Frequencies
+A Poisson distribution is used to model annual forest fire events [@johnson_forest_2001; @yang_spatial_2008]. We created distributions for trail fires, garden fires and lightning fires.
+
 [Fire Frequency Tables](https://docs.google.com/spreadsheets/d/1blQWZPgpWOVH8wdzriO91njUY6qGFU8VxotUYhUHfcs/edit#gid=788358028)
 
 *Ignition Points*
@@ -89,7 +122,7 @@ The number of ignitions in a given year is determined randomly using a Poisson d
 
 *Climate year equivalence*
 
-Each year in the modeled time-frame (1409-1609) has a Palmer's Drought Index derived from [tree ring data??]. Using the drought index we select an equivalent climate year between 1876-2006, for which we a have daily weather records [National Weather Service].
+Each year in the modeled time-frame (1409-1609) has a Palmer's Drought Index derived from (tree ring data??). Using the drought index we select an equivalent climate year between 1876-2006, for which we a have daily weather records [National Weather Service].
 
 weather data is reported with following fields: 
 
@@ -105,7 +138,7 @@ Humidities: (Humid1 is maximum; Humid2 is minimum) are in percent, 0 to 99 (inte
 
 Elevation: is in feet or meters above sea level. NOTE: these units (feet or meters) do not have to be the same as the landscape elevation theme (integer).
 
-(The wtr files formated for FARSITE are copied over from the Mannahatta project, I am not aware of any documentation describing the reformatting process or of the original NOAA data (This data is online at the [NOAA website](http://www.weather.gov/okx/CentralParkHistorical), but I was only able to find a portal to access daily records for past 2 months, and did not see a way to download many daily records at once. It worth checking to make sure this field has been properly converted and the measurement system header is correct (ENGLISH/METRIC)).
+(The wtr files formatted for FARSITE are copied over from the Mannahatta project, I am not aware of any documentation describing the reformatting process or of the original weather data (This data is online at the [National Weather Service Central Park, NY Historical Data](http://www.weather.gov/okx/CentralParkHistorical), but I was only able to find a portal to access daily records for past 2 months, and did not see a way to download many daily records at once. It worth checking to make sure this field has been properly converted and the measurement system header is correct (ENGLISH/METRIC)).
 
 
 *Duration*
@@ -175,6 +208,16 @@ Bark thickness multipliers for each community are based on the dominant tree typ
 
 # Horticulture
 
+## Inputs
+  **Tables**
+  - welikia_lc_reclass.txt
+  - proximity_reclass.txt
+
+  **Spatial Data**
+  - garden_sites.shp
+  - proximity_suitability.tif
+  - slope_suitability.tif
+
 ## Archaeological Evidence for Gardening
 Archaeological evidence suggests the American Indian people living in the Hudson Estuary region practiced horticulture and relied partially on domesticated fruit and vegetable to supplement foraged/hunted foods [@kraft_lenape-delaware_2001, @cantwell_unearthing_2001, @benison_horticulture_1997].
 
@@ -184,7 +227,7 @@ Archaeological evidence suggests the American Indian people living in the Hudson
 ## Site Selection
 Horticultural fields were modeled at historical sites meeting the following two criteria.
 
-1.  historical and archaeological records provide evidence for semi-permanent habitation.
+1. historical and archaeological records provide evidence for semi-permanent habitation.
 2. site point is located within 250 m of freshwater source
 
 Garden locations are then selected using a suitability model which takes into account proximity to the site center, slope and community type.
@@ -222,6 +265,12 @@ When a new garden is created a starting cell is selected randomly from the set o
 The target area of a new garden is calculated using the population at the site. Each time a new garden is created a value of between -5 and 5 is added to the base number of individuals at the site (which does not change overtime), representing changes in population size and introducing variation in the garden size over the course of the disturbance simulation (see the POPULATION_VARIANCE parameter in scenario_settings.py). 
 
 # Beaver Ponds
+
+## Inputs
+  **Spatial Data**
+  - dem.tif <sup>[1](#myfootnote1)</sup>
+  - flow_direction.tif <sup>[1](#myfootnote1)</sup>
+  - stream_suitability.tif <sup>[1](#myfootnote1)</sup>
 
 ## Beaver Populations and Disturbance in the North Eastern United States
 
