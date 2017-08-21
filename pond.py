@@ -257,7 +257,7 @@ class PondDisturbance(d.Disturbance):
         cell_size = self.ecocommunities.meanCellWidth
 
         # convert community raster to array
-        com_array = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
+        com_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
         hist = d.hist(com_array)
 
@@ -281,9 +281,9 @@ class PondDisturbance(d.Disturbance):
                     print('***********abandon pond')
                     com_array[group_array == i] = s.SHALLOW_EMERGENT_MARSH_ID
 
-            self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lower_left, cell_size, value_to_nodata=-9999)
+            self.ecocommunities = arcpy.NumPyArrayToRaster(com_array, lower_left, cell_size)
 
-            # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, 'com_after_abandon_%s.tif' % self.year))
+            self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, 'com_after_abandon_%s.tif' % self.year))
 
     def set_time_since_disturbance(self):
         this_year_time_since_disturbance = os.path.join(self.OUTPUT_DIR,
@@ -342,6 +342,8 @@ class PondDisturbance(d.Disturbance):
             s.logging.info('add new ponds to ecocommunites')
             self.ecocommunities = arcpy.sa.Con(self.new_ponds == s.ACTIVE_BEAVER_POND_ID,
                                                s.ACTIVE_BEAVER_POND_ID, self.ecocommunities)
+
+            self.ecocommunities.save(os.path.join(s.TEMP_DIR, '%s_ecocommunities.tif' % self.year))
 
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
         self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
