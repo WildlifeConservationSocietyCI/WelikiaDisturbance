@@ -24,7 +24,7 @@ else:
     sys.exit(0)
 
 # Environment Settings
-
+print(s.ecocommunities)
 arcpy.env.extent = s.ecocommunities
 arcpy.env.cellSize = s.ecocommunities
 arcpy.env.snapRaster = s.ecocommunities

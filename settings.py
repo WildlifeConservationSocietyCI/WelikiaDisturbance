@@ -46,6 +46,8 @@ RUN_LENGTH = range(1409, 1610)
 # initial conditions
 MEAN_INITIAL_FOREST_AGE = 0
 MINIMUM_FOREST_AGE = 0
+MAXIMUM_FOREST_AGE = 200
+AGE_VAR = 1
 INITIAL_TIME_SINCE_DISTURBANCE = 20
 TRAIL_OVERGROWN_YRS = 20
 
@@ -66,7 +68,7 @@ CONDITIONING_LENGTH = 15
 
 # escaped fire probabilities number of fires / km^2
 EXPECTED_LIGHTNING_FIRE = 0.0005425
-EXPECTED_TRAIL_ESCAPE = 0
+EXPECTED_TRAIL_ESCAPE = 0.00475
 EXPECTED_GARDEN_ESCAPE = 0
 EXPECTED_HUNTING_ESCAPE = 0
 
@@ -93,7 +95,7 @@ DAM_HEIGHT = 9
 # GARDENS
 PROXIMITY_BUFFER = 500
 PER_CAPITA_GARDEN_AREA = 15
-REQUIREMENT_VARIANCE = range(-5, 6)
+POPULATION_VARIATION = range(-5, 6)
 ABANDONMENT_PROBABILITY = 5
 
 
@@ -116,6 +118,11 @@ RED_MAPLE_SWEETGUM_SWAMP = 71001
 
 
 # Scenario Settings
+
+# try:
+#     from settings_local import *
+# except ImportError, e:
+#     pass
 
 try:
     from settings_scenario import *

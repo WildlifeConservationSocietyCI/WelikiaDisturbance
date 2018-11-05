@@ -122,7 +122,7 @@ class Disturbance(object):
 
             # create truncated normal distrbution for age
             lower = s.MINIMUM_FOREST_AGE
-            upper = s.UPPER
+            upper = s.MAXIMUM_FOREST_AGE
             mu = s.MEAN_INITIAL_FOREST_AGE
             sigma = s.AGE_VAR
 

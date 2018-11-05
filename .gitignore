@@ -33,3 +33,6 @@ _inputs_full_extent/
 tests/
 settings_scenario.py
 settings_local.py
+venv/
+_inputs_full_extent.zip
+disturbance_log.txt
