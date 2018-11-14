@@ -7,6 +7,7 @@ import logging
 from arcpy import env
 import sys
 import utils
+from arcpy.sa import *
 
 # ArcGIS Extensions
 
@@ -215,11 +216,14 @@ for feature in cursor:
     if arcpy.Exists(dem_ascii_region) is False:
         print(dem)
         print(ecocommunities)
-        print(env)
         dem_clip = arcpy.sa.ExtractByMask(dem, ecocommunities)
-        dem_temp = os.path.join(s.TEMP_DIR, "dem.tif")
-        arcpy.Resample_management(dem_clip, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
-        arcpy.RasterToASCII_conversion(dem_temp, dem_ascii_region)
+        # inRaster = os.path.join("inputs_full_extent", "dem.tif")
+        # inMaskData = os.path.join("inputs_region", "4_ecocommunities_int.tif")
+        # dem_clip = ExtractByMask(inRaster, inMaskData)
+        # dem_clip.save("D:\_data\welikia\WelikiaDisturbance/temp/test")
+        # dem_temp = os.path.join(s.TEMP_DIR, "dem.tif")
+        # arcpy.Resample_management(dem_clip, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
+        # arcpy.RasterToASCII_conversion(dem_temp, dem_ascii_region)
 
     # create reference ascii raster for region (extent, cell size, shape)
     if arcpy.Exists(reference_ascii_region) is False:
