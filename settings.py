@@ -8,22 +8,20 @@ import numpy
 
 # DIRECTORIES
 TRIAL_NAME = ''
-ROOT_DIR = ''
-REGION = ''
 LOG_DIR = '%s' % TRIAL_NAME
-FARSITE = ''
 
 try:
     from settings_local import *
 except ImportError, e:
     pass
 
-INPUT_DIR = os.path.join(ROOT_DIR, 'inputs')
+INPUT_DIR_REGION = os.path.join(ROOT_DIR, 'inputs_region')
+INPUT_DIR_FULL = os.path.join(ROOT_DIR, 'inputs_full_extent')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
 TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
 
-ecocommunities = os.path.join(INPUT_DIR, '%s_ecocommunities_int.tif' % REGION)
-community_table = os.path.join(ROOT_DIR, 'tables', 'welikia_community_table_int.csv')
+ecocommunities = os.path.join(INPUT_DIR_REGION, '%s_ecocommunities_int.tif' % REGION)
+community_table = os.path.join(INPUT_DIR_FULL, 'tables', 'welikia_community_table_int.csv')
 
 
 #
@@ -118,11 +116,6 @@ RED_MAPLE_SWEETGUM_SWAMP = 71001
 
 
 # Scenario Settings
-
-# try:
-#     from settings_local import *
-# except ImportError, e:
-#     pass
 
 try:
     from settings_scenario import *

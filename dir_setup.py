@@ -1,55 +1,33 @@
 import os
 import arcpy
-import shutil
 import settings as s
+import errno
 
-INPUT_DIR = os.path.join(s.ROOT_DIR, 'inputs')
-OUTPUT_DIR = os.path.join(s.ROOT_DIR, 'outputs')
-
-REGION_BOUNDARIES = os.path.join(s.ROOT_DIR, '_inputs_full_extent', 'region_boundaries', 'disturbance_regions.shp')
-
-regions = []
-
-cursor = arcpy.SearchCursor(REGION_BOUNDARIES)
-for feature in cursor:
-    region_code = int(feature.BoroCode)
-    regions.append(region_code)
-
-print regions
-
+REGION_BOUNDARIES = os.path.join(s.INPUT_DIR_FULL, 'region_boundaries', 'disturbance_regions.shp')
 disturbance_types = ['fire', 'pond', 'garden']
 
-
 def mkdir(path):
-    if os.path.isdir(path) is False:
-        os.mkdir(path)
-
-
-# create input directory
-mkdir(INPUT_DIR)
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 for i in disturbance_types:
-    mkdir(os.path.join(INPUT_DIR, '%s' % i))
+    mkdir(os.path.join(s.INPUT_DIR_REGION, '%s' % i))
 
-mkdir(os.path.join(INPUT_DIR, 'fire', 'spatial'))
-mkdir(os.path.join(INPUT_DIR, 'fire', 'tabular'))
-mkdir(os.path.join(INPUT_DIR, 'garden', 'spatial'))
-mkdir(os.path.join(INPUT_DIR, 'garden', 'tabular'))
+mkdir(os.path.join(s.INPUT_DIR_REGION, 'fire', 'spatial'))
+mkdir(os.path.join(s.INPUT_DIR_REGION, 'fire', 'tabular'))
+mkdir(os.path.join(s.INPUT_DIR_REGION, 'garden', 'spatial'))
+mkdir(os.path.join(s.INPUT_DIR_REGION, 'garden', 'tabular'))
+mkdir(os.path.join(s.INPUT_DIR_REGION, 'pond'))
 
-# create output directory
-mkdir(OUTPUT_DIR)
-for region in regions:
-    mkdir(os.path.join(OUTPUT_DIR, '%s' % region))
-    for i in disturbance_types:
-        mkdir(os.path.join(OUTPUT_DIR, '%s' % region,'%s' % i))
-        if i == 'fire':
-            mkdir(os.path.join(OUTPUT_DIR, '%s' % region, '%s' % i, 'burn_rasters'))
-
-for region in regions:
-    mkdir(os.path.join(INPUT_DIR, 'fire', 'spatial', '%s' % region))
-    mkdir(os.path.join(INPUT_DIR, 'garden', 'spatial', '%s' % region))
-    mkdir(os.path.join(INPUT_DIR, 'pond', '%s' % region))
+# create output directory, creates folders in outputs labeled "burn_rasters"
+for i in disturbance_types:
+    mkdir(os.path.join(s.OUTPUT_DIR, '%s' % i))
+    if i == 'fire':
+        mkdir(os.path.join(s.OUTPUT_DIR, '%s' % i, 'burn_rasters'))
 
 mkdir(os.path.join(s.ROOT_DIR, 'temp'))
-
-# move files from full extent inputs

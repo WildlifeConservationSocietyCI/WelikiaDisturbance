@@ -19,7 +19,7 @@ class FireDisturbance(d.Disturbance):
 
     # Directories
 
-    INPUT_DIR = os.path.join(s.INPUT_DIR, 'fire')
+    INPUT_DIR = os.path.join(s.INPUT_DIR_REGION, 'fire')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'fire')
     # INPUT_DIR = s.INPUT_DIR
     # OUTPUT_DIR = s.OUTPUT_DIR

@@ -11,7 +11,7 @@ class GardenDisturbance(d.Disturbance):
     # CLASS VARIABLES
 
     # Garden Directories
-    INPUT_DIR = os.path.join(s.INPUT_DIR, 'garden')
+    INPUT_DIR = os.path.join(s.INPUT_DIR_REGION, 'garden')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'garden')
     SPATIAL = 'spatial'
     TABULAR = 'tabular'

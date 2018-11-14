@@ -18,7 +18,7 @@ class PondDisturbance(d.Disturbance):
     # CONSTANTS
 
     # Pond Directories
-    INPUT_DIR = os.path.join(s.INPUT_DIR, 'pond')
+    INPUT_DIR = os.path.join(s.INPUT_DIR_REGION, 'pond')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'pond')
 
     # Constant Inputs

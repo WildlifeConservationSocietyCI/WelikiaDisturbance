@@ -5,7 +5,7 @@ from osgeo.gdalconst import *
 from osgeo import gdal_array
 from osgeo import osr
 import linecache
-from wmi import WMI
+# from wmi import WMI
 
 
 def mkdir(path):

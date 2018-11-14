@@ -21,8 +21,8 @@ class Succession(object):
 
         # raster paths
 
-        self.REFERENCE_raster = os.path.join(s.INPUT_DIR, 'reference_grid_%s.tif' % s.REGION)
-        self.REFERENCE_ascii = os.path.join(s.INPUT_DIR, 'reference_grid_%s.asc' % s.REGION)
+        self.REFERENCE_raster = os.path.join(s.INPUT_DIR_REGION, 'reference_grid_%s.tif' % s.REGION)
+        self.REFERENCE_ascii = os.path.join(s.INPUT_DIR_REGION, 'reference_grid_%s.asc' % s.REGION)
         self.CANOPY_raster = os.path.join(s.OUTPUT_DIR, 'canopy.tif')
         self.FOREST_AGE_raster = os.path.join(s.OUTPUT_DIR, 'forest_age.tif')
         self.DBH_raster = os.path.join(s.OUTPUT_DIR, 'dbh.tif')
