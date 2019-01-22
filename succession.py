@@ -246,14 +246,22 @@ class Succession(object):
                                               x_cell_size=s.CELL_SIZE)
 
         # issue deleting: os.remove(r'D:\_data\welikia\WelikiaDisturbance\outputs\1\ecocommunities_1411.tif.vat.cpg')
-        out_raster.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+        e = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
+        # potentially attempt arcpy.Delete(e) or os.remove(ecocommunities_1411.tif*)
+        # arcpy.Delete_management(e)
+        print('attempt to save: %s' % e)
+        out_raster.save(e)
+        print('tried to save %s' % e)
+        # s.logging.info('tried to save %s' % e)
 
         # utils.array_to_raster(self.ecocommunities, os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
         #                       geotransform=self.geot, projection=self.projection)
 
-        test_eco = os.path.join(s.OUTPUT_DIR, 'succ_ecocom_test_%s.tif' % self.year)
-        utils.array_to_raster(self.ecocommunities, test_eco,
-                              geotransform=self.geot, projection=self.projection)
+        # test_eco = os.path.join(s.OUTPUT_DIR, 'succ_ecocom_test_%s.tif' % self.year)
+        # print('attempt to save: %s' % e)
+        # utils.array_to_raster(self.ecocommunities, test_eco,
+        #                       geotransform=self.geot, projection=self.projection)
+        # print('tried to save %s' % e)
         utils.array_to_raster(self.canopy, self.CANOPY_raster,
                               geotransform=self.geot, projection=self.projection)
         utils.array_to_raster(self.forest_age, self.FOREST_AGE_raster,

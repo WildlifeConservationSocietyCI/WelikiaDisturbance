@@ -36,6 +36,7 @@ POND = True
 
 # LOGGING
 logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
+                    filemode='w',
                     level=logging.DEBUG)
 
 # PARAMETERS
