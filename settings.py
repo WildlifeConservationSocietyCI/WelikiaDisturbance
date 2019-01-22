@@ -40,7 +40,7 @@ logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
 
 # PARAMETERS
 # Trial
-RUN_LENGTH = range(1409, 1610)
+RUN_LENGTH = range(1409, 1411)
 
 # FIRE
 # initial conditions

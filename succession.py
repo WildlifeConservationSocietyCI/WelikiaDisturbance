@@ -245,6 +245,7 @@ class Succession(object):
                                                                             self.header['yllcorner']),
                                               x_cell_size=s.CELL_SIZE)
 
+        # issue deleting: os.remove(r'D:\_data\welikia\WelikiaDisturbance\outputs\1\ecocommunities_1411.tif.vat.cpg')
         out_raster.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
         # utils.array_to_raster(self.ecocommunities, os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
