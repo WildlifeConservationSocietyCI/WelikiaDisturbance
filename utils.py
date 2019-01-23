@@ -119,7 +119,7 @@ def array_to_raster(array, out_raster, geotransform, projection, driver='GTiff',
     except ValueError:
         nodata = None
 
-    print('nodata: %s' % nodata)
+    print('%s nodata: %s' % (out_raster, nodata))
 
     # map numpy dtype to GDAL dtype if default arg is used
     if dtype is None:

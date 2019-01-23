@@ -997,4 +997,6 @@ class FireDisturbance(d.Disturbance):
 
         run_time = end_time - start_time
 
+        self.ecocommunities = None
+        del self.ecocommunities
         s.logging.info('runtime: %s' % run_time)

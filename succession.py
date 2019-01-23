@@ -240,34 +240,35 @@ class Succession(object):
         self.transition()
 
         # using arc array to raster because of file lock/permission
-        out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
-                                              lower_left_corner=arcpy.Point(self.header['xllcorner'],
-                                                                            self.header['yllcorner']),
-                                              x_cell_size=s.CELL_SIZE)
+        # out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
+        #                                       lower_left_corner=arcpy.Point(self.header['xllcorner'],
+        #                                                                     self.header['yllcorner']),
+        #                                       x_cell_size=s.CELL_SIZE)
 
         # issue deleting: os.remove(r'D:\_data\welikia\WelikiaDisturbance\outputs\1\ecocommunities_1411.tif.vat.cpg')
         e = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
         # potentially attempt arcpy.Delete(e) or os.remove(ecocommunities_1411.tif*)
         # arcpy.Delete_management(e)
-        print('attempt to save: %s' % e)
-        out_raster.save(e)
-        print('tried to save %s' % e)
+        # print('attempt to save: %s' % e)
+        # out_raster.save(e)
+        # print('tried to save %s' % e)
         # s.logging.info('tried to save %s' % e)
 
         # utils.array_to_raster(self.ecocommunities, os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
         #                       geotransform=self.geot, projection=self.projection)
 
         # test_eco = os.path.join(s.OUTPUT_DIR, 'succ_ecocom_test_%s.tif' % self.year)
-        # print('attempt to save: %s' % e)
-        # utils.array_to_raster(self.ecocommunities, test_eco,
-        #                       geotransform=self.geot, projection=self.projection)
-        # print('tried to save %s' % e)
+        utils.array_to_raster(self.ecocommunities, e,
+                              geotransform=self.geot, projection=self.projection)
         utils.array_to_raster(self.canopy, self.CANOPY_raster,
                               geotransform=self.geot, projection=self.projection)
         utils.array_to_raster(self.forest_age, self.FOREST_AGE_raster,
                               geotransform=self.geot, projection=self.projection)
         utils.array_to_raster(self.dbh, self.DBH_raster,
                               geotransform=self.geot, projection=self.projection)
+
+        out_raster = None
+        del out_raster
 
     # s1 = Succession(1508)
     # print s1.succession_table.head()
