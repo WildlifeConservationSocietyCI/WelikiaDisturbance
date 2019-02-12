@@ -324,7 +324,7 @@ class FireDisturbance(d.Disturbance):
         else:
             # s.logging.info('Assigning initial values to time since disturbance array')
             self.time_since_disturbance = np.empty(shape=self.shape, dtype=np.int32)
-            print ('time since disturvance', self.time_since_disturbance.shape)
+            print ('time since disturbance', self.time_since_disturbance.shape)
             self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
             utils.array_to_raster(self.time_since_disturbance, self.TIME_SINCE_DISTURBANCE_raster,
                                   geotransform=self.geot, projection=self.projection)
@@ -769,6 +769,8 @@ class FireDisturbance(d.Disturbance):
         # set tracking rasters
         self.set_time_since_disturbance()
         self.set_fuel_dbh()
+        print self.shape
+        print ('fuel shape', self.fuel.shape)
 
         # increment time since disturbance tracking raster
         self.time_since_disturbance += 1
@@ -997,4 +999,6 @@ class FireDisturbance(d.Disturbance):
 
         run_time = end_time - start_time
 
+        self.ecocommunities = None
+        del self.ecocommunities
         s.logging.info('runtime: %s' % run_time)

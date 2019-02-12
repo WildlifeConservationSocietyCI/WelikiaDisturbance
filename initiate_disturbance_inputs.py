@@ -154,9 +154,9 @@ if arcpy.Exists(os.path.join(s.INPUT_DIR_FULL, 'proximity_suitability.tif')) is 
 
     proximity_suitability = arcpy.sa.ReclassByTable(euclidian_distance,
                                                     in_remap_table=PROXIMITY_RECLASS,
-                                                    from_value_field='Field1',
-                                                    to_value_field='Field2',
-                                                    output_value_field='Field4')
+                                                    from_value_field='FROM_',
+                                                    to_value_field='TO',
+                                                    output_value_field='OUT')
 
     proximity_suitability.save(os.path.join(s.INPUT_DIR_FULL, 'proximity_suitability.tif'))
 else:
@@ -212,22 +212,16 @@ for feature in cursor:
 
     # set resolution for FARSITE inputs
     arcpy.env.cellSize = s.FARSITE_RESOLUTION
+    dem_temp = os.path.join(s.TEMP_DIR, "dem_%s.tif" % region)
 
     if arcpy.Exists(dem_ascii_region) is False:
-        print(dem)
-        print(ecocommunities)
         dem_clip = arcpy.sa.ExtractByMask(dem, ecocommunities)
-        # inRaster = os.path.join("inputs_full_extent", "dem.tif")
-        # inMaskData = os.path.join("inputs_region", "4_ecocommunities_int.tif")
-        # dem_clip = ExtractByMask(inRaster, inMaskData)
-        # dem_clip.save("D:\_data\welikia\WelikiaDisturbance/temp/test")
-        # dem_temp = os.path.join(s.TEMP_DIR, "dem.tif")
-        # arcpy.Resample_management(dem_clip, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
-        # arcpy.RasterToASCII_conversion(dem_temp, dem_ascii_region)
+        dem_temp = os.path.join(s.TEMP_DIR, "dem.tif")
+        arcpy.Resample_management(dem_clip, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
+        arcpy.RasterToASCII_conversion(dem_temp, dem_ascii_region)
 
     # create reference ascii raster for region (extent, cell size, shape)
     if arcpy.Exists(reference_ascii_region) is False:
-        dem_temp = os.path.join(s.TEMP_DIR, "dem.tif")
         ref = arcpy.sa.SetNull(arcpy.sa.IsNull(dem_temp) == 0, dem_temp)
         arcpy.RasterToASCII_conversion(ref, reference_ascii_region)
 

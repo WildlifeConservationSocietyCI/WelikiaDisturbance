@@ -356,3 +356,5 @@ class PondDisturbance(d.Disturbance):
                               geotransform=self.geot, projection=self.projection)
 
         self.set_pond_area()
+        self.ecocommunities = None
+        del self.ecocommunities

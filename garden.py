@@ -407,3 +407,5 @@ class GardenDisturbance(d.Disturbance):
 
         # self.calculate_garden_area()
         print('garden area: %s' % self.new_garden_area)
+        self.ecocommunities = None
+        del self.ecocommunities
