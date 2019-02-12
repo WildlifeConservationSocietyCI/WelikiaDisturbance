@@ -267,9 +267,6 @@ class Succession(object):
         utils.array_to_raster(self.dbh, self.DBH_raster,
                               geotransform=self.geot, projection=self.projection)
 
-        out_raster = None
-        del out_raster
-
     # s1 = Succession(1508)
     # print s1.succession_table.head()
     # s1.run_succession()

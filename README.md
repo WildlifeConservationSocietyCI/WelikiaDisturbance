@@ -36,8 +36,7 @@ This is the set of spatial data inputs required to run all modules of the distur
   - welikia region boundaries
   - Lenape trails
   - Lenape garden sites
-
-- welikia_community_translation_table.csv
+  - welikia_community_translation_table.csv
 
 ##### Tree Allometery
   - site_index_curve_table.csv
