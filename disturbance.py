@@ -10,10 +10,10 @@ import pandas as pd
 import scipy.stats as ss
 import linecache
 
+
 class Disturbance(object):
 
     def __init__(self, year):
-
         self.year = year
 
         # raster paths

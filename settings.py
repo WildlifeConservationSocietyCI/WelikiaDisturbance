@@ -1,50 +1,59 @@
 import os
-import arcpy
-from arcpy import env
-import sys
 import logging
-import numpy
+import utils
 
 
-# DIRECTORIES
-TRIAL_NAME = ''
-LOG_DIR = '%s' % TRIAL_NAME
-
-try:
-    from settings_local import *
-except ImportError, e:
-    pass
-
-INPUT_DIR_REGION = os.path.join(ROOT_DIR, 'inputs_region')
-INPUT_DIR_FULL = os.path.join(ROOT_DIR, 'inputs_full_extent')
-OUTPUT_DIR = os.path.join(ROOT_DIR, 'outputs', REGION)
-TEMP_DIR = os.path.join(ROOT_DIR, 'temp')
-
-ecocommunities = os.path.join(INPUT_DIR_REGION, '%s_ecocommunities_int.tif' % REGION)
-community_table = os.path.join(INPUT_DIR_FULL, 'tables', 'welikia_community_table_int.csv')
-
-
-#
-DEBUG_MODE = False
-
-# DISTURBANCE FLAG TOGGLE
+# GENERAL SETTINGS
+DEBUG_MODE = False  # print more log lines, save more intermediate files
+RUN_LENGTH = range(1409, 1411)
+# flags for whether to run each disturbance module
 GARDEN = True
 FIRE = True
 POND = True
 
-# LOGGING
-logging.basicConfig(filename=os.path.join(LOG_DIR, 'disturbance_log.txt'),
-                    filemode='w',
-                    level=logging.DEBUG)
 
-# PARAMETERS
-# Trial
-RUN_LENGTH = range(1409, 1411)
+# PATHS AND NAMES
+DATA_DIR = 'D:/_data/Welikia/WelikiaDisturbance/data'  # independent of code paths
+INPUT_DIR_FULL = os.path.join(DATA_DIR, 'inputs_full_extent')
+# 1: Manhattan; 2: Bronx; 3: Brooklyn/Queens; 4: Staten Island
+REGION = 1
+TRIAL_NAME = 'test'
+
+# REQUIRED FULL-EXTENT INPUTS: THESE FILES MUST EXIST
+ECOCOMMUNITIES_FE = os.path.join(INPUT_DIR_FULL, 'Welikia_Ecocommunities', 'Welikia_Ecocommunities_int.tif')
+DEM_FE = os.path.join(INPUT_DIR_FULL, 'dem', 'WELIKIA_DEM_5m_BURNED_STREAMS_10ft_CLIP.tif')
+SITES_FE = os.path.join(INPUT_DIR_FULL, 'garden_sites', 'GARDEN_SITES.shp')
+BUFFER_FE = os.path.join(INPUT_DIR_FULL, 'garden_sites', 'SITE_BUFFER.shp')
+TRAILS_FE = os.path.join(INPUT_DIR_FULL, 'trails', 'fire_trails.tif')
+HUNTING_FE = os.path.join(INPUT_DIR_FULL, 'hunting_sites', 'hunting_sites.tif')
+REGION_BOUNDARIES = os.path.join(INPUT_DIR_FULL, 'region_boundaries', 'disturbance_regions.shp')  # requires BoroName
+PROXIMITY_RECLASS = os.path.join(INPUT_DIR_FULL, 'tables', 'garden', 'proximity_reclass.txt')
+SLOPE_RECLASS = os.path.join(INPUT_DIR_FULL, 'tables', 'garden', 'slope_reclass.txt')
+
+
+# SCENARIO SETTINGS
+
+# COMMUNITY CODES
+GARDEN_ID = 65000
+TRAIL_ID = 1
+HUNTING_SITE_ID = 1
+SUCCESSIONAL_OLD_FIELD_ID = 64800
+SUCCESSIONAL_GRASSLAND_ID = 63500
+SUCCESSIONAL_SHRUBLAND_ID = 64900
+SUCCESSIONAL_HARDWOOD_FOREST_ID = 73600
+
+ACTIVE_BEAVER_POND_ID = 62201
+SHALLOW_EMERGENT_MARSH_ID = 62400
+SHRUB_SWAMP_ID = 62500
+RED_MAPLE_HARDWOOD_SWAMP = 62900
+ATLANTIC_CEDAR_SWAMP = 70900
+RED_MAPLE_BLACK_GUM_SWAMP = 71000
+RED_MAPLE_SWEETGUM_SWAMP = 71001
 
 # FIRE
 # initial conditions
-MEAN_INITIAL_FOREST_AGE = 0
-MINIMUM_FOREST_AGE = 0
+MEAN_INITIAL_FOREST_AGE = 65
+MINIMUM_FOREST_AGE = 20
 MAXIMUM_FOREST_AGE = 200
 AGE_VAR = 1
 INITIAL_TIME_SINCE_DISTURBANCE = 20
@@ -98,27 +107,40 @@ POPULATION_VARIATION = range(-5, 6)
 ABANDONMENT_PROBABILITY = 5
 
 
-# COMMUNITY CODES
-GARDEN_ID = 65000
-TRAIL_ID = 1
-HUNTING_SITE_ID = 1
-SUCCESSIONAL_OLD_FIELD_ID = 64800
-SUCCESSIONAL_GRASSLAND_ID = 63500
-SUCCESSIONAL_SHRUBLAND_ID = 64900
-SUCCESSIONAL_HARDWOOD_FOREST_ID = 73600
+# INTERNAL CONFIGURATION
+trial = utils.format_str(TRIAL_NAME)[:20]
+TRIAL_DIR = os.path.join(DATA_DIR, '{}_{}'.format(REGION, trial))
+INPUT_DIR = os.path.join(TRIAL_DIR, 'inputs')
+OUTPUT_DIR = os.path.join(TRIAL_DIR, 'outputs')
+TEMP_DIR = os.path.join(DATA_DIR, 'temp')
 
-ACTIVE_BEAVER_POND_ID = 62201
-SHALLOW_EMERGENT_MARSH_ID = 62400
-SHRUB_SWAMP_ID = 62500
-RED_MAPLE_HARDWOOD_SWAMP = 62900
-ATLANTIC_CEDAR_SWAMP = 70900
-RED_MAPLE_BLACK_GUM_SWAMP = 71000
-RED_MAPLE_SWEETGUM_SWAMP = 71001
+community_table = os.path.join(INPUT_DIR_FULL, 'tables', 'welikia_community_table_int.csv')
 
+# region-specific spatial inputs created by initiate_disturbance_inputs
+# ecocommunities lifecycle:
+# initial full extent ec: ECOCOMMUNITIES_FE
+# modified full extent ec (initiate_disturbance_inputs): s.TEMP_DIR, 'ecocommunities_fe.tif'
+# initial region ec (initiate_disturbance_inputs): ecocommunities below
+# yearly output ecs (disturbance scripts): s.OUTPUT_DIR, self._ecocommunities_filename % self.year
+ecocommunities = os.path.join(INPUT_DIR, 'ecocommunities.tif')
+reference_raster = os.path.join(INPUT_DIR, 'reference_grid.tif')
+reference_ascii = os.path.join(INPUT_DIR, 'reference_grid.asc')
 
-# Scenario Settings
+dem_ascii = os.path.join(INPUT_DIR, 'fire', 'dem.asc')
+aspect_ascii = os.path.join(INPUT_DIR, 'fire', 'aspect.asc')
+slope_ascii = os.path.join(INPUT_DIR, 'fire', 'slope.asc')
+trails = os.path.join(INPUT_DIR, 'fire', 'trails.tif')
+hunting_sites = os.path.join(INPUT_DIR, 'fire', 'hunting_sites.tif')
 
-try:
-    from settings_scenario import *
-except ImportError, e:
-    pass
+dem = os.path.join(INPUT_DIR, 'pond', 'dem.tif')
+flow_direction = os.path.join(INPUT_DIR, 'pond', 'flow_direction.tif')
+stream_suitability = os.path.join(INPUT_DIR, 'pond', 'stream_suitability.tif')
+
+slope_suitability = os.path.join(INPUT_DIR, 'garden', 'slope_suitability.tif')
+proximity_suitability = os.path.join(INPUT_DIR, 'garden', 'proximity_suitability.tif')
+garden_sites = os.path.join(INPUT_DIR, 'garden', 'garden_sites.shp')
+
+# LOGGING
+logging.basicConfig(filename=os.path.join(DATA_DIR, '{}_{}.log'.format(REGION, trial)),
+                    filemode='w',
+                    level=logging.DEBUG)

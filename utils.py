@@ -1,22 +1,52 @@
 import os
+import errno
+import arcpy
 import numpy as np
 from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo import gdal_array
 from osgeo import osr
 import linecache
+import shutil
 # from wmi import WMI
 
 
+# create dir (including parents if necessary) if it doesn't exist
 def mkdir(path):
-    if os.path.isdir(path) is False:
-        os.mkdir(path)
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 
-def absoluteFilePaths(directory):
-   for dirpath,_,filenames in os.walk(directory):
-       for f in filenames:
-           yield os.path.abspath(os.path.join(dirpath, f))
+# remove contents of dir (but not dir itself)
+def clear_dir(directory):
+    if os.path.isdir(directory):
+        file_list = os.listdir(directory)
+        for file_name in file_list:
+            path = os.path.join(directory, file_name)
+            if os.path.isfile(path):
+                os.remove(path)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+
+
+def set_arc_env(in_raster):
+    arcpy.env.extent = in_raster
+    arcpy.env.cellSize = in_raster
+    arcpy.env.snapRaster = in_raster
+    arcpy.env.mask = in_raster
+    arcpy.env.outputCoordinateSystem = arcpy.Describe(in_raster).spatialReference
+    arcpy.env.cartographicCoordinateSystem = arcpy.Describe(in_raster).spatialReference
+
+
+def absolute_file_paths(directory):
+    for dirpath, _, filenames in os.walk(directory):
+        for f in filenames:
+            yield os.path.abspath(os.path.join(dirpath, f))
 
 
 def format_str(text):
@@ -39,7 +69,6 @@ def format_str(text):
 
 def get_ascii_header(ascii_raster):
     """
-
     :param ascii_raster:
     :return:
     """
