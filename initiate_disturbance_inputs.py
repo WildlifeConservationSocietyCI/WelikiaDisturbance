@@ -3,14 +3,19 @@
 # If running existing scenario and have changed input data or paths, do NOT change REGION/TRIAL_NAME, just run this
 # If running existing scenario and have changed only scenario settings, don't run this
 
-import settings as s
-import arcpy
 import os
-import logging
 import sys
+import logging
+import arcpy
+import settings as s
 import utils
 
-# ArcGIS Extensions
+logging.basicConfig(filename=s.LOGFILE,
+                    filemode='w',
+                    format='%(asctime)s %(levelname)s: %(message)s',
+                    level=logging.DEBUG,
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
 if arcpy.CheckExtension("Spatial") == "Available":
     arcpy.AddMessage("Checking out Spatial")
     arcpy.CheckOutExtension("Spatial")
@@ -28,7 +33,6 @@ utils.clear_dir(s.TRIAL_DIR)
 utils.mkdir(os.path.join(s.INPUT_DIR, 'fire'))
 utils.mkdir(os.path.join(s.INPUT_DIR, 'garden'))
 utils.mkdir(os.path.join(s.INPUT_DIR, 'pond'))
-utils.mkdir(os.path.join(s.OUTPUT_DIR, 'fire', 'burn_rasters'))
 utils.clear_dir(s.TEMP_DIR)
 utils.mkdir(s.TEMP_DIR)
 
@@ -41,7 +45,7 @@ arcpy.PolygonToRaster_conversion(in_features=s.BUFFER_FE,
                                  value_field='RASTERVALU',
                                  out_rasterdataset=lenape_sites,
                                  cellsize=s.CELL_SIZE)
-# TODO: replace hardcoded ecocomm vals with constants from settings file everywhere
+# TODO: replace hardcoded ecocomm vals like 65400 with constants from settings file everywhere
 ecocommunities_fe = arcpy.sa.Con(ecocommunities_fe,
                                  arcpy.sa.Con((arcpy.sa.IsNull(lenape_sites) == 0), 65400, ecocommunities_fe))
 ecocommunities_fe.save(os.path.join(s.TEMP_DIR, 'ecocommunities_fe.tif'))
@@ -110,11 +114,7 @@ for feature in cursor:
                               in_template_dataset=feature.Shape,
                               clipping_geometry='ClippingGeometry')
 
-        # TODO: do we need this? Could we just use ecocomm as reference?
-        # create reference raster (GeoTiff) for region (extent, cellsize, shape)
-        ref = arcpy.sa.SetNull(arcpy.sa.IsNull(s.ecocommunities) == 0, s.ecocommunities)
-        ref.save(s.reference_raster)
-        utils.set_arc_env(ref)
+        utils.set_arc_env(s.ecocommunities)
 
         # FIRE INPUTS
         logging.info('creating region {} fire inputs'.format(region))
@@ -122,7 +122,7 @@ for feature in cursor:
         arcpy.env.cellSize = s.FARSITE_RESOLUTION
 
         dem_clip = arcpy.sa.ExtractByMask(dem, s.ecocommunities)
-        dem_temp = os.path.join(s.TEMP_DIR, "dem.tif")
+        dem_temp = os.path.join(s.TEMP_DIR, "dem_farsite.tif")
         arcpy.Resample_management(dem_clip, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(dem_temp, s.dem_ascii)
 
@@ -143,7 +143,7 @@ for feature in cursor:
 
         # set cell resolution back to reference raster
         # TODO: is this right? Doesn't farsite require same resolution for these?
-        arcpy.env.cellSize = s.reference_raster
+        arcpy.env.cellSize = s.ecocommunities
 
         trail_clip = arcpy.sa.ExtractByMask(s.TRAILS_FE, s.ecocommunities)
         trail_clip.save(s.trails)
@@ -175,16 +175,3 @@ for feature in cursor:
         arcpy.Clip_analysis(in_features=s.SITES_FE,
                             clip_features=feature.Shape,
                             out_feature_class=s.garden_sites)
-
-# TODO:
-# validate this from scratch until all outputs look correct in arcgis (path, cellsize, datatype, extent)
-# refactor disturbance/fire/garden/pond/succession to use new paths. Create output paths as needed in those files.
-# move (most) print statements to logging.info()
-# deal with other TODOs in code where possible
-# when settings.py is done, copy to settings_template.py; add template to repo and remove settings
-# when satisfied, replace inputs_full_extent.zip on google drive and create scenario data hierarchy there
-# (As of 2/12 Kim moved tables from repo to inputs_full_extent; there may be other things to move)
-# edit readme
-# pull request, code review
-# ...
-# refactor/clean up topographic_exposure, disturbance_model_notes, analysis

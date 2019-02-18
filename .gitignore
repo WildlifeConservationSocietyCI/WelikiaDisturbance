@@ -37,3 +37,4 @@ venv/
 _inputs_full_extent.zip
 disturbance_log.txt
 farsite/
+settings.py
