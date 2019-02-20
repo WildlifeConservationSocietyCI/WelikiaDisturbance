@@ -11,8 +11,7 @@ import utils
 class GardenDisturbance(d.Disturbance):
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'garden')
     OUTPUT_DIR = os.path.join(s.OUTPUT_DIR, 'garden')
-    # TODO: See if COMMUNITY_RECLASS_TABLE can be refactored away. Should be able to use the other lc_reclass?
-    COMMUNITY_RECLASS_TABLE = s.COMMUNITY_RECLASS_TABLE
+    COMMUNITY_TABLE = s.COMMUNITY_TABLE
     SLOPE_SUITABILITY = s.slope_suitability
     PROXIMITY_SUITABILITY = s.proximity_suitability
     SITES = s.garden_sites
@@ -56,10 +55,10 @@ class GardenDisturbance(d.Disturbance):
         land cover, proximity and slope suitability rasters for overall suitability score.
         :return:
         """
-        ecocommunity_suitability = arcpy.sa.ReclassByTable(self.ecocommunities, self.COMMUNITY_RECLASS_TABLE,
+        ecocommunity_suitability = arcpy.sa.ReclassByTable(self.ecocommunities, self.COMMUNITY_TABLE,
                                                            from_value_field='Field1',
                                                            to_value_field='Field1',
-                                                           output_value_field='Field3',
+                                                           output_value_field='garden_suitability',
                                                            missing_values='NODATA')
 
         self.suitability = arcpy.sa.Con(ecocommunity_suitability > 0, (ecocommunity_suitability +

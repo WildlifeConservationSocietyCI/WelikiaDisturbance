@@ -29,8 +29,6 @@ HUNTING_FE = os.path.join(INPUT_DIR_FULL, 'hunting_sites', 'hunting_sites.tif')
 REGION_BOUNDARIES = os.path.join(INPUT_DIR_FULL, 'region_boundaries', 'disturbance_regions.shp')  # requires BoroName
 
 COMMUNITY_TABLE = os.path.join(INPUT_DIR_FULL, 'tables', 'welikia_community_table_int.csv')
-# TODO: should this be lc_reclass.txt, moved from gardens/lc_reclass.txt?
-COMMUNITY_RECLASS_TABLE = os.path.join(INPUT_DIR_FULL, 'tables', 'welikia_lc_reclass_temp.txt')
 DBH_LOOKUP = os.path.join(INPUT_DIR_FULL, 'tables', 'dbh_lookup.csv')
 SITE_INDEX_PARAMETERS = os.path.join(INPUT_DIR_FULL, 'tables', 'site_index_curve_table.csv')
 COEFFECIENTS = os.path.join(INPUT_DIR_FULL, 'tables', 'basal_area_growth_coeffecients.csv')
@@ -141,7 +139,7 @@ hunting_sites = os.path.join(INPUT_DIR, 'fire', 'hunting_sites.tif')
 fpj = os.path.join(INPUT_DIR, 'fire', 'PROJECT.FPJ')
 lcp = os.path.join(INPUT_DIR, 'fire', 'LANDSCAPE.LCP')
 # initiate_disturbance_inputs copies dummy files to these locations; fire module recreates them iteratively
-# TODO: edit readme (currently incorrect about what initiate_disturbance outputs for farsite intputs),
+# TODO: edit readme (currently incorrect about what initiate_disturbance outputs for farsite intputs)
 # create dummy files in inputs_full_extent, then use initiate_disturbance to copy to input_dir
 # (These are the only examples of inputs that both have to exist prior to running AND get replaced during run)
 fuel_ascii = os.path.join(INPUT_DIR, 'fire', 'fuel.asc')
