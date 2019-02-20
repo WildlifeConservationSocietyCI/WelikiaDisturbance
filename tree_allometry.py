@@ -1,7 +1,6 @@
-import settings as s
-import os
 import numpy as np
 import pandas as pd
+import settings as s
 
 """
 site index curve parameters
@@ -9,10 +8,11 @@ reference: 'Site Index Curves for Forest Tree Species in the Eastern United Stat
 Carmean et al. 1989
 """
 
-site_index_parameters = pd.read_csv(os.path.join(s.ROOT_DIR, 'tables', 'site_index_curve_table.csv'), index_col=0)
-coeffecients = pd.read_csv(os.path.join(s.ROOT_DIR, 'tables', 'basal_area_growth_coeffecients.csv'), index_col=0)
+site_index_parameters = pd.read_csv(s.SITE_INDEX_PARAMETERS, index_col=0)
+coeffecients = pd.read_csv(s.COEFFECIENTS, index_col=0)
 
-def tree_height_carmean(key, A, S):
+
+def tree_height_carmean(key, age, site_index):
     """
     tree height formula
     reference: 'Site Index Curves for Forest Tree Species in the Eastern United States'
@@ -24,8 +24,8 @@ def tree_height_carmean(key, A, S):
     bi = model parameters
 
     :param key:
-    :param A:
-    :param S:
+    :param age:
+    :param site_index:
     :return:
     """
 
@@ -35,85 +35,84 @@ def tree_height_carmean(key, A, S):
     b4 = site_index_parameters.ix[key]["b4"]
     b5 = site_index_parameters.ix[key]["b5"]
 
-    H = b1 * S**b2 * (1 - np.exp(b3 * A)**(b4 * S**b5))
-    return H
+    height = b1 * site_index ** b2 * (1 - np.exp(b3 * age) ** (b4 * site_index ** b5))
+    return height
 
 
-def tree_height_bean(A):
+def tree_height_bean(age):
     """
     logarithmic age-height relationship for red oak
     reference: 'Using a spatially explicit ecological model to test scenarios
     of fire use by Native Americans: An example from the Harlem Plains, New York, NY'
     Bean and Sanderson 2007
 
-    H = tree height (ft)
+    height = tree height (ft)
     A = age
 
-    :param A:
+    :param age:
     :return:
     """
 
-    H = 44 * np.ma.log(A) - 93
+    height = 44 * np.ma.log(age) - 93
 
-    return H
+    return height
 
 
-def DBH_bean(A):
+def dbh_bean(age):
     """
-    logarithmic age DBH relationship for red oak
+    logarithmic age dbh relationship for red oak
     reference: 'Using a spatially explicit ecological model to test scenarios
     of fire use by Native Americans: An example from the Harlem Plains, New York, NY'
     Bean and Sanderson 2007
 
-    DBH = Diameter at Breast Height (in)
+    dbh = Diameter at Breast Height (in)
     A = age
 
-    :param A:
+    :param age:
     :return:
     """
 
     # ma.log takes log of values greater than 0
-    DBH = 25.706 * np.ma.log(A) - 85.383
+    dbh = 25.706 * np.ma.log(age) - 85.383
 
-    return DBH
+    return dbh
 
 
-def DBH_eq_3_loewenstein(A):
+def dbh_eq_3_loewenstein(age):
     """
-    linear DBH age relationship for red oak [equation 3]
+    linear dbh age relationship for red oak [equation 3]
     reference : 'Age and diameter structure of a managed uneven-aged oak forest'
     Loewenstein et al. 2000
 
-    DBH = Diameter at Breast Height (cm)
+    dbh = Diameter at Breast Height (cm)
     A = age
 
-    :param A:
+    :param age:
     :return:
     """
 
-    DBH = (A - 36.329) / 0.919
-    return DBH
+    dbh = (age - 36.329) / 0.919
+    return dbh
 
 
-def DBH_eq_2_loewenstein(A):
+def dbh_eq_2_loewenstein(age):
     """
-    linear DBH age relationship for red oak [equation 2]
+    linear dbh age relationship for red oak [equation 2]
     reference : 'Age and diameter structure of a managed uneven-aged oak forest'
     Loewenstein et al. 2000
 
-    DBH = Diameter at Breast Height (cm)
+    dbh = Diameter at Breast Height (cm)
     A = age
 
-    :param A:
+    :param age:
     :return:
     """
 
-    DBH = (A - 34.44) / 1.18
-    return DBH
+    dbh = (age - 34.44) / 1.18
+    return dbh
 
 
-
-def POTBAG(species, DBH, SI):
+def get_potbag(species, dbh, site_index):
     """
     potential basal area growth
     reference: Individual-Tree Diameter Growth Model for Northeastern U.S.
@@ -124,20 +123,20 @@ def POTBAG(species, DBH, SI):
     SI = site index
 
     :param species:
-    :param DBH:
-    :param SI:
+    :param dbh:
+    :param site_index:
     :return: potbag:
     """
 
     b1 = coeffecients.ix[species].b1
     b2 = coeffecients.ix[species].b2
 
-    potbag = b1 * SI * (1.0 - np.exp(-b2 * DBH * 10))
+    potbag = b1 * site_index * (1.0 - np.exp(-b2 * dbh * 10))
 
     return potbag
 
 
-def BAG(species, DBH, SI):
+def get_bag(species, dbh, site_index):
     """
     limit basal area growth by competition
     reference: Individual-Tree Diameter Growth Model for Northeastern U.S.
@@ -145,32 +144,33 @@ def BAG(species, DBH, SI):
 
     DBH = diameter at brest height
     SI = site index
-    BAL = basal area of trees larger than or equal to subject tree
+    bal = basal area of trees larger than or equal to subject tree
 
     :param species:
-    :param DBH:
-    :param SI:
+    :param dbh:
+    :param site_index:
     :return: bag:
     """
     b3 = coeffecients.ix[species].b3
-    BAL = coeffecients.ix[species].BAL
+    bal = coeffecients.ix[species].BAL
 
-    potbag = POTBAG(species, DBH, SI)
-    bag = potbag * (np.exp(-b3 * BAL))
+    potbag = get_potbag(species, dbh, site_index)
+    bag = potbag * (np.exp(-b3 * bal))
     return bag
 
 
-def DGROW(species, DBH, SI):
+def get_dgrow(species, dbh, site_index):
     """
     convert basal area growth to diameter
     reference: Individual-Tree Diameter Growth Model for Northeastern U.S.
     Teck and Hilt 1990
-    :param bag:
+    :param species:
     :param dbh:
+    :param site_index:
     :return:
     """
 
-    bag = BAG(species, DBH, SI)
-    dgrow = (((0.00545415 * DBH ** 2) + bag) / 0.00545415) ** 0.5 - DBH
+    bag = get_bag(species, dbh, site_index)
+    dgrow = (((0.00545415 * dbh ** 2) + bag) / 0.00545415) ** 0.5 - dbh
 
     return dgrow

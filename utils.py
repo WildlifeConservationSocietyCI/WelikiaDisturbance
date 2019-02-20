@@ -1,22 +1,69 @@
 import os
+import errno
+import shutil
+import logging
+import time
+import re
+import arcpy
 import numpy as np
 from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo import gdal_array
 from osgeo import osr
 import linecache
-from wmi import WMI
+# from wmi import WMI
 
 
+# create dir (including parents if necessary) if it doesn't exist
 def mkdir(path):
-    if os.path.isdir(path) is False:
-        os.mkdir(path)
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 
-def absoluteFilePaths(directory):
-   for dirpath,_,filenames in os.walk(directory):
-       for f in filenames:
-           yield os.path.abspath(os.path.join(dirpath, f))
+# remove contents of dir (but not dir itself)
+def clear_dir(directory):
+    if os.path.isdir(directory):
+        file_list = os.listdir(directory)
+        for file_name in file_list:
+            path = os.path.join(directory, file_name)
+            if os.path.isfile(path):
+                os.remove(path)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+
+
+def clear_dir_by_pattern(directory, pattern):
+    for f in os.listdir(directory):
+        if re.search(pattern, f):
+            os.remove(os.path.join(directory, f))
+
+
+def set_arc_env(in_raster):
+    arcpy.env.extent = in_raster
+    arcpy.env.cellSize = in_raster
+    arcpy.env.snapRaster = in_raster
+    arcpy.env.mask = in_raster
+    arcpy.env.outputCoordinateSystem = arcpy.Describe(in_raster).spatialReference
+    arcpy.env.cartographicCoordinateSystem = arcpy.Describe(in_raster).spatialReference
+
+
+def wait_for_lock(schema):
+    while not arcpy.TestSchemaLock(schema):
+        print('{} locked'.format(schema))
+        time.sleep(1)
+    print('{} not locked'.format(schema))
+    return True
+
+
+def absolute_file_paths(directory):
+    for dirpath, _, filenames in os.walk(directory):
+        for f in filenames:
+            yield os.path.abspath(os.path.join(dirpath, f))
 
 
 def format_str(text):
@@ -39,7 +86,6 @@ def format_str(text):
 
 def get_ascii_header(ascii_raster):
     """
-
     :param ascii_raster:
     :return:
     """
@@ -62,32 +108,31 @@ def get_ascii_header(ascii_raster):
     return header, header_text, shape
 
 
-def get_geo_info(FileName):
-    sourceDS = gdal.Open(FileName, GA_ReadOnly)
-    geoT = sourceDS.GetGeoTransform()
+def get_geo_info(filename):
+    source_ds = gdal.Open(filename, GA_ReadOnly)
+    geo_t = source_ds.GetGeoTransform()
     projection = osr.SpatialReference()
-    projection.ImportFromWkt(sourceDS.GetProjectionRef())
-    return geoT, projection
+    projection.ImportFromWkt(source_ds.GetProjectionRef())
+    return geo_t, projection
 
 
-def get_cell_size(FileName):
-    geoT, projection = get_geo_info(FileName)
-    return geoT[1]
+def get_cell_size(filename):
+    geo_t, projection = get_geo_info(filename)
+    return geo_t[1]
 
 
 def raster_to_array(in_raster, metadata=False, nodata_to_value=False):
     """
     convert raster to numpy array
-    metadata flag returns geotransform and projection GDAL objects
     :type in_raster object
+    :param metadata flag returns geotransform and projection GDAL objects
+    :param nodata_to_value
     """
-    # print in_ascii
     src_ds = gdal.Open(in_raster, GA_ReadOnly)
     array = gdal_array.DatasetReadAsArray(src_ds)
     nodata = src_ds.GetRasterBand(1).GetNoDataValue()
 
     if nodata_to_value is not False:
-        # print nodata
         array[array == nodata] = nodata_to_value
 
     if metadata is True:
@@ -110,7 +155,6 @@ def array_to_raster(array, out_raster, geotransform, projection, driver='GTiff',
     :return:
     """
 
-    # get array dimensions
     y_size, x_size = array.shape
 
     try:
@@ -119,12 +163,12 @@ def array_to_raster(array, out_raster, geotransform, projection, driver='GTiff',
     except ValueError:
         nodata = None
 
-    print('%s nodata: %s' % (out_raster, nodata))
+    # logging.info('{} nodata: {}'.format(out_raster, nodata))
 
     # map numpy dtype to GDAL dtype if default arg is used
     if dtype is None:
         dtype = gdal_array.NumericTypeCodeToGDALTypeCode(array.dtype)
-        print(dtype)
+        # logging.info('gdal type: {}'.format(dtype))
 
     output_raster = gdal.GetDriverByName(driver).Create(out_raster, x_size, y_size, 1, dtype)
 
@@ -158,6 +202,7 @@ def array_to_ascii(out_ascii_path, array, header, fmt="%4i"):
 
 def array_area(array, cell_size=1, nodata_value=None):
     # count = np.count_nonzero(~np.isnan(array))
+    # TODO: this next line looks wrong -- (array != nodata_value) is a boolean. population_density not used anywhere.
     count = (array != nodata_value).sum()
     area = count * (cell_size ** 2)
     return area

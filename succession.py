@@ -1,34 +1,19 @@
-import settings as s
-import tree_allometry as ta
-from osgeo import gdal
-from osgeo.gdalconst import *
-from osgeo import gdal_array
-import numpy as np
-import linecache
-import arcpy
 import os
+import logging
+import numpy as np
 import pandas as pd
 import scipy.stats as ss
+import settings as s
 import utils
+import tree_allometry as ta
 
 
 class Succession(object):
-    _ecocommunities_filename = 'ecocommunities_%s.tif'
 
     def __init__(self, year):
-
         self.year = year
-
-        # raster paths
-
-        self.REFERENCE_raster = os.path.join(s.INPUT_DIR, 'reference_grid_%s.tif' % s.REGION)
-        self.REFERENCE_ascii = os.path.join(s.INPUT_DIR, 'reference_grid_%s.asc' % s.REGION)
-        self.CANOPY_raster = os.path.join(s.OUTPUT_DIR, 'canopy.tif')
-        self.FOREST_AGE_raster = os.path.join(s.OUTPUT_DIR, 'forest_age.tif')
-        self.DBH_raster = os.path.join(s.OUTPUT_DIR, 'dbh.tif')
         self._ecocommunities_filename = 'ecocommunities_%s.tif'
 
-        # arrays
         self.canopy = None
         self.forest_age = None
         self.dbh = None
@@ -38,46 +23,36 @@ class Succession(object):
         self.pond_time_since_disturbance = None
         self.garden_time_since_disturbance = None
 
-        # header
-        self.shape = None
-        self.header = None
-        self.header_text = None
-
-        # community info table
-        self.community_table = pd.read_csv(s.community_table, index_col=0)
-        self.header, self.header_text, self.shape = utils.get_ascii_header(self.REFERENCE_ascii)
-        self.geot, self.projection = utils.get_geo_info(self.REFERENCE_raster)
+        self.community_table = pd.read_csv(s.COMMUNITY_TABLE, index_col=0)
+        self.dbh_lookup = pd.read_csv(s.DBH_LOOKUP, index_col=0)
+        self.header, self.header_text, self.shape = utils.get_ascii_header(s.reference_ascii)
+        self.geot, self.projection = utils.get_geo_info(s.ecocommunities)
         self.set_ecocommunities()
         self.set_canopy()
         self.set_forest_age()
         self.set_dbh()
 
-
-
     def set_ecocommunities(self):
-        """
-        """
-
         this_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
         last_year_ecocomms = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % (self.year - 1))
 
         if os.path.isfile(this_year_ecocomms):
-            print this_year_ecocomms
+            logging.info(this_year_ecocomms)
             self.ecocommunities = utils.raster_to_array(this_year_ecocomms)
             # self.ecocommunities = arcpy.Raster(this_year_ecocomms)
             # self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
 
         elif os.path.isfile(last_year_ecocomms):
-            print last_year_ecocomms
+            logging.info(last_year_ecocomms)
             self.ecocommunities = utils.raster_to_array(last_year_ecocomms)
             # self.ecocommunities = arcpy.Raster(last_year_ecocomms)
             # self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
 
         else:
-            print 'initial run'
-            print s.ecocommunities
+            logging.info('initial run')
+            logging.info(s.ecocommunities)
             self.ecocommunities = utils.raster_to_array(s.ecocommunities)
-            print self.ecocommunities.shape
+            logging.info(self.ecocommunities.shape)
             # self.ecocommunities = arcpy.Raster(s.ecocommunities)
             # self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
             # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
@@ -91,12 +66,12 @@ class Succession(object):
         :return:
         """
 
-        if os.path.isfile(self.CANOPY_raster):
-            s.logging.info('Setting canopy')
-            self.canopy = utils.raster_to_array(self.CANOPY_raster)
+        if os.path.isfile(s.CANOPY):
+            logging.info('Setting canopy')
+            self.canopy = utils.raster_to_array(s.CANOPY)
 
         else:
-            s.logging.info('Assigning initial values to canopy array')
+            logging.info('Assigning initial values to canopy array')
             # if self.ecocommunities_array is None:
             #     self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
@@ -105,7 +80,7 @@ class Succession(object):
             for index, row in self.community_table.iterrows():
                 self.canopy[self.ecocommunities == index] = row.max_canopy
 
-            utils.array_to_raster(self.canopy, self.CANOPY_raster,
+            utils.array_to_raster(self.canopy, s.CANOPY,
                                   geotransform=self.geot, projection=self.projection)
 
     def set_forest_age(self):
@@ -114,18 +89,18 @@ class Succession(object):
         else: initialize froest age raster
         :return:
         """
-        if os.path.isfile(self.FOREST_AGE_raster):
-            s.logging.info('Setting forest age')
-            self.forest_age = utils.raster_to_array(self.FOREST_AGE_raster)
+        if os.path.isfile(s.FOREST_AGE):
+            logging.info('Setting forest age')
+            self.forest_age = utils.raster_to_array(s.FOREST_AGE)
 
         else:
-            s.logging.info('Assigning initial values to forest age array')
+            logging.info('Assigning initial values to forest age array')
             # if self.ecocommunities_array is None:
             #     self.ecocommunities_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
             # create truncated normal distrbution for age
             lower = s.MINIMUM_FOREST_AGE
-            upper = s.UPPER
+            upper = s.MAXIMUM_FOREST_AGE
             mu = s.MEAN_INITIAL_FOREST_AGE
             sigma = s.AGE_VAR
 
@@ -140,36 +115,32 @@ class Succession(object):
                 if row.forest == 1:
                     self.forest_age = np.where(self.ecocommunities == index, tn, self.forest_age)
 
-            utils.array_to_raster(self.forest_age, self.FOREST_AGE_raster,
+            utils.array_to_raster(self.forest_age, s.FOREST_AGE,
                                   geotransform=self.geot, projection=self.projection
                                   )
 
     def set_dbh(self):
-        """
-
-        :return:
-        """
-        if os.path.isfile(self.DBH_raster):
-            s.logging.info('Setting dbh')
-            self.dbh = utils.raster_to_array(self.DBH_raster)
+        if os.path.isfile(s.DBH):
+            logging.info('Setting dbh')
+            self.dbh = utils.raster_to_array(s.DBH)
 
         else:
-            s.logging.info('Assigning initial values to dbh array')
+            logging.info('Assigning initial values to dbh array')
             self.dbh = np.zeros(shape=self.shape, dtype=np.float32)
             # self.dbh = np.empty(shape=self.shape, dtype=np.float16)
-            age_dbh_lookup = pd.read_csv(os.path.join(s.ROOT_DIR, 'tables', 'dbh_lookup.csv'), index_col=0)
 
             for index, row in self.community_table.iterrows():
-
                 if row.forest == 1:
                     age = np.ma.masked_where(self.ecocommunities != index, self.forest_age)
-                    print index
+                    if s.DEBUG_MODE:
+                        logging.info(index)
                     for a in np.ma.compressed(np.unique(age)):
-                        print a
-                        d = age_dbh_lookup.ix[int(a)][str(index)]
+                        if s.DEBUG_MODE:
+                            logging.info(a)
+                        d = self.dbh_lookup.ix[int(a)][str(index)]
                         self.dbh[(self.ecocommunities == index) & (self.forest_age == a)] = d
 
-            utils.array_to_raster(self.dbh, self.DBH_raster,
+            utils.array_to_raster(self.dbh, s.DBH,
                                   geotransform=self.geot, projection=self.projection)
 
     def grow(self):
@@ -184,9 +155,7 @@ class Succession(object):
                 max_canopy = int(row['max_canopy'])
 
                 # increment age of all communities that have trees all upland communities
-
                 if row.forest == 1:
-
                     # increment canopy
                     self.canopy[(self.ecocommunities == index) & (self.canopy < max_canopy)] += canopy_growth
 
@@ -194,13 +163,15 @@ class Succession(object):
                     # increment non forest canopy
                     self.canopy[(self.ecocommunities == index)] += canopy_growth
 
-                print row.dbh_model
+                if s.DEBUG_MODE:
+                    logging.info(row.dbh_model)
                 if max_canopy > 0:
                     # increment forest age
                     self.forest_age[self.ecocommunities == index] += 1
 
                     # increment dbh
-                    print "%s %s | max canopy: %s" % (index, row.Name, max_canopy)
+                    if s.DEBUG_MODE:
+                        logging.info("%s %s | max canopy: %s" % (index, row.Name, max_canopy))
                     self.dbh[(self.ecocommunities == index) &
                              (self.forest_age == 1)
                              & (self.dbh == 0)] = 0.5
@@ -208,7 +179,7 @@ class Succession(object):
                     dbh_model = int(row.dbh_model)
                     site_index = int(row.site_index)
 
-                    d_grow = ta.DGROW(species=dbh_model, SI=site_index, DBH=self.dbh)
+                    d_grow = ta.get_dgrow(species=dbh_model, site_index=site_index, dbh=self.dbh)
 
                     self.dbh = np.where(self.ecocommunities == index, self.dbh + d_grow, self.dbh)
 
@@ -227,72 +198,56 @@ class Succession(object):
             # AGE BASED SUCCESSION
             elif row.succession_code == 2:
                 self.ecocommunities = np.where((self.ecocommunities == index) &
-                                                  (self.forest_age > row['age_out']),
-                                                  self.climax_communities, self.ecocommunities)
+                                               (self.forest_age > row['age_out']),
+                                               self.climax_communities, self.ecocommunities)
 
     def run_succession(self):
-        """
-
-        :return:
-        """
-
         self.grow()
         self.transition()
 
+        # TODO: decide if we commit to this way of getting around the .cpg deletion issue
         # using arc array to raster because of file lock/permission
         # out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
         #                                       lower_left_corner=arcpy.Point(self.header['xllcorner'],
         #                                                                     self.header['yllcorner']),
         #                                       x_cell_size=s.CELL_SIZE)
-
         # issue deleting: os.remove(r'D:\_data\welikia\WelikiaDisturbance\outputs\1\ecocommunities_1411.tif.vat.cpg')
         e = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
-        # potentially attempt arcpy.Delete(e) or os.remove(ecocommunities_1411.tif*)
-        # arcpy.Delete_management(e)
-        # print('attempt to save: %s' % e)
-        # out_raster.save(e)
-        # print('tried to save %s' % e)
-        # s.logging.info('tried to save %s' % e)
-
-        # utils.array_to_raster(self.ecocommunities, os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
-        #                       geotransform=self.geot, projection=self.projection)
-
-        # test_eco = os.path.join(s.OUTPUT_DIR, 'succ_ecocom_test_%s.tif' % self.year)
         utils.array_to_raster(self.ecocommunities, e,
                               geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.canopy, self.CANOPY_raster,
+        utils.array_to_raster(self.canopy, s.CANOPY,
                               geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.forest_age, self.FOREST_AGE_raster,
+        utils.array_to_raster(self.forest_age, s.FOREST_AGE,
                               geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.dbh, self.DBH_raster,
+        utils.array_to_raster(self.dbh, s.DBH,
                               geotransform=self.geot, projection=self.projection)
 
     # s1 = Succession(1508)
-    # print s1.succession_table.head()
+    # logging.info(s1.succession_table.head())
     # s1.run_succession()
     #
     # for index, row in s1.succession_table.iterrows():
     #     key = row['from_ID']
-    #     print key, type(key)
-    #     print row['max_canopy']
-    #     print row['to_ID'], type(row['to_ID'])
+    #     logging.info(key, type(key))
+    #     logging.info(row['max_canopy'])
+    #     logging.info(row['to_ID'], type(row['to_ID']))
     # if key == 635:
     # self.communities[(self.communities == key) &
     #                  (self.canopy > row['max_canopy'])] = row['to_ID']
 
-# print 'communities \n'
-# print s1.communities
-# print 'canopy \n'
-# print s1.canopy
+# logging.info('communities \n')
+# logging.info(s1.communities)
+# logging.info('canopy \n')
+# logging.info(s1.canopy)
 # run = range(0, 25)
 # for year in run:
-#     print 'year: %s' % year
+#     logging.info('year: %s' % year)
 #     s1.grow()
 #     s1.transition()
-#     print 'communities \n'
-#     print s1.communities
-#     print 'canopy \n'
-#     print s1.canopy
+#     logging.info('communities \n')
+#     logging.info(s1.communities)
+#     logging.info('canopy \n')
+#     logging.info(s1.canopy)
 #
 #     if year == max(run):
 #         # communities
@@ -306,7 +261,7 @@ class Succession(object):
 #             c = int(com)
 #             ax.text(x_val, y_val, c, va='center', ha='center', color='white')
 #
-#         # print s1.communities
+#         # logging.info(s1.communities)
 #         ax2 = plt.subplot(312)
 #         ax2.imshow(s1.communities, interpolation='none')
 #
@@ -334,4 +289,4 @@ class Succession(object):
 #
 #         ax3.imshow(s1.forest_age, interpolation='none', cmap='Blues')
 #         plt.show()
-#         # print s1.canopy
+#         # logging.info(s1.canopy)
