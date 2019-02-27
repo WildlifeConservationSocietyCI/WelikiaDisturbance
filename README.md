@@ -132,7 +132,7 @@ units and options accordingly (should this be left at the default values?).
 Save the landscape file in the same location as the ASCII files (inputs). 
 This is important because FARSITE will have issues running if all files are **NOT** in the same directory. 
 
-Next, you will create a project (.PRJ) file using the newly created landscape (.LCP) file 
+Next, you will create a project (.FPJ) file using the newly created landscape (.LCP) file 
 and initial inputs (Welikia full extent inputs) that include
 - Adjustments (fuel_adjustment.adj)
 - Moistures (fuel_moisture.fms)
@@ -144,7 +144,7 @@ From the main menu select **INPUT > PROJECT INPUTS**.
 A dialogue box will appear with the option to upload the landscape (.LCP) file and the 5 initial input files.
 The rest of the files are optional to upload. 
 
-Save the project file (.PRJ) in the same location as the landscape file (.LCP) 
+Save the project file (.FPJ) in the same location as the landscape file (.LCP) 
 because FARSITE will have issues running if all files are **NOT** in the same directory. 
  
 ## TODO (Kim):

@@ -131,12 +131,12 @@ for feature in cursor:
         ref = arcpy.sa.SetNull(arcpy.sa.IsNull(dem_temp) == 0, dem_temp)
         arcpy.RasterToASCII_conversion(ref, s.reference_ascii)
 
-        slope_clip = arcpy.sa.ExtractByMask(slope, s.ecocommunities)  # TODO: is this needed? - Yes, because the 'slope' file is full extent and needs to be clipped for FARSITE.
+        slope_clip = arcpy.sa.ExtractByMask(slope, s.ecocommunities)
         slope_temp = os.path.join(s.TEMP_DIR, "slope_farsite.tif")
         arcpy.Resample_management(slope_clip, slope_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(slope_temp, s.slope_ascii)
 
-        aspect_clip = arcpy.sa.ExtractByMask(aspect, s.ecocommunities)  # TODO: is this needed?
+        aspect_clip = arcpy.sa.ExtractByMask(aspect, s.ecocommunities)
         aspect_temp = os.path.join(s.TEMP_DIR, "aspect_farsite.tif")
         arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
