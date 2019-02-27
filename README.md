@@ -70,8 +70,8 @@ This is the set of data inputs required to run all modules of the disturbance mo
   - slope.asc 
   - canopy.asc 
   - fuel.asc 
-  - fire_trails.asc 
-  - hunting_sites.asc 
+  - fire_trails.tif 
+  - hunting_sites.tif 
   
 ##### Garden Spatial Data
   - garden_sites.shp 
