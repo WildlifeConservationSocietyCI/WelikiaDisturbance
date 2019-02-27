@@ -126,17 +126,16 @@ for feature in cursor:
         arcpy.Resample_management(dem_clip, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(dem_temp, s.dem_ascii)
 
-        # TODO: do we need this? Could we just use ecocomm as reference?
         # create reference ascii raster for region (extent, cell size, shape)
         ref = arcpy.sa.SetNull(arcpy.sa.IsNull(dem_temp) == 0, dem_temp)
         arcpy.RasterToASCII_conversion(ref, s.reference_ascii)
 
-        slope_clip = arcpy.sa.ExtractByMask(slope, s.ecocommunities)  # TODO: is this needed?
+        slope_clip = arcpy.sa.ExtractByMask(slope, s.ecocommunities)
         slope_temp = os.path.join(s.TEMP_DIR, "slope_farsite.tif")
         arcpy.Resample_management(slope_clip, slope_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(slope_temp, s.slope_ascii)
 
-        aspect_clip = arcpy.sa.ExtractByMask(aspect, s.ecocommunities)  # TODO: is this needed?
+        aspect_clip = arcpy.sa.ExtractByMask(aspect, s.ecocommunities)
         aspect_temp = os.path.join(s.TEMP_DIR, "aspect_farsite.tif")
         arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
