@@ -150,6 +150,7 @@ fms = os.path.join(INPUT_DIR, 'fire', 'fuel_moisture_test.fms')
 adj = os.path.join(INPUT_DIR, 'fire', 'fuel_adjustment.adj')
 wnd = os.path.join(INPUT_DIR, 'fire', 'wind.wnd')
 wtr = os.path.join(INPUT_DIR, 'fire', 'weather.wtr')
+wtr_tables = os.path.join(INPUT_DIR_FULL, 'tables', 'fire', 'wtr')
 
 dem = os.path.join(INPUT_DIR, 'pond', 'dem.tif')
 flow_direction = os.path.join(INPUT_DIR, 'pond', 'flow_direction.tif')

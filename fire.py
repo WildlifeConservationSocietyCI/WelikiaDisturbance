@@ -128,14 +128,14 @@ class FireDisturbance(d.Disturbance):
         self.equivalent_climate_year = random.choice(potential_years)
 
     def set_weather(self):
-        weather = os.path.join(self.INPUT_DIR, 'wtr', '%s.wtr' % self.equivalent_climate_year)
+        weather = os.path.join(s.wtr_tables, '%s.wtr' % self.equivalent_climate_year)
 
-        with open(weather) as weather:
-            for line in weather:
+        with open(weather) as weatherfile:
+            for line in weatherfile:
                 record = line.split()
                 self.weather.append(record)
 
-        shutil.copyfile(os.path.join(self.INPUT_DIR, 'wtr', '%r.wtr' % self.equivalent_climate_year), self.wtr)
+        shutil.copyfile(weather, self.wtr)
 
     def get_clear_day(self):
         # convert window for ignition start date to ordinal date format
