@@ -205,9 +205,9 @@ class FireDisturbance(d.Disturbance):
         # if self.fuel is None:
         self.fuel = np.empty(shape=self.shape, dtype=np.int32)
         # self.fuel.astype(np.int32)
-        logging.info('fuel shape', self.fuel.shape)
-        logging.info('ecocommunities shape', self.ecocommunities.shape)
-        logging.info('time since disturbance shape', self.time_since_disturbance.shape)
+        logging.info('fuel shape: {}'.format(self.fuel.shape))
+        logging.info('ecocommunities shape: {}'.format(self.ecocommunities.shape))
+        logging.info('time since disturbance shape: {}'.format(self.time_since_disturbance.shape))
         for key in self.community_table.index:
             # get fuel values for new, mid and climax states
             fuel_c = self.community_table.loc[key, 'fuel_c']
@@ -277,7 +277,7 @@ class FireDisturbance(d.Disturbance):
         for ignition, i in zip(self.ignition_sites, range(len(self.ignition_sites))):
             x = (header['xllcorner'] + (s.CELL_SIZE * ignition[1]))
             y = (header['yllcorner'] + (s.CELL_SIZE * (self.shape[0] - ignition[0])))
-            logging.info('point coordinates', x, y)
+            logging.info('point coordinates: {}, {}'.format(x, y))
             point.X = x
             point.Y = y
             point_geometry = arcpy.PointGeometry(point)
@@ -296,7 +296,7 @@ class FireDisturbance(d.Disturbance):
         else:
             # logging.info('Assigning initial values to time since disturbance array')
             self.time_since_disturbance = np.empty(shape=self.shape, dtype=np.int32)
-            logging.info('time since disturbance', self.time_since_disturbance.shape)
+            logging.info('time since disturbance: {}'.format(self.time_since_disturbance.shape))
             self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
             utils.array_to_raster(self.time_since_disturbance, self.time_since_disturbance_raster,
                                   geotransform=self.geot, projection=self.projection)
@@ -739,7 +739,13 @@ class FireDisturbance(d.Disturbance):
         # set tracking rasters
         self.set_time_since_disturbance()
         self.set_fuel_dbh()
-        logging.info('fuel shape', self.fuel.shape)
+
+        # convert ndarray to string
+        # ndArray = self.fuel.shape
+        # ndArray.tostring()
+
+        # then log info
+        logging.info('fuel shape: {}'.format(self.fuel.shape))
 
         # increment time since disturbance tracking raster
         self.time_since_disturbance += 1
@@ -869,7 +875,7 @@ class FireDisturbance(d.Disturbance):
             # logging.info('Selected climate equivalent-year: %r' % self.equivalent_climate_year)
 
             # Save matching climate year wtr to input dir for FARSITE
-            shutil.copyfile(os.path.join(self.INPUT_DIR, 'wtr', '%r.wtr' % self.equivalent_climate_year), self.wtr)
+            shutil.copyfile(os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'wtr', '%s.wtr' % self.equivalent_climate_year), self.wtr)
 
             # Create wind file
             self.write_wnd()
@@ -895,7 +901,7 @@ class FireDisturbance(d.Disturbance):
                 self.flame_length = utils.raster_to_array(flame_length)
                 self.flame_length[self.flame_length < 0] = 0
                 self.area_burned = np.count_nonzero(self.flame_length)
-                logging.info('burned area', self.area_burned)
+                logging.info('burned area: {}'.format(self.area_burned))
 
                 if self.area_burned > 0:
                     # Update time since disturbance

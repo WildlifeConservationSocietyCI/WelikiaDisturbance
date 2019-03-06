@@ -92,6 +92,7 @@ def get_ascii_header(ascii_raster):
 
     header_text = [linecache.getline(ascii_raster, i) for i in range(1, 7)]
     header = {}
+    print(header_text)
 
     for line in header_text:
         attribute, value = line.split()

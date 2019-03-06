@@ -129,7 +129,6 @@ for feature in cursor:
         # create reference ascii raster for region (extent, cell size, shape)
         ref = arcpy.sa.SetNull(arcpy.sa.IsNull(dem_temp) == 0, dem_temp)
         arcpy.RasterToASCII_conversion(ref, s.reference_ascii)
-
         slope_clip = arcpy.sa.ExtractByMask(slope, s.ecocommunities)
         slope_temp = os.path.join(s.TEMP_DIR, "slope_farsite.tif")
         arcpy.Resample_management(slope_clip, slope_temp, s.FARSITE_RESOLUTION, "BILINEAR")
