@@ -142,6 +142,7 @@ for feature in cursor:
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
 
         # set cell resolution back to reference raster
+        # trails and hunting sites will be converted to a point shapefile, therefore full resolution is needed
         arcpy.env.cellSize = s.ecocommunities
 
         trail_clip = arcpy.sa.ExtractByMask(s.TRAILS_FE, s.ecocommunities)
