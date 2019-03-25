@@ -150,23 +150,16 @@ because FARSITE will have issues running if all files are **NOT** in the same di
  
 ## TODO (Kim):
 - refactor pond until it runs
-- refactor fire until it runs
 ## TODO (Camille):
-- code review for setup_refactor PR
 - replace inputs_full_extent.zip on google drive with scenario data hierarchy there
-- validate initiate from scratch until all outputs look correct in arcgis (path, cellsize, datatype, extent)
-- deal with TODOs related to settings and initiate_disturbance
 - validate garden
 - validate succession
-- deal with TODOs related to garden (except TODO at ~288)
-- validate pond
 - deal with TODOs related to pond
+- validate pond
 - validate fire
-- deal with TODOs related to fire
-- (As of 2/12 Kim moved tables from repo to inputs_full_extent; there may be other things to move)
 - edit readme
 ## TODO (future):
 - hunt down other sources of script not finishing
 - sort out arcpy/gdal/numpy library conflicts definitively
 - optimize for efficiency and run time
-_ refactor/clean up topographic_exposure, disturbance_model_notes, analysis as necessary
+- refactor/clean up topographic_exposure, disturbance_model_notes, analysis as necessary
