@@ -119,6 +119,7 @@ TRIAL_DIR = os.path.join(DATA_DIR, '{}_{}'.format(REGION, trial))
 INPUT_DIR = os.path.join(TRIAL_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(TRIAL_DIR, 'outputs')
 TEMP_DIR = os.path.join(DATA_DIR, 'temp')
+FIRE_DIR = os.path.join(INPUT_DIR, 'fire')
 
 # region-specific spatial inputs created by initiate_disturbance_inputs or manual farsite manipulation
 # ecocommunities lifecycle:
