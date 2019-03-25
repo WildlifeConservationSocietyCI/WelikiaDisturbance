@@ -9,6 +9,7 @@ import logging
 import arcpy
 import settings as s
 import utils
+import shutil
 
 logging.basicConfig(filename=s.LOGFILE,
                     filemode='w',
@@ -138,6 +139,15 @@ for feature in cursor:
         aspect_temp = os.path.join(s.TEMP_DIR, "aspect_farsite.tif")
         arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
+
+        # Copy custom fuel, fuel adjustment and fuel moisture files from inputs_full_extent to input directory, fire folder
+        files = [
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'custom_fuel.fmd'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_adjustment.adj'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_moisture.fms',)
+        ]
+        for f in files:
+            shutil.copy(f, s.FIRE_DIR)
 
         # set cell resolution back to reference raster
         # TODO: is this right? Doesn't farsite require same resolution for these?
