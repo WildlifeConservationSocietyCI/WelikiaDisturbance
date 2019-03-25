@@ -9,6 +9,7 @@ import logging
 import arcpy
 import settings as s
 import utils
+import shutil
 
 logging.basicConfig(filename=s.LOGFILE,
                     filemode='w',
@@ -126,11 +127,9 @@ for feature in cursor:
         arcpy.Resample_management(dem_clip, dem_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(dem_temp, s.dem_ascii)
 
-        # TODO: do we need this? Could we just use ecocomm as reference?
         # create reference ascii raster for region (extent, cell size, shape)
         ref = arcpy.sa.SetNull(arcpy.sa.IsNull(dem_temp) == 0, dem_temp)
         arcpy.RasterToASCII_conversion(ref, s.reference_ascii)
-
         slope_clip = arcpy.sa.ExtractByMask(slope, s.ecocommunities)
         slope_temp = os.path.join(s.TEMP_DIR, "slope_farsite.tif")
         arcpy.Resample_management(slope_clip, slope_temp, s.FARSITE_RESOLUTION, "BILINEAR")
@@ -141,8 +140,17 @@ for feature in cursor:
         arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
 
+        # Copy custom fuel, fuel adjustment and fuel moisture files from inputs_full_extent to input directory, fire folder
+        files = [
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'custom_fuel.fmd'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_adjustment.adj'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_moisture.fms',)
+        ]
+        for f in files:
+            shutil.copy(f, s.FIRE_DIR)
+
         # set cell resolution back to reference raster
-        # TODO: is this right? Doesn't farsite require same resolution for these?
+        # trails and hunting sites will be converted to a point shapefile, therefore full resolution is needed
         arcpy.env.cellSize = s.ecocommunities
 
         trail_clip = arcpy.sa.ExtractByMask(s.TRAILS_FE, s.ecocommunities)
