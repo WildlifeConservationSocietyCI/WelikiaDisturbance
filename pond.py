@@ -73,6 +73,14 @@ class PondDisturbance(d.Disturbance):
 
         self.coordinate_list = coordinate_list
         logging.info('coordinate list: ', self.coordinate_list)
+        # maybe define x and y?
+        # x =
+        # y =
+        # logging.info('coordinate list: ', x, y)
+        # point.X = x
+        # point.Y = y
+
+        # print(self.coordinate_list)
 
     def flood_pond(self, coordinates):
         """
