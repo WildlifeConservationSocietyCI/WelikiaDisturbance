@@ -105,14 +105,13 @@ This class updates the growth of forest type communities (DBH, age, tree height)
  1. Clone WelikiaDistrubance repository 
  2. Download Welikia full extent inputs (welikia_full_extent_inputs) and move to WelikiaDisturbance directory
  3. Set project and log paths in configuration local_settings.py
- 4. Run dir_setup.py
- 5. Run initiate_disturbance_inputs.py
- 6. Create FARSITE PROJECT and LANDSCAPE files manually in FARSITE GUI (refer to FARSITE Setup below)
- 7. Configure settings in scenario_settings.py
- 8. Run disturbance_script.py
+ 4. Run initiate_disturbance_inputs.py
+ 5. Create FARSITE PROJECT and LANDSCAPE files manually in FARSITE GUI (refer to FARSITE Setup below)
+ 6. Configure settings in scenario_settings.py
+ 7. Run disturbance_script.py
  
 ## FARSITE Setup
-Creating landscape (.LCP) and project (.PRJ) files
+Creating landscape (.LCP) and project (.FPJ) files
 
 *To be done right before running the disturbance script (disturbance_script.py)
 
@@ -145,7 +144,7 @@ From the main menu select **INPUT > PROJECT INPUTS**.
 A dialogue box will appear with the option to upload the landscape (.LCP) file and the 5 initial input files.
 The rest of the files are optional to upload. 
 
-Save the project file (.PRJ) in the same location as the landscape file (.LCP) 
+Save the project file (.FPJ) in the same location as the landscape file (.LCP) 
 because FARSITE will have issues running if all files are **NOT** in the same directory. 
  
 ## TODO (Kim):
