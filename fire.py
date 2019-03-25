@@ -740,10 +740,6 @@ class FireDisturbance(d.Disturbance):
         self.set_time_since_disturbance()
         self.set_fuel_dbh()
 
-        # convert ndarray to string
-        # ndArray = self.fuel.shape
-        # ndArray.tostring()
-
         # then log info
         logging.info('fuel shape: {}'.format(self.fuel.shape))
 
