@@ -147,15 +147,13 @@ The rest of the files are optional to upload.
 Save the project file (.FPJ) in the same location as the landscape file (.LCP) 
 because FARSITE will have issues running if all files are **NOT** in the same directory. 
  
-## TODO (Kim):
-- refactor pond until it runs
-## TODO (Camille):
-- replace inputs_full_extent.zip on google drive with scenario data hierarchy there
-- validate garden
-- validate succession
+## TODO:
 - deal with TODOs related to pond
+- validate succession
+- validate garden
 - validate pond
 - validate fire
+- replace inputs_full_extent.zip on google drive with scenario data hierarchy there
 - edit readme
 ## TODO (future):
 - hunt down other sources of script not finishing
