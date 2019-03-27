@@ -27,8 +27,7 @@ class PondDisturbance(d.Disturbance):
         self.coordinate_list = None
         self.suitability_points = os.path.join(s.TEMP_DIR, 'suitability_points.shp')
         self.pond_points = os.path.join(s.TEMP_DIR, self._pond_point_file)
-        # TODO: rename systematically so names don't collide and so it's clear where temp files come from
-        self.temp_point = os.path.join(s.TEMP_DIR, 'temp_point.shp')  # same as garden
+        self.temp_point_pond = os.path.join(s.TEMP_DIR, 'temp_point_pond.shp')
         self.pond_list = []
         self.new_pond_area = 0
         self.upland_area = 0
@@ -50,7 +49,7 @@ class PondDisturbance(d.Disturbance):
         :return:
         """
         num_points = int(s.DENSITY * self.upland_area) - self.pond_count
-        logging.info('num points: ', num_points)
+        logging.info('num points: {}'.format(num_points))
         # constraint is the area of all suitable locations for new_ponds
         # num_points is the maximum number of new_ponds that should be assigned
         arcpy.CreateRandomPoints_management(out_path=s.TEMP_DIR,
@@ -72,7 +71,7 @@ class PondDisturbance(d.Disturbance):
             coordinate_list.append((point[0][0], point[0][1]))
 
         self.coordinate_list = coordinate_list
-        logging.info('coordinate list: ', self.coordinate_list)
+        logging.info('coordinate list: {}'.format(self.coordinate_list))
 
     def flood_pond(self, coordinates):
         """
@@ -85,7 +84,7 @@ class PondDisturbance(d.Disturbance):
         pour_point = arcpy.Point(coordinates[0], coordinates[1])
 
         arcpy.CopyFeatures_management(in_features=arcpy.PointGeometry(pour_point),
-                                      out_feature_class=self.temp_point)
+                                      out_feature_class=self.temp_point_pond)
 
         pour_point_elevation = arcpy.sa.ExtractByPoints(points=pour_point,
                                                         in_raster=self.DEM)
@@ -93,7 +92,7 @@ class PondDisturbance(d.Disturbance):
         dam_height = pour_point_elevation.maximum + s.DAM_HEIGHT
 
         watershed = arcpy.sa.Watershed(in_flow_direction_raster=self.FLOW_DIRECTION,
-                                       in_pour_point_data=self.temp_point)
+                                       in_pour_point_data=self.temp_point_pond)
 
         # calculate flooded area
         pond = arcpy.sa.Con(watershed == 0, arcpy.sa.Con((arcpy.Raster(self.DEM) <= dam_height), dam_height, 0))
@@ -120,7 +119,7 @@ class PondDisturbance(d.Disturbance):
             # create new_ponds
             for p, i in zip(self.coordinate_list, range(len(self.coordinate_list))):
                 # logging.info('calculating pond %s' % i)
-                self.reset_temp(self.temp_point)
+                self.reset_temp(self.temp_point_pond)
                 pond = self.flood_pond(coordinates=p)
                 self.pond_list.append(pond)
 

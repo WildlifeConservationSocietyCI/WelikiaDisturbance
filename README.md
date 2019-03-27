@@ -147,26 +147,18 @@ A dialogue box will appear with the option to upload the landscape (.LCP) file a
 The rest of the files are optional to upload. 
 
 Save the project file (.FPJ) in the same location as the landscape file (.LCP) 
-because FARSITE will have issues executing if all files are **NOT** in the same directory. 
+because FARSITE will have issues running if all files are **NOT** in the same directory. 
  
-## TODO (Kim):
-- refactor pond until it runs
-
-## TODO (Camille):
-- replace inputs_full_extent.zip on google drive with scenario data hierarchy there
-- validate initiate from scratch until all outputs look correct in arcgis (path, cellsize, datatype, extent)
-- deal with TODOs related to settings and initiate_disturbance
-- validate garden
-- validate succession
-- deal with TODOs related to garden (except TODO at ~288)
-- validate pond
+## TODO:
 - deal with TODOs related to pond
+- validate succession
+- validate garden
+- validate pond
 - validate fire
-- deal with TODOs related to fire
-- (As of 2/12 Kim moved tables from repo to inputs_full_extent; there may be other things to move)
+- replace inputs_full_extent.zip on google drive with scenario data hierarchy there
 - edit readme
 ## TODO (future):
 - hunt down other sources of script not finishing
 - sort out arcpy/gdal/numpy library conflicts definitively
 - optimize for efficiency and run time
-_ refactor/clean up topographic_exposure, disturbance_model_notes, analysis as necessary
+- refactor/clean up topographic_exposure, disturbance_model_notes, analysis as necessary

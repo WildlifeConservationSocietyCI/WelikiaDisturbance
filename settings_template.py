@@ -139,9 +139,6 @@ hunting_sites = os.path.join(FIRE_DIR, 'hunting_sites.tif')
 # paths to farsite files user must create manually, using paths below
 fpj = os.path.join(FIRE_DIR, 'PROJECT.FPJ')
 lcp = os.path.join(FIRE_DIR, 'LANDSCAPE.LCP')
-# initiate_disturbance_inputs copies dummy files to these locations; fire module recreates them iteratively
-# TODO: edit readme (currently incorrect about what initiate_disturbance outputs for farsite intputs)
-# create dummy files in inputs_full_extent, then use initiate_disturbance to copy to input_dir
 # (These are the only examples of inputs that both have to exist prior to running AND get replaced during run)
 fuel_ascii = os.path.join(FIRE_DIR, 'fuel.asc')
 canopy_ascii = os.path.join(FIRE_DIR, 'canopy.asc')

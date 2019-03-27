@@ -19,7 +19,7 @@ class GardenDisturbance(d.Disturbance):
     def __init__(self, year):
         super(GardenDisturbance, self).__init__(year)
 
-        self.temp_point = os.path.join(s.TEMP_DIR, 'temp_point.shp')
+        self.temp_point_garden = os.path.join(s.TEMP_DIR, 'temp_point_garden.shp') # same as pond
         self.temp_buffer = os.path.join(s.TEMP_DIR, 'temp_buffer.shp')
         self.site_populations = []
         self.coordinate_list = []
@@ -128,14 +128,14 @@ class GardenDisturbance(d.Disturbance):
         return count
 
     def set_local_extent(self):
-        if arcpy.Exists(self.temp_point):
-            arcpy.Delete_management(self.temp_point)
+        if arcpy.Exists(self.temp_point_garden):
+            arcpy.Delete_management(self.temp_point_garden)
         arcpy.CopyFeatures_management(in_features=arcpy.PointGeometry(self.site_center),
-                                      out_feature_class=self.temp_point)
+                                      out_feature_class=self.temp_point_garden)
 
         if arcpy.Exists(self.temp_buffer):
             arcpy.Delete_management(self.temp_buffer)
-        arcpy.Buffer_analysis(in_features=self.temp_point,
+        arcpy.Buffer_analysis(in_features=self.temp_point_garden,
                               out_feature_class=self.temp_buffer,
                               buffer_distance_or_field=500)
 
