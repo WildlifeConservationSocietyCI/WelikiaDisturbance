@@ -30,12 +30,14 @@ REGION_BOUNDARIES = os.path.join(INPUT_DIR_FULL, 'region_boundaries', 'disturban
 
 COMMUNITY_TABLE = os.path.join(INPUT_DIR_FULL, 'tables', 'welikia_community_table_int.csv')
 DBH_LOOKUP = os.path.join(INPUT_DIR_FULL, 'tables', 'dbh_lookup.csv')
-SITE_INDEX_PARAMETERS = os.path.join(INPUT_DIR_FULL, 'tables', 'site_index_curve_table.csv')
-COEFFECIENTS = os.path.join(INPUT_DIR_FULL, 'tables', 'basal_area_growth_coeffecients.csv')
 PROXIMITY_RECLASS = os.path.join(INPUT_DIR_FULL, 'tables', 'garden', 'proximity_reclass.txt')
 SLOPE_RECLASS = os.path.join(INPUT_DIR_FULL, 'tables', 'garden', 'slope_reclass.txt')
 PSDI_YEARS = os.path.join(INPUT_DIR_FULL, 'tables', 'fire', 'psdi-years.txt')
 DROUGHT_YEARS = os.path.join(INPUT_DIR_FULL, 'tables', 'fire', 'mannahatta-psdi.txt')
+
+# Required by ancillary code (not disturbance model directly)
+SITE_INDEX_PARAMETERS = os.path.join(INPUT_DIR_FULL, 'tables', 'site_index_curve_table.csv')
+COEFFECIENTS = os.path.join(INPUT_DIR_FULL, 'tables', 'basal_area_growth_coeffecients.csv')
 
 # SCENARIO SETTINGS
 
