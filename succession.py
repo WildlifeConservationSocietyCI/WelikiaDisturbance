@@ -148,8 +148,6 @@ class Succession(object):
         for each upland community increment canopy, forest age and DBH
         :return:
         """
-        # TODO: create single table that contains the fuel, succession, and canopy info for all communities
-
         for index, row in self.community_table.iterrows():
                 canopy_growth = int(row['canopy_growth'])
                 max_canopy = int(row['max_canopy'])
@@ -205,13 +203,6 @@ class Succession(object):
         self.grow()
         self.transition()
 
-        # TODO: decide if we commit to this way of getting around the .cpg deletion issue
-        # using arc array to raster because of file lock/permission
-        # out_raster = arcpy.NumPyArrayToRaster(in_array=self.ecocommunities,
-        #                                       lower_left_corner=arcpy.Point(self.header['xllcorner'],
-        #                                                                     self.header['yllcorner']),
-        #                                       x_cell_size=s.CELL_SIZE)
-        # issue deleting: os.remove(r'D:\_data\welikia\WelikiaDisturbance\outputs\1\ecocommunities_1411.tif.vat.cpg')
         e = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
         utils.array_to_raster(self.ecocommunities, e,
                               geotransform=self.geot, projection=self.projection)
