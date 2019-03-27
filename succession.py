@@ -6,7 +6,6 @@ import scipy.stats as ss
 import settings as s
 import utils
 import tree_allometry as ta
-import arcpy
 
 
 class Succession(object):
