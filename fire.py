@@ -767,8 +767,7 @@ class FireDisturbance(d.Disturbance):
                                   (self.fuel != 98) &
                                   (self.fuel != 99))
 
-            # TODO: Should this and hunting_sites below be like del trail_array?
-            trail_array = None
+            del trail_array
 
             for row, col in zip(rows, cols):
                 self.potential_trail_ignition_sites.append((row, col))
@@ -784,7 +783,7 @@ class FireDisturbance(d.Disturbance):
         if number_of_garden_ignitions > 0:
 
             # Get list of potential garden fire sites
-            # TODO: garden_disturbance will never be not None. Do we need the self.garden_disturbance <= 1 clause?
+            # TODO: garden_disturbance will never be not None. Do we need the self.garden_disturbance <= 1 clause? - is line 790 needed? look at garden disturbance in arcgis
             if self.garden_disturbance is not None:
                 rows, cols = np.where((self.ecocommunities == s.GARDEN_ID) &
                                       (self.garden_disturbance <= 1))
@@ -809,8 +808,7 @@ class FireDisturbance(d.Disturbance):
                                   (self.fuel != 98) &
                                   (self.fuel != 99))
 
-            hunting_sites = None
-
+            del hunting_sites
             for row, col in zip(rows, cols):
                 self.potential_hunting_ignition_sites.append((row, col))
 

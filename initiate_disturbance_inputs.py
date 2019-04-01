@@ -140,11 +140,16 @@ for feature in cursor:
         arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
 
-        # Copy custom fuel, fuel adjustment and fuel moisture files from inputs_full_extent to input directory, fire folder
+        # Copy custom fuel, fuel adjustment, fuel moisture, canopy, fuel, weather and wind files from inputs_full_extent to input directory, fire folder.
+        # Canopy, fuel, weather and wind files are copied in. Their presence are needed to act as dummy files to create LANDSCAPE and PROJECT files for FARSITE.
         files = [
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'custom_fuel.fmd'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_adjustment.adj'),
-            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_moisture.fms',)
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_moisture.fms'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'canopy.asc'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel.asc'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'weather.wtr'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'wind.wnd')
         ]
         for f in files:
             shutil.copy(f, s.FIRE_DIR)
