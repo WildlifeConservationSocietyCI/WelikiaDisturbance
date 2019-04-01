@@ -19,7 +19,7 @@ class GardenDisturbance(d.Disturbance):
     def __init__(self, year):
         super(GardenDisturbance, self).__init__(year)
 
-        self.temp_point_garden = os.path.join(s.TEMP_DIR, 'temp_point_garden.shp') # same as pond
+        self.temp_point_garden = os.path.join(s.TEMP_DIR, 'temp_point_garden.shp')
         self.temp_buffer = os.path.join(s.TEMP_DIR, 'temp_buffer.shp')
         self.site_populations = []
         self.coordinate_list = []
@@ -268,7 +268,6 @@ class GardenDisturbance(d.Disturbance):
             else:
                 random_cells = arcpy.sa.Con(new_cells, self.randrast)
                 array = arcpy.RasterToNumPyArray(random_cells)
-                # TODO: wrap this in list() so that pop() below resolves?
                 random_values = numpy.unique(array).tolist()
                 random.shuffle(random_values)
 
@@ -341,8 +340,6 @@ class GardenDisturbance(d.Disturbance):
                 if self.garden is not None:
                     self.create_garden()
                     arcpy.env.extent = self.ecocommunities
-                    # TODO: why do we need this?
-                    self.garden = arcpy.sa.Plus(self.garden, 0)
 
                     # Return garden cells from self.garden else return existing communities
                     self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, self.garden,
