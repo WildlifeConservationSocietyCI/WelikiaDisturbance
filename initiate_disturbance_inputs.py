@@ -40,15 +40,14 @@ utils.mkdir(s.TEMP_DIR)
 
 logging.info('creating full extent ecocommunities')
 ecocommunities_fe = arcpy.Raster(s.ECOCOMMUNITIES_FE)
-# TODO: Is this obsolete? Should Lenape sites not already be in ecocomm grid?
+# TODO: Is this obsolete? Should Lenape sites not already be in ecocomm grid? - ask Eric
 lenape_sites = os.path.join(s.TEMP_DIR, 'lenape_sites.tif')
 arcpy.PolygonToRaster_conversion(in_features=s.BUFFER_FE,
                                  value_field='RASTERVALU',
                                  out_rasterdataset=lenape_sites,
                                  cellsize=s.CELL_SIZE)
-# TODO: replace hardcoded ecocomm vals like 65400 with constants from settings file everywhere
 ecocommunities_fe = arcpy.sa.Con(ecocommunities_fe,
-                                 arcpy.sa.Con((arcpy.sa.IsNull(lenape_sites) == 0), 65400, ecocommunities_fe))
+                                 arcpy.sa.Con((arcpy.sa.IsNull(lenape_sites) == 0), s.LENAPE_SITE_ID, ecocommunities_fe))
 ecocommunities_fe.save(os.path.join(s.TEMP_DIR, 'ecocommunities_fe.tif'))
 
 logging.info('creating full extent dem')
