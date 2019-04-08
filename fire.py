@@ -71,7 +71,6 @@ class FireDisturbance(d.Disturbance):
         self.end_day = None
         self.flame_length = None
         self.memory = None
-        self.garden_disturbance = None
         self.area_burned = 0
         self.upland_area = 0
 
@@ -783,10 +782,9 @@ class FireDisturbance(d.Disturbance):
         if number_of_garden_ignitions > 0:
 
             # Get list of potential garden fire sites
-            # TODO: garden_disturbance will never be not None. Do we need the self.garden_disturbance <= 1 clause? - is line 790 needed? look at garden disturbance in arcgis
-            if self.garden_disturbance is not None:
+            if self.time_since_disturbance is not None:
                 rows, cols = np.where((self.ecocommunities == s.GARDEN_ID) &
-                                      (self.garden_disturbance <= 1))
+                                      (self.time_since_disturbance <= 1))
 
                 for row, col in zip(rows, cols):
                     self.potential_garden_ignition_sites.append((row, col))

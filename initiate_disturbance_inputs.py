@@ -154,6 +154,8 @@ for feature in cursor:
         for f in files:
             shutil.copy(f, s.FIRE_DIR)
 
+        # Customize canopy.asc and fuel.asc file headers for FARSITE for each region.
+
         # set cell resolution back to reference raster
         # trails and hunting sites will be converted to a point shapefile, therefore full resolution is needed
         arcpy.env.cellSize = s.ecocommunities
