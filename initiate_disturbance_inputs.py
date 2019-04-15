@@ -141,7 +141,6 @@ for feature in cursor:
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
 
         # Copy custom fuel, fuel adjustment, fuel moisture, canopy, fuel, weather and wind files from inputs_full_extent to input directory, fire folder.
-        # Canopy, fuel, weather and wind files are copied in. Their presence are needed to act as dummy files to create LANDSCAPE and PROJECT files for FARSITE.
         files = [
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'custom_fuel.fmd'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_adjustment.adj'),
@@ -154,7 +153,7 @@ for feature in cursor:
         for f in files:
             shutil.copy(f, s.FIRE_DIR)
 
-        # Customize canopy.asc and fuel.asc file headers for FARSITE for each region.
+        # TODO: Customize canopy.asc and fuel.asc file headers for FARSITE for each region.
 
         # set cell resolution back to reference raster
         # trails and hunting sites will be converted to a point shapefile, therefore full resolution is needed
