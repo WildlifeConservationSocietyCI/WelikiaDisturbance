@@ -154,6 +154,28 @@ for feature in cursor:
             shutil.copy(f, s.FIRE_DIR)
 
         # TODO: Customize canopy.asc and fuel.asc file headers for FARSITE for each region.
+        # header, header_text, shape = utils.get_ascii_header(s.dem_ascii)
+        #
+        # # 2nd version
+        # lines = ('ncols         {}\n'.format(header['ncols']),
+        #          'nrows         {}\n'.format(header['nrows']),
+        #          'xllcorner     {}\n'.format(header['xllcorner']),
+        #          'yllcorner     {}\n'.format(header['yllcorner']),
+        #          'cellsize      {}\n'.format(header['cellsize']),
+        #          'NODATA_value  {}\n'.format(header['NODATA_value'])
+        #
+        # with open(s.canopy_ascii, 'w') as f:
+        #     f.write('\n'.join(lines))
+        #
+        #
+        # # 1st version
+        # with open(s.fuel_ascii, "w") as f:
+        #     f.writelines('ncols         {}\n'.format(header['ncols']),
+        #                  'nrows         {}\n'.format(header['nrows']),
+        #                  'xllcorner     {}\n'.format(header['xllcorner']),
+        #                  'yllcorner     {}\n'.format(header['yllcorner']),
+        #                  'cellsize      {}\n'.format(header['cellsize']),
+        #                  'NODATA_value  {}\n'.format(header['NODATA_value']))
 
         # set cell resolution back to reference raster
         # trails and hunting sites will be converted to a point shapefile, therefore full resolution is needed
