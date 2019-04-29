@@ -48,8 +48,6 @@ In tables:
 
 ##### Fire Tables
 In tables > fire:
-  - canopy.asc
-  - fuel.asc
   - custom_fuel.fmd 
   - fuel_adjustment.adj 
   - fuel_moisture.fms 
@@ -74,8 +72,8 @@ In tables > garden:
   - aspect.asc 
   - dem.asc 
   - slope.asc 
-  - canopy.asc (rewritten)
-  - fuel.asc (rewritten)
+  - canopy.asc
+  - fuel.asc 
   - fire_trails.tif
   - hunting_sites.tif 
   
