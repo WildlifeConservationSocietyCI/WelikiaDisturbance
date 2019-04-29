@@ -102,6 +102,7 @@ def get_ascii_header(ascii_raster):
     header['cellsize'] = int(header['cellsize'])
     header['xllcorner'] = float(header['xllcorner'])
     header['yllcorner'] = float(header['yllcorner'])
+    header['NODATA_value'] = int(header['NODATA_value'])
 
     shape = (header['nrows'], header['ncols'])
 

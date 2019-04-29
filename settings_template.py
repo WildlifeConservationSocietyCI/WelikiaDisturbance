@@ -4,7 +4,7 @@ import utils
 
 # GENERAL SETTINGS
 DEBUG_MODE = False  # print more log lines, save more intermediate files
-RUN_LENGTH = range(1409, 1411)  # start year to end year + 1 (range(1409, 1611) = years 1409 through 1610 inclusive)
+RUN_LENGTH = range(1409, 1412)  # start year to end year + 1 (range(1409, 1611) = years 1409 through 1610 inclusive)
 # flags for whether to run each disturbance module
 GARDEN = True
 FIRE = True
@@ -12,7 +12,7 @@ POND = True
 
 
 # PATHS AND NAMES
-DATA_DIR = 'D:/_data/Welikia/WelikiaDisturbance/data'  # independent of code paths
+DATA_DIR = r'D:\_data\Welikia\WelikiaDisturbance\data'  # independent of code paths
 INPUT_DIR_FULL = os.path.join(DATA_DIR, 'inputs_full_extent')
 # 1: Manhattan; 2: Bronx; 3: Brooklyn/Queens; 4: Staten Island
 REGION = 1
@@ -86,7 +86,7 @@ CONDITIONING_LENGTH = 15
 # escaped fire probabilities number of fires / km^2
 EXPECTED_LIGHTNING_FIRE = 0.0005425
 EXPECTED_TRAIL_ESCAPE = 0.00475
-EXPECTED_GARDEN_ESCAPE = 0
+EXPECTED_GARDEN_ESCAPE = 1
 EXPECTED_HUNTING_ESCAPE = 0
 
 # nonburnable fuel type
@@ -142,6 +142,7 @@ hunting_sites = os.path.join(FIRE_DIR, 'hunting_sites.tif')
 # paths to farsite files user must create manually, using paths below
 fpj = os.path.join(FIRE_DIR, 'PROJECT.FPJ')
 lcp = os.path.join(FIRE_DIR, 'LANDSCAPE.LCP')
+# initiate_disturbance_inputs copies region specific dem_ascii, renames to fuel_ascii & canopy_ascii for correct headers
 # (These are the only examples of inputs that both have to exist prior to running AND get replaced during run)
 fuel_ascii = os.path.join(FIRE_DIR, 'fuel.asc')
 canopy_ascii = os.path.join(FIRE_DIR, 'canopy.asc')

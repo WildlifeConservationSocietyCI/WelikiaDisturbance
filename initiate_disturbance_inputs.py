@@ -139,14 +139,20 @@ for feature in cursor:
         arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
 
-        # Copy custom fuel, fuel adjustment and fuel moisture files from inputs_full_extent to input directory, fire folder
+        # Copy custom fuel, fuel adjustment, fuel moisture, weather and wind files from inputs_full_extent to input directory, fire folder.
         files = [
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'custom_fuel.fmd'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_adjustment.adj'),
-            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_moisture.fms',)
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_moisture.fms'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'weather.wtr'),
+            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'wind.wnd')
         ]
         for f in files:
             shutil.copy(f, s.FIRE_DIR)
+
+        # Copy dem.asc twice and rename to fuel.asc and canopy.asc. Header will now have the appropriate data for specified region.
+        shutil.copyfile(s.dem_ascii, s.fuel_ascii)
+        shutil.copyfile(s.dem_ascii, s.canopy_ascii)
 
         # set cell resolution back to reference raster
         # trails and hunting sites will be converted to a point shapefile, therefore full resolution is needed
