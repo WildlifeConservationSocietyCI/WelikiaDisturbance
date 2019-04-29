@@ -143,7 +143,6 @@ hunting_sites = os.path.join(FIRE_DIR, 'hunting_sites.tif')
 fpj = os.path.join(FIRE_DIR, 'PROJECT.FPJ')
 lcp = os.path.join(FIRE_DIR, 'LANDSCAPE.LCP')
 # initiate_disturbance_inputs copies region specific dem_ascii, renames to fuel_ascii & canopy_ascii for correct headers
-# create dummy files in inputs_full_extent, then use initiate_disturbance to copy to input_dir
 # (These are the only examples of inputs that both have to exist prior to running AND get replaced during run)
 fuel_ascii = os.path.join(FIRE_DIR, 'fuel.asc')
 canopy_ascii = os.path.join(FIRE_DIR, 'canopy.asc')

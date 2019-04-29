@@ -140,7 +140,7 @@ for feature in cursor:
         arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
 
-        # Copy custom fuel, fuel adjustment, fuel moisture, canopy, fuel, weather and wind files from inputs_full_extent to input directory, fire folder.
+        # Copy custom fuel, fuel adjustment, fuel moisture, weather and wind files from inputs_full_extent to input directory, fire folder.
         files = [
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'custom_fuel.fmd'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_adjustment.adj'),
