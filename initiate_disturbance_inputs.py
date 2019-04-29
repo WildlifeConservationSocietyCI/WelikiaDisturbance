@@ -145,37 +145,15 @@ for feature in cursor:
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'custom_fuel.fmd'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_adjustment.adj'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_moisture.fms'),
-            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'canopy.asc'),
-            os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel.asc'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'weather.wtr'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'wind.wnd')
         ]
         for f in files:
             shutil.copy(f, s.FIRE_DIR)
 
-        # TODO: Customize canopy.asc and fuel.asc file headers for FARSITE for each region.
-        # header, header_text, shape = utils.get_ascii_header(s.dem_ascii)
-        #
-        # # 2nd version
-        # lines = ('ncols         {}\n'.format(header['ncols']),
-        #          'nrows         {}\n'.format(header['nrows']),
-        #          'xllcorner     {}\n'.format(header['xllcorner']),
-        #          'yllcorner     {}\n'.format(header['yllcorner']),
-        #          'cellsize      {}\n'.format(header['cellsize']),
-        #          'NODATA_value  {}\n'.format(header['NODATA_value'])
-        #
-        # with open(s.canopy_ascii, 'w') as f:
-        #     f.write('\n'.join(lines))
-        #
-        #
-        # # 1st version
-        # with open(s.fuel_ascii, "w") as f:
-        #     f.writelines('ncols         {}\n'.format(header['ncols']),
-        #                  'nrows         {}\n'.format(header['nrows']),
-        #                  'xllcorner     {}\n'.format(header['xllcorner']),
-        #                  'yllcorner     {}\n'.format(header['yllcorner']),
-        #                  'cellsize      {}\n'.format(header['cellsize']),
-        #                  'NODATA_value  {}\n'.format(header['NODATA_value']))
+        # Copy dem.asc twice and rename to fuel.asc and canopy.asc. Header will now have the appropriate data for specified region.
+        shutil.copyfile(s.dem_ascii, s.fuel_ascii)
+        shutil.copyfile(s.dem_ascii, s.canopy_ascii)
 
         # set cell resolution back to reference raster
         # trails and hunting sites will be converted to a point shapefile, therefore full resolution is needed
