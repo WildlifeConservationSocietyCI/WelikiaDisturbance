@@ -127,7 +127,7 @@ class FireDisturbance(d.Disturbance):
         self.equivalent_climate_year = random.choice(potential_years)
 
     def set_weather(self):
-        weather = os.path.join(s.wtr_tables, '%s.wtr' % self.equivalent_climate_year)
+        weather = os.path.join(s.WTR_DIR, '%s.wtr' % self.equivalent_climate_year)
 
         with open(weather) as weatherfile:
             for line in weatherfile:

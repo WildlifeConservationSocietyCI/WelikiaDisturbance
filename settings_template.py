@@ -86,7 +86,7 @@ CONDITIONING_LENGTH = 15
 # escaped fire probabilities number of fires / km^2
 EXPECTED_LIGHTNING_FIRE = 0.0005425
 EXPECTED_TRAIL_ESCAPE = 0.00475
-EXPECTED_GARDEN_ESCAPE = 1
+EXPECTED_GARDEN_ESCAPE = 0
 EXPECTED_HUNTING_ESCAPE = 0
 
 # nonburnable fuel type
@@ -123,6 +123,7 @@ INPUT_DIR = os.path.join(TRIAL_DIR, 'inputs')
 OUTPUT_DIR = os.path.join(TRIAL_DIR, 'outputs')
 TEMP_DIR = os.path.join(DATA_DIR, 'temp')
 FIRE_DIR = os.path.join(INPUT_DIR, 'fire')
+WTR_DIR = os.path.join(INPUT_DIR_FULL, 'tables', 'fire', 'wtr')
 
 # region-specific spatial inputs created by initiate_disturbance_inputs or manual farsite manipulation
 # ecocommunities lifecycle:
@@ -152,7 +153,6 @@ fms = os.path.join(FIRE_DIR, 'fuel_moisture_test.fms')
 adj = os.path.join(FIRE_DIR, 'fuel_adjustment.adj')
 wnd = os.path.join(FIRE_DIR, 'wind.wnd')
 wtr = os.path.join(FIRE_DIR, 'weather.wtr')
-wtr_tables = os.path.join(INPUT_DIR_FULL, 'tables', 'fire', 'wtr')
 
 dem = os.path.join(INPUT_DIR, 'pond', 'dem.tif')
 flow_direction = os.path.join(INPUT_DIR, 'pond', 'flow_direction.tif')
