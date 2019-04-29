@@ -108,7 +108,7 @@ This class updates the growth of forest type communities (DBH, age, tree height)
 ## Setup
  1. Clone WelikiaDistrubance repository 
  2. Download Welikia full extent inputs and move to WelikiaDisturbance directory
- 3. Make copy of settings_template.py (settings.py) and log paths
+ 3. Make copy of settings_template.py (settings.py) and set variables at top
  4. Run initiate_disturbance_inputs.py
  5. Create FARSITE PROJECT and LANDSCAPE files manually in FARSITE GUI (refer to FARSITE Setup below)
  6. Run disturbance_script.py
@@ -149,14 +149,6 @@ The rest of the files are optional to upload.
 Save the project file (.FPJ) in the same location as the landscape file (.LCP) 
 because FARSITE will have issues running if all files are **NOT** in the same directory. 
  
-## TODO:
-- deal with TODOs related to pond
-- validate succession
-- validate garden
-- validate pond
-- validate fire
-- replace inputs_full_extent.zip on google drive with scenario data hierarchy there
-- edit readme
 ## TODO (future):
 - hunt down other sources of script not finishing
 - sort out arcpy/gdal/numpy library conflicts definitively
