@@ -30,7 +30,9 @@ else:
     sys.exit(0)
 
 arcpy.env.workspace = s.TEMP_DIR
-arcpy.env.scratchWorkspace = s.TEMP_DIR
+scratchdir = os.path.join(s.TEMP_DIR, 'scratch')
+utils.mkdir(scratchdir)
+arcpy.env.scratchWorkspace = scratchdir
 # arcpy.env.workspace = os.path.join(s.TEMP_DIR, 'working.gdb')
 # arcpy.env.scratchWorkspace = os.path.join(s.TEMP_DIR, 'working.gdb')
 arcpy.env.overwriteOutput = True

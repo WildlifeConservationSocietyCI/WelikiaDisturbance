@@ -1,11 +1,11 @@
 import os
-import arcpy
-import numpy
 import random
 import logging
+import arcpy
+import numpy
 import settings as s
 import disturbance as d
-import utils
+# import utils
 
 
 class GardenDisturbance(d.Disturbance):
@@ -69,19 +69,19 @@ class GardenDisturbance(d.Disturbance):
         #     self.suitability.save(os.path.join(self.OUTPUT_DIR, 'suitability_%s.tif' % self.year))
         # del ecocommunity_suitability
 
-    # def wipe_locks(self):
-    #     path_suitability = os.path.join(self.OUTPUT_DIR, 'suitability_{}.tif'.format(self.year))
-    #     path_local_suitability = os.path.join(self.OUTPUT_DIR, 'local_suitability.tif')
-    #     path_garden = os.path.join(self.OUTPUT_DIR, 'garden_{}.tif'.format(self.year))
-    #     if hasattr(self, 'suitability') and os.path.isfile(path_suitability):
-    #         del self.suitability
-    #         self.suitability = arcpy.Raster(path_suitability)
-    #     if hasattr(self, 'local_suitability') and os.path.isfile(path_local_suitability):
-    #         del self.local_suitability
-    #         self.local_suitability = arcpy.Raster(path_local_suitability)
-    #     if hasattr(self, 'garden') and os.path.isfile(path_garden):
-    #         del self.garden
-    #         self.garden = arcpy.Raster(path_garden)
+    def wipe_locks(self):
+        path_suitability = os.path.join(self.OUTPUT_DIR, 'suitability_{}.tif'.format(self.year))
+        path_local_suitability = os.path.join(self.OUTPUT_DIR, 'local_suitability.tif')
+        path_garden = os.path.join(self.OUTPUT_DIR, 'garden_{}.tif'.format(self.year))
+        if hasattr(self, 'suitability') and os.path.isfile(path_suitability):
+            del self.suitability
+            self.suitability = arcpy.Raster(path_suitability)
+        if hasattr(self, 'local_suitability') and os.path.isfile(path_local_suitability):
+            del self.local_suitability
+            self.local_suitability = arcpy.Raster(path_local_suitability)
+        if hasattr(self, 'garden') and os.path.isfile(path_garden):
+            del self.garden
+            self.garden = arcpy.Raster(path_garden)
 
     def population_to_garden_area(self):
         """
@@ -165,6 +165,10 @@ class GardenDisturbance(d.Disturbance):
         :return:
         """
 
+        self.randrast = None
+        if os.path.isfile(os.path.join(self.OUTPUT_DIR, 'randrast.tif')):
+            arcpy.Delete_management(os.path.join(self.OUTPUT_DIR, 'randrast.tif'))
+
         # If the maximum suitability is no data or zero set to None
         if self.local_suitability.maximum is None or self.local_suitability.maximum == 0:
             self.garden = None
@@ -190,7 +194,9 @@ class GardenDisturbance(d.Disturbance):
                 gardencenter.save(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
 
             self.garden = gardencenter
-            # del gardencenter
+            del maxsuit, randrastclip, gardencenter
+            if os.path.isfile(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif')):
+                arcpy.Delete_management(os.path.join(self.OUTPUT_DIR, 'gardencenter.tif'))
 
     def points_to_coordinates(self):
         """
@@ -327,6 +333,7 @@ class GardenDisturbance(d.Disturbance):
         logging.info('checking for existing gardens')
         for population, coordinates in zip(self.site_populations, self.coordinate_list):
             logging.info('garden coordinates: {} {}'.format(coordinates[0], coordinates[1]))
+            self.wipe_locks()
             self.site_center = arcpy.Point(coordinates[0], coordinates[1])
             self.population = population
             self.population_to_garden_area()
@@ -341,10 +348,17 @@ class GardenDisturbance(d.Disturbance):
                     self.create_garden()
                     arcpy.env.extent = self.ecocommunities
 
+                    logging.info('garden: {}'.format(self.garden))
                     # Return garden cells from self.garden else return existing communities
                     self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 0, self.garden,
                                                        self.ecocommunities)
-                    # self.wipe_locks()
+
+                    thisisabsurd = random.randint(0, 1000000)
+                    fn = 'ecocommunities_{}_{}.tif'.format(self.year, thisisabsurd)
+                    logging.info('saving ecocom after a single garden disturbance: {}'.format(self.ecocommunities))
+                    self.ecocommunities.save((os.path.join(s.TEMP_DIR, fn)))
+
+                    logging.info('ecocommunities: {}'.format(self.ecocommunities))
                     e = arcpy.RasterToNumPyArray(self.ecocommunities)
                     self.canopy[e == s.GARDEN_ID] = 0
                     self.forest_age[e == s.GARDEN_ID] = 0
@@ -360,12 +374,18 @@ class GardenDisturbance(d.Disturbance):
                                                    self.time_since_disturbance + 1)
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
 
-        utils.array_to_raster(self.canopy, s.CANOPY,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.forest_age, s.FOREST_AGE,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.dbh, s.DBH,
-                              geotransform=self.geot, projection=self.projection)
+        canopy = arcpy.NumPyArrayToRaster(self.canopy)
+        canopy.save(s.CANOPY)
+        forestage = arcpy.NumPyArrayToRaster(self.forest_age)
+        forestage.save(s.FOREST_AGE)
+        dbh = arcpy.NumPyArrayToRaster(self.dbh)
+        dbh.save(s.DBH)
+        # utils.array_to_raster(self.canopy, s.CANOPY,
+        #                       geotransform=self.geot, projection=self.projection)
+        # utils.array_to_raster(self.forest_age, s.FOREST_AGE,
+        #                       geotransform=self.geot, projection=self.projection)
+        # utils.array_to_raster(self.dbh, s.DBH,
+        #                       geotransform=self.geot, projection=self.projection)
 
         logging.info('garden area: %s' % self.garden_area)
         self.ecocommunities = None
