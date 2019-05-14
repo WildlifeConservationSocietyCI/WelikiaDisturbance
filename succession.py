@@ -1,5 +1,6 @@
 import os
 import logging
+import arcpy
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
@@ -13,12 +14,13 @@ class Succession(object):
     def __init__(self, year):
         self.year = year
         self._ecocommunities_filename = 'ecocommunities_%s.tif'
+        utils.set_arc_env(s.ecocommunities)
 
         self.canopy = None
         self.forest_age = None
         self.dbh = None
         self.ecocommunities = None
-        self.climax_communities = utils.raster_to_array(s.ecocommunities)
+        self.climax_communities = arcpy.RasterToNumPyArray(s.ecocommunities)
         self.climax_canopy = None
         self.pond_time_since_disturbance = None
         self.garden_time_since_disturbance = None
@@ -26,7 +28,7 @@ class Succession(object):
         self.community_table = pd.read_csv(s.COMMUNITY_TABLE, index_col=0)
         self.dbh_lookup = pd.read_csv(s.DBH_LOOKUP, index_col=0)
         self.header, self.header_text, self.shape = utils.get_ascii_header(s.reference_ascii)
-        self.geot, self.projection = utils.get_geo_info(s.ecocommunities)
+        # self.geot, self.projection = utils.get_geo_info(s.ecocommunities)
         self.set_ecocommunities()
         self.set_canopy()
         self.set_forest_age()
@@ -38,24 +40,37 @@ class Succession(object):
 
         if os.path.isfile(this_year_ecocomms):
             logging.info(this_year_ecocomms)
-            self.ecocommunities = utils.raster_to_array(this_year_ecocomms)
+            ecocomm = arcpy.Raster(this_year_ecocomms)
+            ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_before_RasterToNumPyArray_{}.tif'.format(self.year)))
+            self.ecocommunities = arcpy.RasterToNumPyArray(this_year_ecocomms, nodata_to_value=-2147483647)
+            # self.ecocommunities = utils.raster_to_array(this_year_ecocomms)
             # self.ecocommunities = arcpy.Raster(this_year_ecocomms)
             # self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
 
         elif os.path.isfile(last_year_ecocomms):
             logging.info(last_year_ecocomms)
-            self.ecocommunities = utils.raster_to_array(last_year_ecocomms)
+            ecocomm = arcpy.Raster(last_year_ecocomms)
+            ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_before_RasterToNumPyArray_{}.tif'.format(self.year)))
+            self.ecocommunities = arcpy.RasterToNumPyArray(last_year_ecocomms, nodata_to_value=-2147483647)
+            # self.ecocommunities = utils.raster_to_array(last_year_ecocomms)
             # self.ecocommunities = arcpy.Raster(last_year_ecocomms)
             # self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
 
         else:
             logging.info('initial run')
             logging.info(s.ecocommunities)
-            self.ecocommunities = utils.raster_to_array(s.ecocommunities)
-            logging.info(self.ecocommunities.shape)
+            self.ecocommunities = arcpy.RasterToNumPyArray(s.ecocommunities)
+            # self.ecocommunities = utils.raster_to_array(s.ecocommunities)
             # self.ecocommunities = arcpy.Raster(s.ecocommunities)
             # self.ecocommunities = arcpy.RasterToNumPyArray(self.ecocommunities, nodata_to_value=-9999)
             # self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
+
+        logging.info(self.ecocommunities)
+        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities,
+                                           arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                           x_cell_size=s.CELL_SIZE,
+                                           y_cell_size=s.CELL_SIZE, value_to_nodata=-2147483647)
+        ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_after_set_ecocommunities_{}.tif'.format(self.year)))
 
         self.shape = self.ecocommunities.shape
 
@@ -68,7 +83,8 @@ class Succession(object):
 
         if os.path.isfile(s.CANOPY):
             logging.info('Setting canopy')
-            self.canopy = utils.raster_to_array(s.CANOPY)
+            self.canopy = arcpy.RasterToNumPyArray(s.CANOPY)
+            # self.canopy = utils.raster_to_array(s.CANOPY)
 
         else:
             logging.info('Assigning initial values to canopy array')
@@ -80,8 +96,10 @@ class Succession(object):
             for index, row in self.community_table.iterrows():
                 self.canopy[self.ecocommunities == index] = row.max_canopy
 
-            utils.array_to_raster(self.canopy, s.CANOPY,
-                                  geotransform=self.geot, projection=self.projection)
+            canopy = arcpy.NumPyArrayToRaster(self.canopy, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+            canopy.save(s.CANOPY)
+            # utils.array_to_raster(self.canopy, s.CANOPY,
+            #                       geotransform=self.geot, projection=self.projection)
 
     def set_forest_age(self):
         """
@@ -91,7 +109,8 @@ class Succession(object):
         """
         if os.path.isfile(s.FOREST_AGE):
             logging.info('Setting forest age')
-            self.forest_age = utils.raster_to_array(s.FOREST_AGE)
+            self.forest_age = arcpy.RasterToNumPyArray(s.FOREST_AGE)
+            # self.forest_age = utils.raster_to_array(s.FOREST_AGE)
 
         else:
             logging.info('Assigning initial values to forest age array')
@@ -115,14 +134,17 @@ class Succession(object):
                 if row.forest == 1:
                     self.forest_age = np.where(self.ecocommunities == index, tn, self.forest_age)
 
-            utils.array_to_raster(self.forest_age, s.FOREST_AGE,
-                                  geotransform=self.geot, projection=self.projection
-                                  )
+            forestage = arcpy.NumPyArrayToRaster(self.forest_age, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+            forestage.save(s.FOREST_AGE)
+            # utils.array_to_raster(self.forest_age, s.FOREST_AGE,
+            #                       geotransform=self.geot, projection=self.projection
+            #                       )
 
     def set_dbh(self):
         if os.path.isfile(s.DBH):
             logging.info('Setting dbh')
-            self.dbh = utils.raster_to_array(s.DBH)
+            self.dbh = arcpy.RasterToNumPyArray(s.DBH)
+            # self.dbh = utils.raster_to_array(s.DBH)
 
         else:
             logging.info('Assigning initial values to dbh array')
@@ -140,8 +162,10 @@ class Succession(object):
                         d = self.dbh_lookup.ix[int(a)][str(index)]
                         self.dbh[(self.ecocommunities == index) & (self.forest_age == a)] = d
 
-            utils.array_to_raster(self.dbh, s.DBH,
-                                  geotransform=self.geot, projection=self.projection)
+            dbh = arcpy.NumPyArrayToRaster(self.dbh, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+            dbh.save(s.DBH)
+            # utils.array_to_raster(self.dbh, s.DBH,
+            #                       geotransform=self.geot, projection=self.projection)
 
     def grow(self):
         """
@@ -149,37 +173,37 @@ class Succession(object):
         :return:
         """
         for index, row in self.community_table.iterrows():
-                canopy_growth = int(row['canopy_growth'])
-                max_canopy = int(row['max_canopy'])
+            canopy_growth = int(row['canopy_growth'])
+            max_canopy = int(row['max_canopy'])
 
-                # increment age of all communities that have trees all upland communities
-                if row.forest == 1:
-                    # increment canopy
-                    self.canopy[(self.ecocommunities == index) & (self.canopy < max_canopy)] += canopy_growth
+            # increment age of all communities that have trees all upland communities
+            if row['forest'] == 1:
+                # increment canopy
+                self.canopy[(self.ecocommunities == index) & (self.canopy < max_canopy)] += canopy_growth
 
-                elif max_canopy > 0 and row.forest == 0:
-                    # increment non forest canopy
-                    self.canopy[(self.ecocommunities == index)] += canopy_growth
+            elif max_canopy > 0 and row.forest == 0:
+                # increment non forest canopy
+                self.canopy[(self.ecocommunities == index)] += canopy_growth
 
+            # if s.DEBUG_MODE:
+            #     logging.info(row)
+            if max_canopy > 0:
+                # increment forest age
+                self.forest_age[self.ecocommunities == index] += 1
+
+                # increment dbh
                 if s.DEBUG_MODE:
-                    logging.info(row.dbh_model)
-                if max_canopy > 0:
-                    # increment forest age
-                    self.forest_age[self.ecocommunities == index] += 1
+                    logging.info("%s %s | max canopy: %s" % (index, row['Name'], max_canopy))
+                self.dbh[(self.ecocommunities == index) &
+                         (self.forest_age == 1)
+                         & (self.dbh == 0)] = 0.5
 
-                    # increment dbh
-                    if s.DEBUG_MODE:
-                        logging.info("%s %s | max canopy: %s" % (index, row.Name, max_canopy))
-                    self.dbh[(self.ecocommunities == index) &
-                             (self.forest_age == 1)
-                             & (self.dbh == 0)] = 0.5
+                dbh_model = int(row['dbh_model'])
+                site_index = int(row['site_index'])
 
-                    dbh_model = int(row.dbh_model)
-                    site_index = int(row.site_index)
+                d_grow = ta.get_dgrow(species=dbh_model, site_index=site_index, dbh=self.dbh)
 
-                    d_grow = ta.get_dgrow(species=dbh_model, site_index=site_index, dbh=self.dbh)
-
-                    self.dbh = np.where(self.ecocommunities == index, self.dbh + d_grow, self.dbh)
+                self.dbh = np.where(self.ecocommunities == index, self.dbh + d_grow, self.dbh)
 
     def transition(self):
         """
@@ -200,18 +224,31 @@ class Succession(object):
                                                self.climax_communities, self.ecocommunities)
 
     def run_succession(self):
+        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_before_grow_{}.tif'.format(self.year)))
         self.grow()
+        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_before_transition_{}.tif'.format(self.year)))
         self.transition()
 
         e = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
-        utils.array_to_raster(self.ecocommunities, e,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.canopy, s.CANOPY,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.forest_age, s.FOREST_AGE,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.dbh, s.DBH,
-                              geotransform=self.geot, projection=self.projection)
+        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_after_succession_{}.tif'.format(self.year)))
+        ecocomm.save(e)
+        # utils.array_to_raster(self.ecocommunities, e,
+        #                       geotransform=self.geot, projection=self.projection)
+        canopy = arcpy.NumPyArrayToRaster(self.canopy, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        canopy.save(s.CANOPY)
+        # utils.array_to_raster(self.canopy, s.CANOPY,
+        #                       geotransform=self.geot, projection=self.projection)
+        forestage = arcpy.NumPyArrayToRaster(self.forest_age, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        forestage.save(s.FOREST_AGE)
+        # utils.array_to_raster(self.forest_age, s.FOREST_AGE,
+        #                       geotransform=self.geot, projection=self.projection)
+        dbh = arcpy.NumPyArrayToRaster(self.dbh, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        dbh.save(s.DBH)
+        # utils.array_to_raster(self.dbh, s.DBH,
+        #                       geotransform=self.geot, projection=self.projection)
 
     # s1 = Succession(1508)
     # logging.info(s1.succession_table.head())
