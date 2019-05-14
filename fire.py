@@ -290,21 +290,28 @@ class FireDisturbance(d.Disturbance):
     def set_time_since_disturbance(self):
         if os.path.isfile(self.time_since_disturbance_raster):
             # logging.info('Setting time since disturbance')
-            self.time_since_disturbance = utils.raster_to_array(self.time_since_disturbance_raster)
+            # self.time_since_disturbance = utils.raster_to_array(self.time_since_disturbance_raster)
+            self.time_since_disturbance = arcpy.RasterToNumPyArray(self.time_since_disturbance_raster)
 
         else:
             # logging.info('Assigning initial values to time since disturbance array')
             self.time_since_disturbance = np.empty(shape=self.shape, dtype=np.int32)
             logging.info('time since disturbance: {}'.format(self.time_since_disturbance.shape))
             self.time_since_disturbance.fill(s.INITIAL_TIME_SINCE_DISTURBANCE)
-            utils.array_to_raster(self.time_since_disturbance, self.time_since_disturbance_raster,
-                                  geotransform=self.geot, projection=self.projection)
+            tsd = arcpy.NumPyArrayToRaster(self.time_since_disturbance,
+                                           arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                           x_cell_size=s.CELL_SIZE,
+                                           y_cell_size=s.CELL_SIZE)
+            tsd.save(self.time_since_disturbance_raster)
+            # utils.array_to_raster(self.time_since_disturbance, self.time_since_disturbance_raster,
+            #                       geotransform=self.geot, projection=self.projection)
 
         self.get_memory()
         # logging.info('memory usage: %r Mb' % self.memory)
 
     def get_ignition(self, in_ascii):
-        array = utils.raster_to_array(in_ascii)
+        # array = utils.raster_to_array(in_ascii)
+        array = arcpy.RasterToNumPyArray(in_ascii)
         for index, cell_value in np.ndenumerate(array):
             if cell_value == 1:
                 if self.fuel[index[0]][index[1]] not in s.NONBURNABLE:
@@ -620,8 +627,13 @@ class FireDisturbance(d.Disturbance):
                                                               site_index=site_index),
                                        tree_height)
         # Save tree height array to raster
-        utils.array_to_raster(tree_height, os.path.join(self.OUTPUT_DIR, 'tree_height.tif'),
-                              geotransform=self.geot, projection=self.projection)
+        th = arcpy.NumPyArrayToRaster(tree_height,
+                                      arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                      x_cell_size=s.CELL_SIZE,
+                                      y_cell_size=s.CELL_SIZE)
+        th.save(os.path.join(self.OUTPUT_DIR, 'tree_height.tif'))
+        # utils.array_to_raster(tree_height, os.path.join(self.OUTPUT_DIR, 'tree_height.tif'),
+        #                       geotransform=self.geot, projection=self.projection)
 
         # Calculate bark thickness
         vsp_multiplier = np.empty(shape=self.shape)
@@ -632,8 +644,13 @@ class FireDisturbance(d.Disturbance):
         bark_thickness = vsp_multiplier * self.dbh
 
         # Save bark thickness array to raster
-        utils.array_to_raster(bark_thickness, os.path.join(self.OUTPUT_DIR, 'bark_thickness.tif'),
-                              geotransform=self.geot, projection=self.projection)
+        bark = arcpy.NumPyArrayToRaster(bark_thickness,
+                                        arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                        x_cell_size=s.CELL_SIZE,
+                                        y_cell_size=s.CELL_SIZE)
+        bark.save(os.path.join(self.OUTPUT_DIR, 'bark_thickness.tif'))
+        # utils.array_to_raster(bark_thickness, os.path.join(self.OUTPUT_DIR, 'bark_thickness.tif'),
+        #                       geotransform=self.geot, projection=self.projection)
 
         # Define crown ratio
         crown_ratio = 0.4
@@ -721,7 +738,12 @@ class FireDisturbance(d.Disturbance):
                      (self.forest_age == 0) &
                      (self.flame_length != 0)] = 0.5
 
-        utils.array_to_raster(self.dbh, s.DBH, geotransform=self.geot, projection=self.projection)
+        dbh = arcpy.NumPyArrayToRaster(self.dbh,
+                                       arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                       x_cell_size=s.CELL_SIZE,
+                                       y_cell_size=s.CELL_SIZE)
+        dbh.save(s.DBH)
+        # utils.array_to_raster(self.dbh, s.DBH, geotransform=self.geot, projection=self.projection)
 
     def run_year(self):
         start_time = time.time()
@@ -757,7 +779,8 @@ class FireDisturbance(d.Disturbance):
 
         if number_of_trail_ignitions > 0:
             # Get list of potential trail fire sites
-            trail_array = utils.raster_to_array(self.TRAIL_raster)
+            # trail_array = utils.raster_to_array(self.TRAIL_raster)
+            trail_array = arcpy.RasterToNumPyArray(self.TRAIL_raster)
 
             rows, cols = np.where((trail_array == s.TRAIL_ID) &
                                   (self.time_since_disturbance >= s.TRAIL_OVERGROWN_YRS) &
@@ -799,7 +822,8 @@ class FireDisturbance(d.Disturbance):
         if number_of_hunting_ignitions > 0:
 
             # Get list of potential hunting fire sites
-            hunting_sites = utils.raster_to_array(self.HUNTING_raster)
+            # hunting_sites = utils.raster_to_array(self.HUNTING_raster)
+            hunting_sites = arcpy.RasterToNumPyArray(self.HUNTING_raster)
             rows, cols = np.where((hunting_sites == s.HUNTING_SITE_ID) &
                                   (self.fuel != 14) &
                                   (self.fuel != 16) &
@@ -843,8 +867,13 @@ class FireDisturbance(d.Disturbance):
         if len(self.ignition_sites) > 0:
             # self.set_fuel()
             # down sample fuel and canopy for FARSITE
-            utils.array_to_raster(self.fuel, os.path.join(s.TEMP_DIR, 'fuel.tif'),
-                                  geotransform=self.geot, projection=self.projection)
+            fuel = arcpy.NumPyArrayToRaster(self.fuel,
+                                            arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                            x_cell_size=s.CELL_SIZE,
+                                            y_cell_size=s.CELL_SIZE)
+            fuel.save(os.path.join(s.TEMP_DIR, 'fuel.tif'))
+            # utils.array_to_raster(self.fuel, os.path.join(s.TEMP_DIR, 'fuel.tif'),
+            #                       geotransform=self.geot, projection=self.projection)
             arcpy.env.cellSize = s.FARSITE_RESOLUTION
 
             fuel_temp = os.path.join(s.TEMP_DIR, "fuel_ds.tif")
@@ -867,7 +896,9 @@ class FireDisturbance(d.Disturbance):
             # logging.info('Selected climate equivalent-year: %r' % self.equivalent_climate_year)
 
             # Save matching climate year wtr to input dir for FARSITE
-            shutil.copyfile(os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'wtr', '%s.wtr' % self.equivalent_climate_year), self.wtr)
+            shutil.copyfile(
+                os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'wtr', '%s.wtr' % self.equivalent_climate_year),
+                self.wtr)
 
             # Create wind file
             self.write_wnd()
@@ -890,7 +921,8 @@ class FireDisturbance(d.Disturbance):
                 flame_length_clip.save(flame_length)
 
                 # read flame length as array
-                self.flame_length = utils.raster_to_array(flame_length)
+                # self.flame_length = utils.raster_to_array(flame_length)
+                self.flame_length = arcpy.RasterToNumPyArray(flame_length)
                 self.flame_length[self.flame_length < 0] = 0
                 self.area_burned = np.count_nonzero(self.flame_length)
                 logging.info('burned area: {}'.format(self.area_burned))
@@ -929,18 +961,40 @@ class FireDisturbance(d.Disturbance):
 
         logging.info('saving arrays as ascii')
         time_s = time.time()
-        utils.array_to_raster(self.canopy, s.CANOPY,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.forest_age, s.FOREST_AGE,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.time_since_disturbance, self.time_since_disturbance_raster,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.ecocommunities, os.path.join(self.OUTPUT_DIR, 'ecocommunities.tif'),
-                              geotransform=self.geot, projection=self.projection)
-
-        utils.array_to_raster(self.ecocommunities,
-                              os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
-                              geotransform=self.geot, projection=self.projection)
+        canopy = arcpy.NumPyArrayToRaster(self.canopy,
+                                          arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                          x_cell_size=s.CELL_SIZE,
+                                          y_cell_size=s.CELL_SIZE)
+        canopy.save(s.CANOPY)
+        forestage = arcpy.NumPyArrayToRaster(self.forest_age,
+                                             arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                             x_cell_size=s.CELL_SIZE,
+                                             y_cell_size=s.CELL_SIZE)
+        forestage.save(s.FOREST_AGE)
+        tsd = arcpy.NumPyArrayToRaster(self.time_since_disturbance,
+                                       arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                       x_cell_size=s.CELL_SIZE,
+                                       y_cell_size=s.CELL_SIZE)
+        tsd.save(self.time_since_disturbance_raster)
+        e = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
+        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities,
+                                           arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                           x_cell_size=s.CELL_SIZE,
+                                           y_cell_size=s.CELL_SIZE)
+        ecocomm.save(e)
+        ecocomm.save(os.path.join(self.OUTPUT_DIR, 'ecocommunities.tif'))
+        # utils.array_to_raster(self.canopy, s.CANOPY,
+        #                       geotransform=self.geot, projection=self.projection)
+        # utils.array_to_raster(self.forest_age, s.FOREST_AGE,
+        #                       geotransform=self.geot, projection=self.projection)
+        # utils.array_to_raster(self.time_since_disturbance, self.time_since_disturbance_raster,
+        #                       geotransform=self.geot, projection=self.projection)
+        # utils.array_to_raster(self.ecocommunities, os.path.join(self.OUTPUT_DIR, 'ecocommunities.tif'),
+        #                       geotransform=self.geot, projection=self.projection)
+        #
+        # utils.array_to_raster(self.ecocommunities,
+        #                       os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year),
+        #                       geotransform=self.geot, projection=self.projection)
 
         time_e = time.time()
         logging.info('saved arrays as rasters : %s' % (time_e - time_s))

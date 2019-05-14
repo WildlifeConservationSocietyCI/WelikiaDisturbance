@@ -217,7 +217,7 @@ class Succession(object):
                                            arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
                                            x_cell_size=s.CELL_SIZE,
                                            y_cell_size=s.CELL_SIZE)
-        ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_after_succession_{}.tif'.format(self.year)))
+        # ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_after_succession_{}.tif'.format(self.year)))
         ecocomm.save(e)
         canopy = arcpy.NumPyArrayToRaster(self.canopy,
                                           arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),

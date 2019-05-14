@@ -19,11 +19,11 @@ Later versions may work, but have not been tested.
 [FARSITE 4.1.055](http://www.firelab.org/document/farsite-software)
 
 #### Initial Model Inputs
-*Change link and upload new directory: [Welikia full extent inputs](https://drive.google.com/open?id=0ByGEknMOH_xMQWhMR04wUEZ2bjQ):
-This is the set of data inputs required to run all modules of the disturbance model. Includes data and code folders.
+[Welikia full extent inputs](https://drive.google.com/drive/u/0/folders/1AgE23qyX_nypcPdS0N9IEi4mWJsqNGoS):
+This is the template set of full-extent data inputs required to run all modules of the disturbance model. 
+Model run input and output data should be saved to the [runs](https://drive.google.com/drive/u/0/folders/1Az8kVxXJdD0_Go_x6Oi3EfY2KPi8Pu9k) folder.
 
 ##### General
-
   - DEM (dem)
   - Ecological communities (Welikia_Ecocommunities)
   - Welikia region boundaries (region_boundaries)
@@ -95,12 +95,12 @@ This class adds and abandons horticultural fields. The general placment of garde
 This class updates the growth of forest type communities (DBH, age, tree height) and transitions early succesional communities to advanced states using pathways defined in welikia_community_table_int.csv
 
 ## Module Integration 
-![alt text](https://github.com/WildlifeConservationSocietyCI/WelikiaDisturbance/blob/master/disturbance_model_notes/figures/succession_disturbance_diagram.png "Logo Title Text 1")
+![](https://github.com/WildlifeConservationSocietyCI/WelikiaDisturbance/blob/master/disturbance_model_notes/figures/integrated_disturbance_model.png)
 
 ## Setup
- 1. Clone WelikiaDistrubance repository 
- 2. Download Welikia full extent inputs and move to WelikiaDisturbance directory
- 3. Make copy of settings_template.py (settings.py) and set variables at top
+ 1. Clone WelikiaDisturbance repository 
+ 2. Download Welikia [full extent inputs](https://drive.google.com/drive/u/0/folders/1AgE23qyX_nypcPdS0N9IEi4mWJsqNGoS) to a suitable local data directory
+ 3. Make copy of settings_template.py as settings.py and set variables at top
  4. Run initiate_disturbance_inputs.py
  5. Create FARSITE PROJECT and LANDSCAPE files manually in FARSITE GUI (refer to FARSITE Setup below)
  6. Run disturbance_script.py
