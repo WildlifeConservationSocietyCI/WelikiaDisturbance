@@ -10,18 +10,10 @@ ESRI python distribution which contains arcpy library ([WCS license information]
 
 #### Python Libraries
 
-[numpy‑1.13.1+mkl‑cp27‑cp27m‑win_amd64](http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy)
-
-[GDAL 2.0.2 x64 bindings](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
-
-[pywin32-214.win-amd64-py3.0.exe](https://sourceforge.net/projects/pywin32/files/pywin32/Build%20214/)
-
-pandas
-
-scipy
-
-WMI
-
+The only necessary libraries not included as part of the esri python distribution are [WMI](http://timgolden.me.uk/python/wmi/index.html) and [pywinauto](http://pywinauto.github.io/), which can be installed via:  
+pip install pywinauto==0.5.4 or  
+conda install pywinauto==0.5.4  
+Later versions may work, but have not been tested.
 
 #### FARSITE
 [FARSITE 4.1.055](http://www.firelab.org/document/farsite-software)

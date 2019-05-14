@@ -4,7 +4,6 @@ import numpy as np
 import logging
 import settings as s
 import disturbance as d
-import utils
 
 
 class PondDisturbance(d.Disturbance):
@@ -315,12 +314,21 @@ class PondDisturbance(d.Disturbance):
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
         self.ecocommunities.save(os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year))
 
-        utils.array_to_raster(self.canopy, s.CANOPY,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.forest_age, s.FOREST_AGE,
-                              geotransform=self.geot, projection=self.projection)
-        utils.array_to_raster(self.dbh, s.DBH,
-                              geotransform=self.geot, projection=self.projection)
+        canopy = arcpy.NumPyArrayToRaster(self.canopy,
+                                          arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                          x_cell_size=s.CELL_SIZE,
+                                          y_cell_size=s.CELL_SIZE)
+        canopy.save(s.CANOPY)
+        forestage = arcpy.NumPyArrayToRaster(self.forest_age,
+                                             arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                             x_cell_size=s.CELL_SIZE,
+                                             y_cell_size=s.CELL_SIZE)
+        forestage.save(s.FOREST_AGE)
+        dbh = arcpy.NumPyArrayToRaster(self.dbh,
+                                       arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                       x_cell_size=s.CELL_SIZE,
+                                       y_cell_size=s.CELL_SIZE)
+        dbh.save(s.DBH)
 
         self.set_pond_area()
         self.ecocommunities = None

@@ -169,17 +169,6 @@ class GardenDisturbance(d.Disturbance):
         :return:
         """
 
-        # del self.randrast
-        # self.randrast = None
-        # if os.path.isfile(os.path.join(s.TEMP_DIR, 'maxsuit.tif')):
-        #     os.remove(os.path.join(s.TEMP_DIR, 'maxsuit.tif'))
-        # if os.path.isfile(os.path.join(s.TEMP_DIR, 'randrast.tif')):
-        #     os.remove(os.path.join(s.TEMP_DIR, 'randrast.tif'))
-        # if os.path.isfile(os.path.join(s.TEMP_DIR, 'randrastclip.tif')):
-        #     os.remove(os.path.join(s.TEMP_DIR, 'randrastclip.tif'))
-        # if os.path.isfile(os.path.join(s.TEMP_DIR, 'gardencenter.tif')):
-        #     os.remove(os.path.join(s.TEMP_DIR, 'gardencenter.tif'))
-
         # If the maximum suitability is no data or zero set to None
         if self.local_suitability.maximum is None or self.local_suitability.maximum == 0:
             self.garden = None
@@ -342,7 +331,6 @@ class GardenDisturbance(d.Disturbance):
         logging.info('checking for existing gardens')
         for population, coordinates in zip(self.site_populations, self.coordinate_list):
             logging.info('garden coordinates: {} {}'.format(coordinates[0], coordinates[1]))
-            # self.wipe_locks()
             self.site_center = arcpy.Point(coordinates[0], coordinates[1])
             self.population = population
             self.population_to_garden_area()
@@ -373,7 +361,6 @@ class GardenDisturbance(d.Disturbance):
                     # self.dbh[(e == s.SUCCESSIONAL_OLD_FIELD_ID) & (self.forest_age == 0)] = 0.5
 
             arcpy.env.extent = self.ecocommunities
-            # del arcpy
 
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
         logging.info('ecocom after garden disturbance: {}'.format(self.ecocommunities))
@@ -397,13 +384,7 @@ class GardenDisturbance(d.Disturbance):
                                        x_cell_size=s.CELL_SIZE,
                                        y_cell_size=s.CELL_SIZE)
         dbh.save(s.DBH)
-        # utils.array_to_raster(self.canopy, s.CANOPY,
-        #                       geotransform=self.geot, projection=self.projection)
-        # utils.array_to_raster(self.forest_age, s.FOREST_AGE,
-        #                       geotransform=self.geot, projection=self.projection)
-        # utils.array_to_raster(self.dbh, s.DBH,
-        #                       geotransform=self.geot, projection=self.projection)
 
         logging.info('garden area: %s' % self.garden_area)
-        # self.ecocommunities = None
-        # del self.ecocommunities
+        self.ecocommunities = None
+        del self.ecocommunities

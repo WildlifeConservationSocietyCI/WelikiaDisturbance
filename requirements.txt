@@ -2,3 +2,4 @@ numpy
 pandas
 scipy
 pywinauto==0.5.4
+WMI
