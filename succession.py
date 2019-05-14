@@ -69,7 +69,7 @@ class Succession(object):
         ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities,
                                            arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
                                            x_cell_size=s.CELL_SIZE,
-                                           y_cell_size=s.CELL_SIZE, value_to_nodata=-2147483647)
+                                           y_cell_size=s.CELL_SIZE)
         ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_after_set_ecocommunities_{}.tif'.format(self.year)))
 
         self.shape = self.ecocommunities.shape
@@ -96,7 +96,10 @@ class Succession(object):
             for index, row in self.community_table.iterrows():
                 self.canopy[self.ecocommunities == index] = row.max_canopy
 
-            canopy = arcpy.NumPyArrayToRaster(self.canopy, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+            canopy = arcpy.NumPyArrayToRaster(self.canopy,
+                                              arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                              x_cell_size=s.CELL_SIZE,
+                                              y_cell_size=s.CELL_SIZE)
             canopy.save(s.CANOPY)
             # utils.array_to_raster(self.canopy, s.CANOPY,
             #                       geotransform=self.geot, projection=self.projection)
@@ -134,7 +137,10 @@ class Succession(object):
                 if row.forest == 1:
                     self.forest_age = np.where(self.ecocommunities == index, tn, self.forest_age)
 
-            forestage = arcpy.NumPyArrayToRaster(self.forest_age, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+            forestage = arcpy.NumPyArrayToRaster(self.forest_age,
+                                                 arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                                 x_cell_size=s.CELL_SIZE,
+                                                 y_cell_size=s.CELL_SIZE)
             forestage.save(s.FOREST_AGE)
             # utils.array_to_raster(self.forest_age, s.FOREST_AGE,
             #                       geotransform=self.geot, projection=self.projection
@@ -162,7 +168,10 @@ class Succession(object):
                         d = self.dbh_lookup.ix[int(a)][str(index)]
                         self.dbh[(self.ecocommunities == index) & (self.forest_age == a)] = d
 
-            dbh = arcpy.NumPyArrayToRaster(self.dbh, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+            dbh = arcpy.NumPyArrayToRaster(self.dbh,
+                                           arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                           x_cell_size=s.CELL_SIZE,
+                                           y_cell_size=s.CELL_SIZE)
             dbh.save(s.DBH)
             # utils.array_to_raster(self.dbh, s.DBH,
             #                       geotransform=self.geot, projection=self.projection)
@@ -224,28 +233,36 @@ class Succession(object):
                                                self.climax_communities, self.ecocommunities)
 
     def run_succession(self):
-        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
-        ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_before_grow_{}.tif'.format(self.year)))
         self.grow()
-        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
-        ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_before_transition_{}.tif'.format(self.year)))
         self.transition()
 
         e = os.path.join(s.OUTPUT_DIR, self._ecocommunities_filename % self.year)
-        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        ecocomm = arcpy.NumPyArrayToRaster(self.ecocommunities,
+                                           arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                           x_cell_size=s.CELL_SIZE,
+                                           y_cell_size=s.CELL_SIZE)
         ecocomm.save(os.path.join(s.TEMP_DIR, 'ecosystems_after_succession_{}.tif'.format(self.year)))
         ecocomm.save(e)
         # utils.array_to_raster(self.ecocommunities, e,
         #                       geotransform=self.geot, projection=self.projection)
-        canopy = arcpy.NumPyArrayToRaster(self.canopy, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        canopy = arcpy.NumPyArrayToRaster(self.canopy,
+                                          arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                          x_cell_size=s.CELL_SIZE,
+                                          y_cell_size=s.CELL_SIZE)
         canopy.save(s.CANOPY)
         # utils.array_to_raster(self.canopy, s.CANOPY,
         #                       geotransform=self.geot, projection=self.projection)
-        forestage = arcpy.NumPyArrayToRaster(self.forest_age, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        forestage = arcpy.NumPyArrayToRaster(self.forest_age,
+                                             arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                             x_cell_size=s.CELL_SIZE,
+                                             y_cell_size=s.CELL_SIZE)
         forestage.save(s.FOREST_AGE)
         # utils.array_to_raster(self.forest_age, s.FOREST_AGE,
         #                       geotransform=self.geot, projection=self.projection)
-        dbh = arcpy.NumPyArrayToRaster(self.dbh, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        dbh = arcpy.NumPyArrayToRaster(self.dbh,
+                                       arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                       x_cell_size=s.CELL_SIZE,
+                                       y_cell_size=s.CELL_SIZE)
         dbh.save(s.DBH)
         # utils.array_to_raster(self.dbh, s.DBH,
         #                       geotransform=self.geot, projection=self.projection)

@@ -5,8 +5,12 @@ import arcpy
 import numpy
 import settings as s
 import disturbance as d
-# import utils
 
+
+# TODO: Throughout the code, we had previously been leveraging in-memory raster processing,
+#  to avoid expensive disk read/write operations. But with the lastest code and (exclusive use of)
+#  arcpy 10.7x64, we get errors using *.afr intermediate files. Architecture should be refactored
+#  to avoid disk access and be fast.
 
 class GardenDisturbance(d.Disturbance):
     INPUT_DIR = os.path.join(s.INPUT_DIR, 'garden')
@@ -110,6 +114,7 @@ class GardenDisturbance(d.Disturbance):
             arcpy.env.extent = self.ecocommunities
             self.ecocommunities = arcpy.sa.Con(arcpy.sa.IsNull(local_communities) == 0, local_communities,
                                                self.ecocommunities)
+            self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
 
             # set extent back to local to proceed with rest of garden process
             arcpy.env.extent = self.temp_buffer
@@ -164,16 +169,16 @@ class GardenDisturbance(d.Disturbance):
         :return:
         """
 
-        del self.randrast
-        self.randrast = None
-        if os.path.isfile(os.path.join(s.TEMP_DIR, 'maxsuit.tif')):
-            os.remove(os.path.join(s.TEMP_DIR, 'maxsuit.tif'))
-        if os.path.isfile(os.path.join(s.TEMP_DIR, 'randrast.tif')):
-            os.remove(os.path.join(s.TEMP_DIR, 'randrast.tif'))
-        if os.path.isfile(os.path.join(s.TEMP_DIR, 'randrastclip.tif')):
-            os.remove(os.path.join(s.TEMP_DIR, 'randrastclip.tif'))
-        if os.path.isfile(os.path.join(s.TEMP_DIR, 'gardencenter.tif')):
-            os.remove(os.path.join(s.TEMP_DIR, 'gardencenter.tif'))
+        # del self.randrast
+        # self.randrast = None
+        # if os.path.isfile(os.path.join(s.TEMP_DIR, 'maxsuit.tif')):
+        #     os.remove(os.path.join(s.TEMP_DIR, 'maxsuit.tif'))
+        # if os.path.isfile(os.path.join(s.TEMP_DIR, 'randrast.tif')):
+        #     os.remove(os.path.join(s.TEMP_DIR, 'randrast.tif'))
+        # if os.path.isfile(os.path.join(s.TEMP_DIR, 'randrastclip.tif')):
+        #     os.remove(os.path.join(s.TEMP_DIR, 'randrastclip.tif'))
+        # if os.path.isfile(os.path.join(s.TEMP_DIR, 'gardencenter.tif')):
+        #     os.remove(os.path.join(s.TEMP_DIR, 'gardencenter.tif'))
 
         # If the maximum suitability is no data or zero set to None
         if self.local_suitability.maximum is None or self.local_suitability.maximum == 0:
@@ -182,22 +187,22 @@ class GardenDisturbance(d.Disturbance):
         # Else select random garden center out of cells with the highest suitability
         else:
             maxsuit = arcpy.sa.Con(self.local_suitability == self.local_suitability.maximum, self.local_suitability)
-            if s.DEBUG_MODE:
-                maxsuit.save(os.path.join(s.TEMP_DIR, 'maxsuit.tif'))
+            # if s.DEBUG_MODE:
+            maxsuit.save(os.path.join(s.TEMP_DIR, 'maxsuit.tif'))
 
             # Create random raster to associate with most suitable areas to randomly select garden centroid cell
             self.randrast = arcpy.sa.CreateRandomRaster(345, self.local_suitability, self.local_suitability)
-            if s.DEBUG_MODE:
-                self.randrast.save(os.path.join(s.TEMP_DIR, 'randrast.tif'))
+            # if s.DEBUG_MODE:
+            self.randrast.save(os.path.join(s.TEMP_DIR, 'randrast.tif'))
 
             randrastclip = arcpy.sa.Con(maxsuit, self.randrast)
-            if s.DEBUG_MODE:
-                randrastclip.save(os.path.join(s.TEMP_DIR, 'randrastclip.tif'))
+            # if s.DEBUG_MODE:
+            randrastclip.save(os.path.join(s.TEMP_DIR, 'randrastclip.tif'))
 
             # Select garden center using the maximum value in the random raster
             gardencenter = arcpy.sa.Con(randrastclip == randrastclip.maximum, s.GARDEN_ID)
-            if s.DEBUG_MODE:
-                gardencenter.save(os.path.join(s.TEMP_DIR, 'gardencenter.tif'))
+            # if s.DEBUG_MODE:
+            gardencenter.save(os.path.join(s.TEMP_DIR, 'gardencenter.tif'))
 
             self.garden = gardencenter
             del maxsuit, randrastclip, gardencenter
@@ -231,23 +236,23 @@ class GardenDisturbance(d.Disturbance):
 
             # Set nodata values in garden grid to 0
             zero = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 1, 0, self.garden)
-            if s.DEBUG_MODE:
-                zero.save(os.path.join(s.TEMP_DIR, "zero_%s.tif" % counter))
+            # if s.DEBUG_MODE:
+            zero.save(os.path.join(s.TEMP_DIR, "zero_%s.tif" % counter))
 
             # Create another grid where current garden is NODATA and all other values = 0
             nullgard = arcpy.sa.SetNull(zero == s.GARDEN_ID, 0)
-            if s.DEBUG_MODE:
-                nullgard.save(os.path.join(s.TEMP_DIR, "nullgard_%s.tif" % counter))
+            # if s.DEBUG_MODE:
+            nullgard.save(os.path.join(s.TEMP_DIR, "nullgard_%s.tif" % counter))
 
             # Expand potential garden grid by one cell
             zone = arcpy.sa.Expand(self.garden, 1, s.GARDEN_ID)
-            if s.DEBUG_MODE:
-                zone.save(os.path.join(s.TEMP_DIR, "zone_%s.tif" % counter))
+            # if s.DEBUG_MODE:
+            zone.save(os.path.join(s.TEMP_DIR, "zone_%s.tif" % counter))
 
             # Create a clipping raster for gardens
             zapped = arcpy.sa.Plus(nullgard, self.local_suitability)
-            if s.DEBUG_MODE:
-                zapped.save(os.path.join(s.TEMP_DIR, "zapped_%s.tif" % counter))
+            # if s.DEBUG_MODE:
+            zapped.save(os.path.join(s.TEMP_DIR, "zapped_%s.tif" % counter))
 
             # Clip expanded garden grid by removing unsuitable areas and places where garden currently exists
             clip = arcpy.sa.ExtractByMask(zone, zapped)
@@ -258,16 +263,16 @@ class GardenDisturbance(d.Disturbance):
                 logging.info('no new cells can be added')
                 break
 
-            if s.DEBUG_MODE:
-                clip.save(os.path.join(s.TEMP_DIR, 'clip_%s.tif' % counter))
+            # if s.DEBUG_MODE:
+            clip.save(os.path.join(s.TEMP_DIR, 'clip_%s.tif' % counter))
 
             ring_suitability = arcpy.sa.Con(clip, self.local_suitability)
-            if s.DEBUG_MODE:
-                ring_suitability.save(os.path.join(s.TEMP_DIR, 'ring_suitability_%s.tif' % counter))
+            # if s.DEBUG_MODE:
+            ring_suitability.save(os.path.join(s.TEMP_DIR, 'ring_suitability_%s.tif' % counter))
 
             new_cells = arcpy.sa.Con(ring_suitability == ring_suitability.maximum, s.GARDEN_ID)
-            if s.DEBUG_MODE:
-                new_cells.save(os.path.join(s.TEMP_DIR, 'new_cells_%s.tif' % counter))
+            # if s.DEBUG_MODE:
+            new_cells.save(os.path.join(s.TEMP_DIR, 'new_cells_%s.tif' % counter))
 
             new_cells_area = self.get_garden_area(new_cells)
 
@@ -288,8 +293,8 @@ class GardenDisturbance(d.Disturbance):
                     self.garden = arcpy.sa.Con(arcpy.sa.IsNull(new_cell) == 0, new_cell, self.garden)
 
                     self.garden_area = self.get_garden_area(self.garden)
-                    if s.DEBUG_MODE:
-                        new_cell.save(os.path.join(s.TEMP_DIR, 'new_cell_%s.tif' % counter))
+                    # if s.DEBUG_MODE:
+                    new_cell.save(os.path.join(s.TEMP_DIR, 'new_cell_%s.tif' % counter))
 
             self.garden_area = self.get_garden_area(self.garden)
             del zero, zone, zapped, nullgard, clip, ring_suitability, new_cells
@@ -371,18 +376,26 @@ class GardenDisturbance(d.Disturbance):
             # del arcpy
 
         self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s.tif' % self.year)))
-        self.ecocommunities.save((os.path.join(s.OUTPUT_DIR, 'ecocommunities_%s_test.tif' % self.year)))
         logging.info('ecocom after garden disturbance: {}'.format(self.ecocommunities))
 
         self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities == s.GARDEN_ID, 0,
                                                    self.time_since_disturbance + 1)
         self.time_since_disturbance.save(os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year))
 
-        canopy = arcpy.NumPyArrayToRaster(self.canopy, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        canopy = arcpy.NumPyArrayToRaster(self.canopy,
+                                          arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                          x_cell_size=s.CELL_SIZE,
+                                          y_cell_size=s.CELL_SIZE)
         canopy.save(s.CANOPY)
-        forestage = arcpy.NumPyArrayToRaster(self.forest_age, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        forestage = arcpy.NumPyArrayToRaster(self.forest_age,
+                                             arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                             x_cell_size=s.CELL_SIZE,
+                                             y_cell_size=s.CELL_SIZE)
         forestage.save(s.FOREST_AGE)
-        dbh = arcpy.NumPyArrayToRaster(self.dbh, x_cell_size=s.CELL_SIZE, y_cell_size=s.CELL_SIZE)
+        dbh = arcpy.NumPyArrayToRaster(self.dbh,
+                                       arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                       x_cell_size=s.CELL_SIZE,
+                                       y_cell_size=s.CELL_SIZE)
         dbh.save(s.DBH)
         # utils.array_to_raster(self.canopy, s.CANOPY,
         #                       geotransform=self.geot, projection=self.projection)
