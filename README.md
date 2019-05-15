@@ -10,9 +10,9 @@ ESRI python distribution which contains arcpy library ([WCS license information]
 
 #### Python Libraries
 
-The only necessary libraries not included as part of the esri python distribution are [WMI](http://timgolden.me.uk/python/wmi/index.html) and [pywinauto](http://pywinauto.github.io/), which can be installed via:  
+The only necessary libraries not included as part of the esri python distribution are [WMI](http://timgolden.me.uk/python/wmi/index.html), [pywin32](https://github.com/mhammond/pywin32) and [pywinauto](http://pywinauto.github.io/), which can be installed via:  
 pip install pywinauto==0.5.4 or  
-conda install pywinauto==0.5.4  
+(if using conda) conda install pywinauto==0.5.4  
 Later versions may work, but have not been tested.
 
 #### FARSITE
@@ -121,13 +121,13 @@ The inputs are ASCII files, which include
 - Canopy cover (canopy.asc)
 
 Open FARSITE and from the main menu select **INPUT > LANDSCAPE UTILITES > GENREATE LANDSCAPE FILE**. 
-A dialogue box will appear with the option to upload these 5 ASCII files. 
+A dialogue box will appear with the option to specify paths to these 5 ASCII files. 
 
-Save the landscape file in the same location as the ASCII files (inputs). 
+Save the landscape file in the same location as the ASCII fire input files as `LANDSCAPE.LCP`. 
 This is important because FARSITE will have issues executing if all files are **NOT** in the same directory. 
 
-Next, you will create a project (.FPJ) file using the newly created landscape (.LCP) file 
-and initial inputs (Welikia full extent inputs) that include
+Next, create a project (.FPJ) file using the newly created landscape (.LCP) file 
+and initial inputs (in the full extent inputs directory) that include
 - Adjustments (fuel_adjustment.adj)
 - Moistures (fuel_moisture.fms)
 - Custom Models (custom_fuel.fmd)
@@ -135,13 +135,12 @@ and initial inputs (Welikia full extent inputs) that include
 - Wind Files (wind.wnd)
 
 From the main menu select **INPUT > PROJECT INPUTS**. 
-A dialogue box will appear with the option to upload the landscape (.LCP) file and the 5 initial input files.
-The rest of the files are optional to upload. 
+A dialogue box will appear with the option to specify the path to the landscape (.LCP) file and the 5 initial input files.
 
-Save the project file (.FPJ) in the same location as the landscape file (.LCP) 
+Save the project file (.FPJ) as `PROJECT.FPJ` in the same location as the landscape file (.LCP) 
 because FARSITE will have issues running if all files are **NOT** in the same directory. 
  
-## TODO (future):
+## TODO:
 - hunt down other sources of script not finishing
 - sort out arcpy/gdal/numpy library conflicts definitively
 - optimize for efficiency and run time
