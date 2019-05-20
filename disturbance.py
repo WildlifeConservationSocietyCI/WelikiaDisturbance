@@ -2,10 +2,9 @@ import os
 import logging
 import arcpy
 import numpy as np
-import settings as s
-import utils
 import pandas as pd
 import scipy.stats as ss
+import settings as s
 
 
 class Disturbance(object):
@@ -25,8 +24,8 @@ class Disturbance(object):
         self.dbh_lookup = pd.read_csv(s.DBH_LOOKUP, index_col=0)
 
         self.upland_area = 0
-        self.shape = utils.raster_to_array(self.REFERENCE).shape
-        self.geot, self.projection = utils.get_geo_info(self.REFERENCE)
+        refarray = arcpy.RasterToNumPyArray(self.REFERENCE)
+        self.shape = refarray.shape
         self.set_ecocommunities()
         self.set_canopy()
         self.set_forest_age()
@@ -63,7 +62,7 @@ class Disturbance(object):
 
         if os.path.isfile(s.CANOPY):
             logging.info('Setting canopy')
-            self.canopy = utils.raster_to_array(s.CANOPY)
+            self.canopy = arcpy.RasterToNumPyArray(s.CANOPY)
 
         else:
             logging.info('Assigning initial values to canopy array')
@@ -88,8 +87,11 @@ class Disturbance(object):
                 # elif row.max_canopy == 0:
                 #     self.canopy[self.ecocommunities_array == index] = row.max_canopy
 
-            utils.array_to_raster(self.canopy, s.CANOPY,
-                                  geotransform=self.geot, projection=self.projection)
+            canopy = arcpy.NumPyArrayToRaster(self.canopy,
+                                              arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                              x_cell_size=s.CELL_SIZE,
+                                              y_cell_size=s.CELL_SIZE)
+            canopy.save(s.CANOPY)
 
     def set_forest_age(self):
         """
@@ -99,7 +101,7 @@ class Disturbance(object):
         """
         if os.path.isfile(s.FOREST_AGE):
             logging.info('Setting forest age')
-            self.forest_age = utils.raster_to_array(s.FOREST_AGE)
+            self.forest_age = arcpy.RasterToNumPyArray(s.FOREST_AGE)
 
         else:
             logging.info('Assigning initial values to forest age array')
@@ -124,8 +126,11 @@ class Disturbance(object):
                 if row.forest == 1:
                     self.forest_age = np.where(self.ecocommunities_array == index, tn, self.forest_age)
 
-            utils.array_to_raster(self.forest_age, s.FOREST_AGE,
-                                  geotransform=self.geot, projection=self.projection)
+            forestage = arcpy.NumPyArrayToRaster(self.forest_age,
+                                                 arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                                 x_cell_size=s.CELL_SIZE,
+                                                 y_cell_size=s.CELL_SIZE)
+            forestage.save(s.FOREST_AGE)
 
     def set_dbh(self):
         """
@@ -134,7 +139,7 @@ class Disturbance(object):
         """
         if os.path.isfile(s.DBH):
             logging.info('Setting dbh')
-            self.dbh = utils.raster_to_array(s.DBH)
+            self.dbh = arcpy.RasterToNumPyArray(s.DBH)
 
         else:
             logging.info('Assigning initial values to dbh array')
@@ -152,8 +157,11 @@ class Disturbance(object):
                         d = self.dbh_lookup.ix[int(a)][str(index)]
                         self.dbh[(self.ecocommunities_array == index) & (self.forest_age == a)] = d
 
-            utils.array_to_raster(self.dbh, s.DBH,
-                                  geotransform=self.geot, projection=self.projection)  # , dtype=gdal.GDT_Float32)
+            dbh = arcpy.NumPyArrayToRaster(self.dbh,
+                                           arcpy.Point(arcpy.env.extent.XMin, arcpy.env.extent.YMin),
+                                           x_cell_size=s.CELL_SIZE,
+                                           y_cell_size=s.CELL_SIZE)
+            dbh.save(s.DBH)
 
     def set_upland_area(self):
         if type(self.ecocommunities) is np.ndarray:

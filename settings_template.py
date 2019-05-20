@@ -9,6 +9,7 @@ RUN_LENGTH = range(1409, 1412)  # start year to end year + 1 (range(1409, 1611) 
 GARDEN = True
 FIRE = True
 POND = True
+CELL_SIZE = 5
 
 
 # PATHS AND NAMES
@@ -106,7 +107,6 @@ DENSITY = 0.4
 # minimum distance: used to buffer out from existing ponds to create territories
 MINIMUM_DISTANCE = 1000
 POND_ABANDONMENT_PROBABILITY = 10
-CELL_SIZE = 5
 DAM_HEIGHT = 9
 
 # GARDENS

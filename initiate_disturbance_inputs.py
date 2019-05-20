@@ -5,11 +5,11 @@
 
 import os
 import sys
+import shutil
 import logging
 import arcpy
 import settings as s
 import utils
-import shutil
 
 logging.basicConfig(filename=s.LOGFILE,
                     filemode='w',
@@ -47,7 +47,8 @@ arcpy.PolygonToRaster_conversion(in_features=s.BUFFER_FE,
                                  out_rasterdataset=lenape_sites,
                                  cellsize=s.CELL_SIZE)
 ecocommunities_fe = arcpy.sa.Con(ecocommunities_fe,
-                                 arcpy.sa.Con((arcpy.sa.IsNull(lenape_sites) == 0), s.LENAPE_SITE_ID, ecocommunities_fe))
+                                 arcpy.sa.Con((arcpy.sa.IsNull(lenape_sites) == 0), s.LENAPE_SITE_ID,
+                                              ecocommunities_fe))
 ecocommunities_fe.save(os.path.join(s.TEMP_DIR, 'ecocommunities_fe.tif'))
 
 logging.info('creating full extent dem')
@@ -139,7 +140,7 @@ for feature in cursor:
         arcpy.Resample_management(aspect_clip, aspect_temp, s.FARSITE_RESOLUTION, "BILINEAR")
         arcpy.RasterToASCII_conversion(aspect_temp, s.aspect_ascii)
 
-        # Copy custom fuel, fuel adjustment, fuel moisture, weather and wind files from inputs_full_extent to input directory, fire folder.
+        # Copy custom fire files from inputs_full_extent to input fire directory.
         files = [
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'custom_fuel.fmd'),
             os.path.join(s.INPUT_DIR_FULL, 'tables', 'fire', 'fuel_adjustment.adj'),
@@ -150,7 +151,7 @@ for feature in cursor:
         for f in files:
             shutil.copy(f, s.FIRE_DIR)
 
-        # Copy dem.asc twice and rename to fuel.asc and canopy.asc. Header will now have the appropriate data for specified region.
+        # Rename dem.asc to fuel.asc and canopy.asc. Header will now have the appropriate data for specified region.
         shutil.copyfile(s.dem_ascii, s.fuel_ascii)
         shutil.copyfile(s.dem_ascii, s.canopy_ascii)
 
