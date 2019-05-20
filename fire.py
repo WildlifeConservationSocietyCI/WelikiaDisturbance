@@ -561,7 +561,7 @@ class FireDisturbance(d.Disturbance):
         # Initiate simulation
         farsite_main_win.SetFocus().MenuItem('Simulate->Initiate/Terminate').Click()
         landscape_initiated = farsite.window_(title_re='LANDSCAPE:*')
-        landscape_initiated.Wait('ready', timeout=40)
+        landscape_initiated.Wait('ready', timeout=60)
 
         time.sleep(s.INITIATE_RENDER_WAIT_TIME)
 
@@ -587,7 +587,7 @@ class FireDisturbance(d.Disturbance):
             logging.error('can not find SELECT VECTOR IGNITION FILE window')
 
         logging.info('Starting simulation')
-        farsite_main_win.Wait('ready', timeout=20)
+        farsite_main_win.Wait('ready', timeout=60)
         farsite_main_win.SetFocus().MenuItem(u'&Simulate->&Start/Restart').Click()
         simulation_complete = farsite.window_(title_re='.*Simulation Complete')
         simulation_complete.Wait(wait_for='ready', timeout=s.SIMULATION_TIMEOUT, retry_interval=0.5)
