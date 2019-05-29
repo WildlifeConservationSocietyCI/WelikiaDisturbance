@@ -471,12 +471,20 @@ class FireDisturbance(d.Disturbance):
                     set_parameters.TypeKeys('{LEFT}')
                 else:
                     set_parameters.TypeKeys('{RIGHT}')
-            set_parameters[u'&OK'].Click()
             time.sleep(3)
+            try:
+                ok_button = set_parameters[u'&OK']
+            except:
+                logging.info("Can't find OK button")
+            set_parameters[u'&OK'].Click()
             logging.info('Parameters set')
 
         except pywinauto.findwindows.WindowNotFoundError:
             logging.error('Can not find MODEL PARAMETERS window')
+            farsite.Kill_()
+
+        except:
+            logging.error('Something wrong with setting parameters dialog')
             farsite.Kill_()
 
         # fire behavior options: disable crown fire
@@ -491,6 +499,10 @@ class FireDisturbance(d.Disturbance):
 
         except pywinauto.findwindows.WindowNotFoundError:
             logging.error('can not find FIRE BEHAVIOR OPTIONS window')
+            farsite.Kill_()
+
+        except:
+            logging.error('fire behavior options NOT set')
             farsite.Kill_()
 
         # Set number of simulation threads
@@ -590,6 +602,7 @@ class FireDisturbance(d.Disturbance):
             set_ignition.Wait('ready')
             set_ignition[u'Files of &type:ComboBox'].Select(u', SHAPE FILES (*.SHP)')
             set_ignition[u'File &name:Edit'].SetEditText(self.ignition)
+            time.sleep(1)
             set_ignition[u'&Open'].Click()
             # try:
             #     contains_polygon = farsite.window_(title=self.IGNITION)
