@@ -377,7 +377,7 @@ class FireDisturbance(d.Disturbance):
                 load_fuel = farsite.window_(title='Select ASCII Raster File')
                 load_fuel.SetFocus()
                 load_fuel[u'File &name:Edit'].SetEditText(self.fuel_ascii)
-                load_fuel[u'&Open'].DoubleClick()
+                load_fuel[u'&Open'].Click()
                 landscape_load.SetFocus()
                 landscape_load.Wait('ready')
                 landscape_load[u'Canopy Co&ver ASCII'].Click()
@@ -385,7 +385,7 @@ class FireDisturbance(d.Disturbance):
                 load_canopy.SetFocus()
                 load_canopy.Wait('ready')
                 load_canopy[u'File &name:Edit'].SetEditText(self.canopy_ascii)
-                load_canopy[u'&Open'].DoubleClick()
+                load_canopy[u'&Open'].Click()
                 landscape_load.SetFocus()
                 landscape_load[u'&OK'].Click()
 
@@ -395,7 +395,8 @@ class FireDisturbance(d.Disturbance):
 
             # Wait while FARSITE generates the landscape file
             landscape_generated = farsite.window_(title_re='.*Landscape Generated$')
-            landscape_generated.Wait('visible', timeout=10000, retry_interval=0.5)
+            landscape_generated.Wait('ready', timeout=10000, retry_interval=0.5)
+            time.sleep(1)
             landscape_generated.SetFocus()
             landscape_generated[u'OK'].Click()
 
@@ -456,6 +457,7 @@ class FireDisturbance(d.Disturbance):
             set_parameters.TypeKeys('{LEFT 30}')
             set_parameters.TypeKeys('{TAB}')
             set_parameters[u'ScrollBar3'].Click()
+            time.sleep(1)
             # set perimeter resolution
             while int(set_parameters[u'Static3'].WindowText().split()[0]) != s.PERIMETER_RESOLUTION:
                 if int(set_parameters[u'Static3'].WindowText().split()[0]) > s.PERIMETER_RESOLUTION:
