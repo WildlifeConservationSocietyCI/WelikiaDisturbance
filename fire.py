@@ -417,15 +417,21 @@ class FireDisturbance(d.Disturbance):
         # Export and output options
         # logging.info('Setting export and output options')
 
+        # # If 'Clear Screen' window appears:
+        # set_outputs = farsite.window_(title='Clear Screen')
+        # if pywinauto.findwindows.farsite.window_(title='Clear Screen'):
+        #     set_outputs.Wait('ready').SetFocus()
+        #     set_outputs[u'&OK'].Click()
+
         # Open export and output option window
         farsite_main_win.SetFocus().MenuItem('Output->Export and Output').Click()
         try:
             set_outputs = farsite.window_(title='Export and Output Options')
             set_outputs.Wait('ready').SetFocus()
-            set_outputs[u'&Select Rater File Name'].Click()
+            set_outputs[u'&Select Raster File Name'].Click()
             select_raster = farsite.window_(title='Select Raster File')
             select_raster[u'File &name:Edit'].SetEditText(self.farsite_output)
-            select_raster[u'&Save'].DoubleClick()
+            select_raster[u'&Save'].Click()
             set_outputs[u'Flame Length (m)'].Click()
             # set_outputs[u'&Default'].Click()
             if set_outputs[u'XUpDown'].GetValue() != s.FARSITE_RESOLUTION:
@@ -465,7 +471,7 @@ class FireDisturbance(d.Disturbance):
                     set_parameters.TypeKeys('{RIGHT}')
             set_parameters[u'&OK'].Click()
             time.sleep(3)
-            # logging.info('Parameters set')
+            logging.info('Parameters set')
 
         except pywinauto.findwindows.WindowNotFoundError:
             logging.error('Can not find MODEL PARAMETERS window')
@@ -479,6 +485,7 @@ class FireDisturbance(d.Disturbance):
             set_fire_behavior.SetFocus()
             set_fire_behavior[u'Enable Crownfire'].UnCheck()
             set_fire_behavior[u'&OK'].Click()
+            logging.info('fire behavior options set')
 
         except pywinauto.findwindows.WindowNotFoundError:
             logging.error('can not find FIRE BEHAVIOR OPTIONS window')
@@ -492,6 +499,7 @@ class FireDisturbance(d.Disturbance):
             simulation_options.Wait('ready')
             simulation_options.UpDown.SetValue(8)
             simulation_options[u'&OK'].Click()
+            logging.info('Simulation Options set')
 
         except pywinauto.findwindows.WindowNotFoundError:
             logging.error('can not find SIMULATION OPTIONS window')
@@ -551,8 +559,7 @@ class FireDisturbance(d.Disturbance):
                     simulation_duration.Updown10.Increment()
 
             simulation_duration[u'OK'].Click()
-
-            # logging.info('Duration set')
+            logging.info('Duration set')
 
         except farsite.findwindows.WindowNotFoundError:
             logging.info('can not find SIMULATION DURATION window')
@@ -561,7 +568,15 @@ class FireDisturbance(d.Disturbance):
         # Initiate simulation
         farsite_main_win.SetFocus().MenuItem('Simulate->Initiate/Terminate').Click()
         landscape_initiated = farsite.window_(title_re='LANDSCAPE:*')
-        landscape_initiated.Wait('ready', timeout=60)
+        try:
+            landscape_initiated.Wait('ready', timeout=s.INITIATE_RENDER_WAIT_TIME)
+        except:
+            print(set_parameters, set_fire_behavior, simulation_options, simulation_duration)
+        # Died here in 1418 because the 'Clear screen' dialog was showing, because the set_parameters window was open.
+        # It appeared that all the actions in that dialog, as well as in everything between that point in the script and
+        # here, had run successfully, and in farsite you can't select other dialogs from the menu without first closing
+        # this one. So I'm not sure how this could be open; was it opened a second time?
+        # One option would be to write code here that closes it if it's open
 
         time.sleep(s.INITIATE_RENDER_WAIT_TIME)
 
@@ -573,7 +588,7 @@ class FireDisturbance(d.Disturbance):
             set_ignition.Wait('ready')
             set_ignition[u'Files of &type:ComboBox'].Select(u', SHAPE FILES (*.SHP)')
             set_ignition[u'File &name:Edit'].SetEditText(self.ignition)
-            set_ignition[u'&Open'].DoubleClick()
+            set_ignition[u'&Open'].Click()
             # try:
             #     contains_polygon = farsite.window_(title=self.IGNITION)
             #     contains_polygon.SetFocus()
@@ -593,6 +608,8 @@ class FireDisturbance(d.Disturbance):
         simulation_complete.Wait(wait_for='ready', timeout=s.SIMULATION_TIMEOUT, retry_interval=0.5)
         simulation_complete.SetFocus()
         simulation_complete[u'OK'].Click()
+        logging.info(farsite.top_window_())
+        time.sleep(2)
         logging.info('Simulation complete')
         # Exit FARSITE
         farsite.Kill_()
