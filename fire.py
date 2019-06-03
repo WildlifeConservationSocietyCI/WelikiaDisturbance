@@ -346,7 +346,7 @@ class FireDisturbance(d.Disturbance):
 
         try:
             load_project = farsite.window_(title='Select Project File')
-            load_project.Wait('ready').SetFocus()
+            load_project.Wait('ready', timeout=100).SetFocus()
             load_project[u'File &name:Edit'].SetEditText(self.fpj)
             load_project[u'&Open'].Click()
             # time.sleep(.5)
@@ -366,26 +366,28 @@ class FireDisturbance(d.Disturbance):
 
         try:
             project_inputs = farsite.window_(title='FARSITE Project')
-            project_inputs.Wait('ready').SetFocus()
+            project_inputs.Wait('ready', timeout=100).SetFocus()
             project_inputs[u'->13'].Click()
 
             # Load fuel and canopy rasters
             try:
                 landscape_load = farsite.window_(title='Landscape (LCP) File Generation')
-                landscape_load.Wait('ready').SetFocus()
+                landscape_load.Wait('ready', timeout=100).SetFocus()
                 landscape_load[u'&Fuel Model ASCII'].Click()
                 load_fuel = farsite.window_(title='Select ASCII Raster File')
                 load_fuel.SetFocus()
                 load_fuel[u'File &name:Edit'].SetEditText(self.fuel_ascii)
                 load_fuel[u'&Open'].Click()
                 landscape_load.SetFocus()
-                landscape_load.Wait('ready')
+                landscape_load.Wait('ready', timeout=100)
                 landscape_load[u'Canopy Co&ver ASCII'].Click()
                 load_canopy = farsite.window_(title='Select ASCII Raster File')
                 load_canopy.SetFocus()
-                load_canopy.Wait('ready')
+                load_canopy.Wait('ready', timeout=100)
                 load_canopy[u'File &name:Edit'].SetEditText(self.canopy_ascii)
+                time.sleep(1)
                 load_canopy[u'&Open'].Click()
+                time.sleep(1)
                 landscape_load.SetFocus()
                 landscape_load[u'&OK'].Click()
 
@@ -402,7 +404,7 @@ class FireDisturbance(d.Disturbance):
 
             # logging.info('landscape file loaded')
 
-            project_inputs.Wait('ready').SetFocus()
+            project_inputs.Wait('ready', timeout=100).SetFocus()
             project_inputs[u'&OK'].Click()
 
         except pywinauto.findwindows.WindowNotFoundError:
@@ -428,7 +430,7 @@ class FireDisturbance(d.Disturbance):
         farsite_main_win.SetFocus().MenuItem('Output->Export and Output').Click()
         try:
             set_outputs = farsite.window_(title='Export and Output Options')
-            set_outputs.Wait('ready').SetFocus()
+            set_outputs.Wait('ready', timeout=100).SetFocus()
             set_outputs[u'&Select Raster File Name'].Click()
             select_raster = farsite.window_(title='Select Raster File')
             select_raster[u'File &name:Edit'].SetEditText(self.farsite_output)
@@ -510,7 +512,7 @@ class FireDisturbance(d.Disturbance):
         try:
             simulation_options = farsite.window_(title='Simulation Options')
             simulation_options.SetFocus()
-            simulation_options.Wait('ready')
+            simulation_options.Wait('ready', timeout=100)
             simulation_options.UpDown.SetValue(8)
             simulation_options[u'&OK'].Click()
             logging.info('Simulation Options set')
@@ -599,7 +601,7 @@ class FireDisturbance(d.Disturbance):
         try:
             set_ignition = farsite.window_(title='Select Vector Ignition File')
             set_ignition.SetFocus()
-            set_ignition.Wait('ready')
+            set_ignition.Wait('ready', timeout=100)
             set_ignition[u'Files of &type:ComboBox'].Select(u', SHAPE FILES (*.SHP)')
             set_ignition[u'File &name:Edit'].SetEditText(self.ignition)
             time.sleep(1)
@@ -617,7 +619,7 @@ class FireDisturbance(d.Disturbance):
             logging.error('can not find SELECT VECTOR IGNITION FILE window')
 
         logging.info('Starting simulation')
-        farsite_main_win.Wait('ready', timeout=60)
+        farsite_main_win.Wait('ready', timeout=100)
         farsite_main_win.SetFocus().MenuItem(u'&Simulate->&Start/Restart').Click()
         simulation_complete = farsite.window_(title_re='.*Simulation Complete')
         simulation_complete.Wait(wait_for='ready', timeout=s.SIMULATION_TIMEOUT, retry_interval=0.5)
