@@ -39,7 +39,9 @@ arcpy.env.scratchWorkspace = scratchdir
 arcpy.env.overwriteOutput = True
 utils.set_arc_env(s.ecocommunities)
 
-utils.clear_dir(s.OUTPUT_DIR)
+if s.FROMSCRATCH:
+    utils.clear_dir(s.OUTPUT_DIR)
+
 utils.mkdir(os.path.join(s.OUTPUT_DIR, 'fire', 'burn_rasters'))
 utils.mkdir(os.path.join(s.OUTPUT_DIR, 'garden'))
 utils.mkdir(os.path.join(s.OUTPUT_DIR, 'pond'))

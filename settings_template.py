@@ -10,6 +10,7 @@ GARDEN = True
 FIRE = True
 POND = True
 CELL_SIZE = 5
+FROMSCRATCH = False
 
 
 # PATHS AND NAMES

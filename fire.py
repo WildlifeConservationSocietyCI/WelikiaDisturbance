@@ -375,22 +375,20 @@ class FireDisturbance(d.Disturbance):
                 landscape_load.Wait('ready', timeout=100).SetFocus()
                 landscape_load[u'&Fuel Model ASCII'].Click()
                 load_fuel = farsite.window_(title='Select ASCII Raster File')
-                load_fuel.SetFocus()
+                load_fuel.Wait('ready', timeout=100).SetFocus()
                 load_fuel[u'File &name:Edit'].SetEditText(self.fuel_ascii)
                 time.sleep(1)
                 load_fuel[u'&Open'].Click()
                 time.sleep(1)
-                landscape_load.SetFocus()
-                landscape_load.Wait('ready', timeout=100)
+                landscape_load.Wait('ready', timeout=100).SetFocus()
                 landscape_load[u'Canopy Co&ver ASCII'].Click()
                 load_canopy = farsite.window_(title='Select ASCII Raster File')
-                load_canopy.SetFocus()
-                load_canopy.Wait('ready', timeout=100)
+                load_canopy.Wait('ready', timeout=100).SetFocus()
                 load_canopy[u'File &name:Edit'].SetEditText(self.canopy_ascii)
                 time.sleep(1)
                 load_canopy[u'&Open'].Click()
                 time.sleep(1)
-                landscape_load.SetFocus()
+                landscape_load.Wait('ready', timeout=100).SetFocus()
                 landscape_load[u'&OK'].Click()
 
             except pywinauto.findwindows.WindowNotFoundError:
@@ -596,7 +594,7 @@ class FireDisturbance(d.Disturbance):
         # this one. So I'm not sure how this could be open; was it opened a second time?
         # One option would be to write code here that closes it if it's open
 
-        time.sleep(s.INITIATE_RENDER_WAIT_TIME)
+        # time.sleep(s.INITIATE_RENDER_WAIT_TIME)
 
         # Set Ignition
         farsite_main_win.SetFocus().MenuItem('Simulate->Modify Map->Import Ignition File').Click()
