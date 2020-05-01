@@ -172,11 +172,3 @@ class Disturbance(object):
         for index, row in self.community_table.iterrows():
             if row.upland == 1 and index in area_hist:
                 self.upland_area += area_hist[index]
-
-
-def hist(a):
-    if type(a) is np.ndarray:
-        values, counts = np.unique(a, return_counts=True)
-    else:
-        values, counts = np.unique(arcpy.RasterToNumPyArray(a, nodata_to_value=-9999), return_counts=True)
-    return dict(zip(values, counts))

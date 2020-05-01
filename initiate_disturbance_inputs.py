@@ -7,6 +7,7 @@ import os
 import sys
 import shutil
 import logging
+import random
 import arcpy
 import settings as s
 import utils
@@ -38,18 +39,7 @@ utils.clear_dir(s.TEMP_DIR)
 utils.mkdir(s.TEMP_DIR)
 
 
-logging.info('creating full extent ecocommunities')
 ecocommunities_fe = arcpy.Raster(s.ECOCOMMUNITIES_FE)
-# TODO: Is this obsolete? Should Lenape sites not already be in ecocomm grid? - ask Eric
-lenape_sites = os.path.join(s.TEMP_DIR, 'lenape_sites.tif')
-arcpy.PolygonToRaster_conversion(in_features=s.BUFFER_FE,
-                                 value_field='RASTERVALU',
-                                 out_rasterdataset=lenape_sites,
-                                 cellsize=s.CELL_SIZE)
-ecocommunities_fe = arcpy.sa.Con(ecocommunities_fe,
-                                 arcpy.sa.Con((arcpy.sa.IsNull(lenape_sites) == 0), s.LENAPE_SITE_ID,
-                                              ecocommunities_fe))
-ecocommunities_fe.save(os.path.join(s.TEMP_DIR, 'ecocommunities_fe.tif'))
 
 logging.info('creating full extent dem')
 dem = arcpy.sa.ExtractByMask(s.DEM_FE, ecocommunities_fe)
@@ -87,7 +77,7 @@ stream_suitability = arcpy.sa.Con((ecocommunities_fe == 61801) |
 stream_suitability.save(os.path.join(s.TEMP_DIR, 'stream_suitability.tif'))
 
 logging.info('creating full extent proximity suitability')
-euclidian_distance = arcpy.sa.EucDistance(s.SITES_FE,
+euclidian_distance = arcpy.sa.EucDistance(s.GARDEN_SITES_FE,
                                           maximum_distance=s.PROXIMITY_BUFFER,
                                           cell_size=s.CELL_SIZE)
 proximity_suitability = arcpy.sa.ReclassByTable(euclidian_distance,
@@ -97,9 +87,95 @@ proximity_suitability = arcpy.sa.ReclassByTable(euclidian_distance,
                                                 output_value_field='OUT')
 proximity_suitability.save(os.path.join(s.TEMP_DIR, 'proximity_suitability.tif'))
 
+habsites_path = os.path.join(s.TEMP_DIR, 'habsites.tif')
+if not arcpy.Exists(habsites_path):
+    logging.info('creating full extent upland suitability raster')
+    upland_suitability = arcpy.sa.ReclassByTable(ecocommunities_fe, s.COMMUNITY_TABLE,
+                                                 from_value_field='Field1',
+                                                 to_value_field='Field1',
+                                                 output_value_field='upland',
+                                                 missing_values='NODATA')
+    upland_suitability.save(os.path.join(s.TEMP_DIR, 'upland_suitability.tif'))
+    habitation_suitability = arcpy.sa.Con(upland_suitability > 0, (upland_suitability +
+                                                                   slope_suitability))
+    habitation_suitability.save(os.path.join(s.TEMP_DIR, 'habitation_suitability.tif'))
 
-# arcpy.MakeFeatureLayer_management(s.REGION_BOUNDARIES, "regionlyr")
-# arcpy.SelectLayerByAttribute_management("regionlyr", where_clause=' "BoroCode" = {} '.format(s.REGION))
+    logging.info('calculating Lenape habitation sites')
+    point_cursor = arcpy.da.SearchCursor(s.HABITATION_SITES_FE, ["FID", "Population"])
+    point_layer = arcpy.MakeFeatureLayer_management(s.HABITATION_SITES_FE, "habsite_layer")
+    hab_buffer = os.path.join(s.TEMP_DIR, 'hab_buffer.shp')
+    habsite_rasters = []
+    for point in point_cursor:
+        pointid = point[0]
+        population = point[1] or 0
+        if s.DEBUG_MODE:
+            logging.info("Calculating site %s pop %s" % (pointid, population))
+        arcpy.env.extent = ecocommunities_fe
+        # thisisabsurd = random.randint(0, 1000000)
+        var = random.choice(s.POPULATION_VARIATION)
+        site_area_target = int((population + var) * s.PER_CAPITA_SITE_AREA / (s.CELL_SIZE ** 2))
+        arcpy.SelectLayerByAttribute_management("habsite_layer", "NEW_SELECTION", ' "FID" = {}'.format(pointid))
+
+        if arcpy.Exists(hab_buffer):
+            arcpy.Delete_management(hab_buffer)
+        arcpy.Buffer_analysis(in_features="habsite_layer",
+                              out_feature_class=hab_buffer,
+                              buffer_distance_or_field=s.PROXIMITY_BUFFER)
+        arcpy.env.extent = hab_buffer
+
+        habsite_center = os.path.join(s.TEMP_DIR, 'habsite_center_{}.tif'.format(pointid))
+        arcpy.PointToRaster_conversion(in_features="habsite_layer",
+                                       value_field='FID',
+                                       out_rasterdataset=habsite_center,
+                                       cellsize=s.CELL_SIZE)
+        habsite = arcpy.Raster(habsite_center)
+        habsite_siteid = arcpy.sa.Con(habsite == pointid, s.LENAPE_SITE_ID, habsite)
+        # habsite_siteid.save(os.path.join(s.TEMP_DIR, "habsite_prebuffer_{}_{}.tif".format(pointid, thisisabsurd)))
+        habsite_area_start = utils.get_raster_area(habsite_siteid, s.LENAPE_SITE_ID)
+        habsite_buffered, habsite_area = utils.smart_buffer(
+            habsite_siteid,
+            s.LENAPE_SITE_ID,
+            habitation_suitability,
+            "site",
+            habsite_area_start,
+            site_area_target,
+        )
+        # arcpy.env.extent = ecocommunities_fe
+        # arcpy.Mosaic_management([habsite_buffered], ecocommunities_fe)
+        # habsite_rasters.append(habsite_buffered)
+        # ecocommunities_fe = arcpy.sa.Con(ecocommunities_fe,
+        #                                  arcpy.sa.Con(arcpy.sa.IsNull(habsite_buffered) == 0, habsite_buffered,
+        #                                               ecocommunities_fe))
+        # time.sleep(1)
+        habsite_path = os.path.join(s.TEMP_DIR, "habsite_{}.tif".format(pointid))
+        habsite_buffered.save(habsite_path)
+        habsite_rasters.append(habsite_path)
+        del habsite, habsite_center, habsite_buffered
+
+    arcpy.env.extent = ecocommunities_fe
+    arcpy.MosaicToNewRaster_management(habsite_rasters, s.TEMP_DIR, 'habsites.tif', number_of_bands=1, pixel_type="1_BIT")
+    utils.clear_dir(s.TEMP_DIR, r"habsite_\S*")
+
+habsites = arcpy.Raster(habsites_path)
+ecocommunities_fe = arcpy.sa.Con(
+    arcpy.sa.IsNull(habsites) == 1,
+    ecocommunities_fe,
+    arcpy.sa.Con(habsites == 1, s.LENAPE_SITE_ID, ecocommunities_fe)
+)
+# Correcting for weird 0/nodata banding in preceding. Relies on no eco id = 0.
+ecocommunities_fe = arcpy.sa.SetNull(ecocommunities_fe, ecocommunities_fe, "VALUE = 0")
+ecocommunities_fe.save(os.path.join(s.TEMP_DIR, 'ecocommunities_fe.tif'))
+
+# TODO: tweak site point locations based on how they creep upslope (?)
+# TODO: check that the altered ecocommunities_fe doesn't result in
+#  points from garden_sites.shp overlapping habitation sites
+# TODO: does this logic mean we lose cells if two site centers start out close to each other?
+# TODO: reinstate real ecocommunities
+# TODO: check garden disturbance still works
+
+
+arcpy.MakeFeatureLayer_management(s.REGION_BOUNDARIES, "regionlyr")
+arcpy.SelectLayerByAttribute_management("regionlyr", where_clause=' "BoroCode" = {} '.format(s.REGION))
 cursor = arcpy.SearchCursor(s.REGION_BOUNDARIES)
 for feature in cursor:
     region = int(feature.BoroCode)
@@ -186,6 +262,6 @@ for feature in cursor:
         proximity_suitability_clip = arcpy.sa.ExtractByMask(proximity_suitability, s.ecocommunities)
         proximity_suitability_clip.save(s.proximity_suitability)
 
-        arcpy.Clip_analysis(in_features=s.SITES_FE,
+        arcpy.Clip_analysis(in_features=s.GARDEN_SITES_FE,
                             clip_features=feature.Shape,
                             out_feature_class=s.garden_sites)

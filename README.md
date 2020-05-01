@@ -27,6 +27,7 @@ Model run input and output data should be saved to the [runs](https://drive.goog
   - DEM (dem)
   - Ecological communities (Welikia_Ecocommunities)
   - Welikia region boundaries (region_boundaries)
+  - Lenape habitation sites (lenape_sites)
   - Lenape trails (trails)
   - Lenape garden sites (garden_sites)
   - Tables (includes welikia_community_table_int.csv and tables below)

@@ -4,6 +4,7 @@ import shutil
 import logging
 import time
 import re
+import random
 import arcpy
 import numpy as np
 # from osgeo import gdal
@@ -12,6 +13,7 @@ import numpy as np
 # from osgeo import osr
 import linecache
 # from wmi import WMI
+import settings as s
 
 
 # create dir (including parents if necessary) if it doesn't exist
@@ -26,21 +28,22 @@ def mkdir(path):
 
 
 # remove contents of dir (but not dir itself)
-def clear_dir(directory):
+def clear_dir(directory, pattern=None, ignore_errors=True):
     if os.path.isdir(directory):
-        file_list = os.listdir(directory)
-        for file_name in file_list:
-            path = os.path.join(directory, file_name)
-            if os.path.isfile(path):
-                os.remove(path)
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-
-
-def clear_dir_by_pattern(directory, pattern):
-    for f in os.listdir(directory):
-        if re.search(pattern, f):
-            os.remove(os.path.join(directory, f))
+        for filename in os.listdir(directory):
+            path = os.path.join(directory, filename)
+            try:
+                if os.path.isfile(path):
+                    if pattern:
+                        if re.search(pattern, filename):
+                            os.remove(path)
+                    else:
+                        os.remove(path)
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+            except:
+                if ignore_errors:
+                    pass
 
 
 def set_arc_env(in_raster):
@@ -226,3 +229,115 @@ def population_count(array):
     array = array[array > 0]
     population = np.sum(array)
     return population
+
+
+def hist(a):
+    if type(a) is np.ndarray:
+        values, counts = np.unique(a, return_counts=True)
+    else:
+        values, counts = np.unique(arcpy.RasterToNumPyArray(a, nodata_to_value=-9999), return_counts=True)
+    return dict(zip(values, counts))
+
+
+def get_raster_area(in_raster, value):
+    """
+    return count of cells with given value in raster (e.g. # of garden cells in community raster)
+    :return:
+    """
+    count = 0
+    histogram = hist(in_raster)
+    if value in histogram:
+        count = histogram[value]
+
+    return count
+
+
+def smart_buffer(raster, raster_value, suitability, label, start_area=0, target_area=0):
+    """
+    Expand input raster using a suitability surface until it reaches target
+    E.g.: Create a new garden, based on Mannahatta AML script.
+    Note this does not "look ahead," but rather expands 1 cell at a time
+    :return:
+    """
+
+    counter = 0
+    raster_area = start_area
+    while raster_area < target_area:
+        zero = nullgard = zone = zapped = clip = ring_suitability = new_cells = None
+        # self.wipe_locks()
+        counter += 1
+        if s.DEBUG_MODE:
+            logging.info('%s smart_buffer %s counter: %s area: %s target: %s' %
+                         (label, raster_value, counter, raster_area, target_area))
+
+        # Set nodata values in garden grid to 0
+        zero = arcpy.sa.Con(arcpy.sa.IsNull(raster) == 1, 0, raster)
+        # if s.DEBUG_MODE:
+        #     zero.save(os.path.join(s.TEMP_DIR, "zero_%s.tif" % counter))
+
+        # Create another grid where current garden is NODATA and all other values = 0
+        nullgard = arcpy.sa.SetNull(zero == raster_value, 0)
+        # if s.DEBUG_MODE:
+        #     nullgard.save(os.path.join(s.TEMP_DIR, "nullgard_%s.tif" % counter))
+
+        # Expand potential garden grid by one cell
+        zone = arcpy.sa.Expand(raster, 1, raster_value)
+        # if s.DEBUG_MODE:
+        #     zone.save(os.path.join(s.TEMP_DIR, "zone_%s.tif" % counter))
+
+        # Create a clipping raster for gardens
+        zapped = arcpy.sa.Plus(nullgard, suitability)
+        # if s.DEBUG_MODE:
+        #     zapped.save(os.path.join(s.TEMP_DIR, "zapped_%s.tif" % counter))
+
+        # Clip expanded garden grid by removing unsuitable areas and places where garden currently exists
+        clip = arcpy.sa.ExtractByMask(zone, zapped)
+        array = arcpy.RasterToNumPyArray(clip)
+        unique_values = np.unique(array, return_counts=True)
+        value_dict = dict(zip(unique_values[0], unique_values[1]))
+        if raster_value not in value_dict.keys():
+            logging.info('no new cells can be added')
+            break
+
+        # if s.DEBUG_MODE:
+        #     clip.save(os.path.join(s.TEMP_DIR, 'clip_%s.tif' % counter))
+
+        ring_suitability = arcpy.sa.Con(clip, suitability)
+        # if s.DEBUG_MODE:
+        #     ring_suitability.save(os.path.join(s.TEMP_DIR, 'ring_suitability_%s.tif' % counter))
+
+        new_cells = arcpy.sa.Con(ring_suitability == ring_suitability.maximum, raster_value)
+        # if s.DEBUG_MODE:
+        #     new_cells.save(os.path.join(s.TEMP_DIR, 'new_cells_%s.tif' % counter))
+
+        new_cells_area = get_raster_area(new_cells, raster_value)
+
+        if (new_cells_area + raster_area) <= target_area:
+            raster = arcpy.sa.Con(zero == raster_value, raster_value,
+                                  arcpy.sa.Con(new_cells == raster_value, raster_value, raster))
+
+        else:
+            randrast = arcpy.sa.CreateRandomRaster(345, suitability, suitability)
+            random_cells = arcpy.sa.Con(new_cells, randrast)
+            array = arcpy.RasterToNumPyArray(random_cells)
+            random_values = np.unique(array).tolist()
+            random.shuffle(random_values)
+
+            while raster_area < target_area:
+                r = random_values.pop()
+                new_cell = arcpy.sa.Con(random_cells == r, raster_value)
+
+                raster = arcpy.sa.Con(arcpy.sa.IsNull(new_cell) == 0, new_cell, raster)
+
+                raster_area = get_raster_area(raster, raster_value)
+                # if s.DEBUG_MODE:
+                #     new_cell.save(os.path.join(s.TEMP_DIR, 'new_cell_%s.tif' % counter))
+
+        raster_area = get_raster_area(raster, raster_value)
+        del zero, zone, zapped, nullgard, clip, ring_suitability, new_cells
+        # utils.clear_dir_by_pattern(s.TEMP_DIR, '.cpg')
+        # utils.clear_dir_by_pattern(self.OUTPUT_DIR, '.cpg')
+        # if s.DEBUG_MODE:
+        #     logging.info('finished smart_buffer {}'.format(counter))
+
+    return raster, raster_area

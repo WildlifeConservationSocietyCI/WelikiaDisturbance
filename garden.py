@@ -2,10 +2,9 @@ import os
 import random
 import logging
 import arcpy
-import numpy
 import settings as s
 import disturbance as d
-
+from utils import get_raster_area, smart_buffer
 
 # TODO: Throughout the code, we had previously been leveraging in-memory raster processing,
 #  to avoid expensive disk read/write operations. But with the lastest code and (exclusive use of)
@@ -120,18 +119,6 @@ class GardenDisturbance(d.Disturbance):
             arcpy.env.extent = self.temp_buffer
             del local_communities
 
-    def get_garden_area(self, in_raster):
-        """
-        return count of garden cells in community raster
-        :return:
-        """
-        count = 0
-        hist = d.hist(in_raster)
-        if s.GARDEN_ID in hist:
-            count = hist[s.GARDEN_ID]
-
-        return count
-
     def set_local_extent(self):
         if arcpy.Exists(self.temp_point_garden):
             arcpy.Delete_management(self.temp_point_garden)
@@ -142,7 +129,7 @@ class GardenDisturbance(d.Disturbance):
             arcpy.Delete_management(self.temp_buffer)
         arcpy.Buffer_analysis(in_features=self.temp_point_garden,
                               out_feature_class=self.temp_buffer,
-                              buffer_distance_or_field=500)
+                              buffer_distance_or_field=s.PROXIMITY_BUFFER)
 
         arcpy.env.extent = self.temp_buffer
 
@@ -154,7 +141,7 @@ class GardenDisturbance(d.Disturbance):
         if s.DEBUG_MODE:
             local_ecocommunities.save(os.path.join(s.TEMP_DIR, 'local_ecosystem.tif'))
 
-        self.garden_area = self.get_garden_area(local_ecocommunities)
+        self.garden_area = get_raster_area(local_ecocommunities, s.GARDEN_ID)
 
         # self.wipe_locks()
         self.local_suitability = arcpy.sa.ExtractByMask(self.suitability, self.temp_buffer)
@@ -208,94 +195,6 @@ class GardenDisturbance(d.Disturbance):
             self.coordinate_list.append((point[0][0], point[0][1]))
         # del cursor
 
-    def create_garden(self):
-        """
-        Create a new garden, based on Mannahatta AML script.
-        :return:
-        """
-
-        counter = 0
-        while self.garden_area < self.garden_area_target:
-            zero = nullgard = zone = zapped = clip = ring_suitability = new_cells = None
-            # self.wipe_locks()
-            counter += 1
-            if s.DEBUG_MODE:
-                logging.info('counter: %s' % counter)
-                logging.info('garden area pre create_garden: %s' % self.garden_area)
-
-            # Set nodata values in garden grid to 0
-            zero = arcpy.sa.Con(arcpy.sa.IsNull(self.garden) == 1, 0, self.garden)
-            # if s.DEBUG_MODE:
-            zero.save(os.path.join(s.TEMP_DIR, "zero_%s.tif" % counter))
-
-            # Create another grid where current garden is NODATA and all other values = 0
-            nullgard = arcpy.sa.SetNull(zero == s.GARDEN_ID, 0)
-            # if s.DEBUG_MODE:
-            nullgard.save(os.path.join(s.TEMP_DIR, "nullgard_%s.tif" % counter))
-
-            # Expand potential garden grid by one cell
-            zone = arcpy.sa.Expand(self.garden, 1, s.GARDEN_ID)
-            # if s.DEBUG_MODE:
-            zone.save(os.path.join(s.TEMP_DIR, "zone_%s.tif" % counter))
-
-            # Create a clipping raster for gardens
-            zapped = arcpy.sa.Plus(nullgard, self.local_suitability)
-            # if s.DEBUG_MODE:
-            zapped.save(os.path.join(s.TEMP_DIR, "zapped_%s.tif" % counter))
-
-            # Clip expanded garden grid by removing unsuitable areas and places where garden currently exists
-            clip = arcpy.sa.ExtractByMask(zone, zapped)
-            array = arcpy.RasterToNumPyArray(clip)
-            unique_values = numpy.unique(array, return_counts=True)
-            value_dict = dict(zip(unique_values[0], unique_values[1]))
-            if s.GARDEN_ID not in value_dict.keys():
-                logging.info('no new cells can be added')
-                break
-
-            # if s.DEBUG_MODE:
-            clip.save(os.path.join(s.TEMP_DIR, 'clip_%s.tif' % counter))
-
-            ring_suitability = arcpy.sa.Con(clip, self.local_suitability)
-            # if s.DEBUG_MODE:
-            ring_suitability.save(os.path.join(s.TEMP_DIR, 'ring_suitability_%s.tif' % counter))
-
-            new_cells = arcpy.sa.Con(ring_suitability == ring_suitability.maximum, s.GARDEN_ID)
-            # if s.DEBUG_MODE:
-            new_cells.save(os.path.join(s.TEMP_DIR, 'new_cells_%s.tif' % counter))
-
-            new_cells_area = self.get_garden_area(new_cells)
-
-            if (new_cells_area + self.garden_area) <= self.garden_area_target:
-                self.garden = arcpy.sa.Con(zero == s.GARDEN_ID, s.GARDEN_ID,
-                                           arcpy.sa.Con(new_cells == s.GARDEN_ID, s.GARDEN_ID, self.garden))
-
-            else:
-                random_cells = arcpy.sa.Con(new_cells, self.randrast)
-                array = arcpy.RasterToNumPyArray(random_cells)
-                random_values = numpy.unique(array).tolist()
-                random.shuffle(random_values)
-
-                while self.garden_area < self.garden_area_target:
-                    r = random_values.pop()
-                    new_cell = arcpy.sa.Con(random_cells == r, s.GARDEN_ID)
-
-                    self.garden = arcpy.sa.Con(arcpy.sa.IsNull(new_cell) == 0, new_cell, self.garden)
-
-                    self.garden_area = self.get_garden_area(self.garden)
-                    # if s.DEBUG_MODE:
-                    new_cell.save(os.path.join(s.TEMP_DIR, 'new_cell_%s.tif' % counter))
-
-            self.garden_area = self.get_garden_area(self.garden)
-            del zero, zone, zapped, nullgard, clip, ring_suitability, new_cells
-            # utils.clear_dir_by_pattern(s.TEMP_DIR, '.cpg')
-            # utils.clear_dir_by_pattern(self.OUTPUT_DIR, '.cpg')
-            if s.DEBUG_MODE:
-                logging.info('finished create_garden {}'.format(counter))
-
-        path_garden = os.path.join(self.OUTPUT_DIR, 'garden_{}.tif'.format(self.year))
-        self.garden.save(path_garden)
-        logging.info('finished create_garden: {}'.format(self.garden))
-
     # def calculate_garden_area(self):
     #     time_since_disturbance = os.path.join(self.OUTPUT_DIR, 'time_since_disturbance_%s.tif' % self.year)
     #     field_names = ['VALUE', 'COUNT']
@@ -343,7 +242,17 @@ class GardenDisturbance(d.Disturbance):
                 self.set_garden_center()
                 # Continue only if garden center has been assigned
                 if self.garden is not None:
-                    self.create_garden()
+                    path_garden = os.path.join(self.OUTPUT_DIR, 'garden_{}.tif'.format(self.year))
+                    self.garden, self.garden_area = smart_buffer(
+                        self.garden,
+                        s.GARDEN_ID,
+                        self.local_suitability,
+                        "garden",
+                        self.garden_area,
+                        self.garden_area_target,
+                    )
+                    self.garden.save(path_garden)
+                    logging.info('finished create_garden: {}'.format(self.garden))
                     arcpy.env.extent = self.ecocommunities
 
                     # Return garden cells from self.garden else return existing communities
@@ -355,9 +264,9 @@ class GardenDisturbance(d.Disturbance):
                     self.ecocommunities.save((os.path.join(s.TEMP_DIR, fn)))
                     logging.info('ecocommunities: {}'.format(self.ecocommunities))
                     e = arcpy.RasterToNumPyArray(self.ecocommunities)
-                    self.canopy[e == s.GARDEN_ID] = 0
-                    self.forest_age[e == s.GARDEN_ID] = 0
-                    self.dbh[e == s.GARDEN_ID] = 0
+                    self.canopy[e == s.GARDEN_ID | e == s.LENAPE_SITE_ID] = 0
+                    self.forest_age[e == s.GARDEN_ID | e == s.LENAPE_SITE_ID] = 0
+                    self.dbh[e == s.GARDEN_ID | e == s.LENAPE_SITE_ID] = 0
                     # self.dbh[(e == s.SUCCESSIONAL_OLD_FIELD_ID) & (self.forest_age == 0)] = 0.5
 
             arcpy.env.extent = self.ecocommunities

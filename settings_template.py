@@ -63,8 +63,11 @@ RED_MAPLE_SWEETGUM_SWAMP = 71001
 
 # FIRE
 # initial conditions
+# This tif comes out grainy, should it be "more" continuous? The equation for this does a new calculation for each cell.
+# Taken from a normal distribution for the northeast region (Pan et al., 2011)
 MEAN_INITIAL_FOREST_AGE = 65
 MINIMUM_FOREST_AGE = 20
+# Pan et al. 2011 says forests in these regions (Northeast) have the potential to reach 100-120 (currently).
 MAXIMUM_FOREST_AGE = 200
 AGE_VAR = 1
 INITIAL_TIME_SINCE_DISTURBANCE = 20
@@ -103,15 +106,19 @@ INITIATE_RENDER_WAIT_TIME = 20
 SIMULATION_TIMEOUT = 100000
 
 # PONDS
-# density: number of ponds/km^2
+# density: number of ponds(dams)/km^2 - This can range from 0.4 - 0.8 (Naiman et al., 1988)
 DENSITY = 0.4
 # minimum distance: used to buffer out from existing ponds to create territories
+# average = 10.6 dams/km (Naiman et al., 1988; Allen, 1983)
 MINIMUM_DISTANCE = 1000
+# Should probability of abandonment increase over time? It is currently 10%/year. (Logofet et al., 2016)
 POND_ABANDONMENT_PROBABILITY = 10
 DAM_HEIGHT = 9
 
 # GARDENS
 PROXIMITY_BUFFER = 500
+# Percentage dependency of diet per capita towards gardening for Lenape (Speth and Spielmann, 1983).
+# This paper showed senarios for 15, 30, 60 and 100% dependency on agriculture.
 PER_CAPITA_GARDEN_AREA = 15
 POPULATION_VARIATION = range(-5, 6)
 ABANDONMENT_PROBABILITY = 5

@@ -2,6 +2,8 @@ import os
 import arcpy
 import numpy as np
 import logging
+
+import utils
 import settings as s
 import disturbance as d
 
@@ -153,7 +155,7 @@ class PondDisturbance(d.Disturbance):
         return exclude_territory
 
     def set_region_group(self, in_raster):
-        hist = d.hist(self.ecocommunities)
+        hist = utils.hist(self.ecocommunities)
 
         if s.ACTIVE_BEAVER_POND_ID in hist:
             sum_ponds_set_null = arcpy.sa.SetNull(in_raster != s.ACTIVE_BEAVER_POND_ID, 1)
@@ -232,7 +234,7 @@ class PondDisturbance(d.Disturbance):
         # convert community raster to array
         com_array = arcpy.RasterToNumPyArray(self.ecocommunities)
 
-        hist = d.hist(com_array)
+        hist = utils.hist(com_array)
 
         if s.ACTIVE_BEAVER_POND_ID in hist:
             # identify individual ponds using region group
@@ -268,7 +270,7 @@ class PondDisturbance(d.Disturbance):
             self.time_since_disturbance = arcpy.sa.Con(self.ecocommunities == s.ACTIVE_BEAVER_POND_ID, 1, 30)
 
     def set_pond_area(self):
-        hist = d.hist(self.time_since_disturbance)
+        hist = utils.hist(self.time_since_disturbance)
 
         if 1 in hist:
             self.new_pond_area = hist[1]
